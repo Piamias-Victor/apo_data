@@ -1,7 +1,7 @@
 // src/components/FamiliesList.tsx
 
 import React from 'react';
-import { useFamiliesContext } from '@/contexts/familiesContext';
+import { useFamiliesContext } from '@/contexts/families';
 
 /**
  * Composant pour afficher la liste des familles avec leurs sous-familles.

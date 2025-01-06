@@ -3,12 +3,10 @@ import { fetchData } from "./fetch";
 
 export const fetchSales = async (
   page: number,
-  limit: number,
-  sort_by: string,
-  order: string
+  limit: number
 ): Promise<{ sales: Sale[]; total: number }> => {
   return await fetchData<{ sales: Sale[]; total: number }>(
-    `/api/data_sale?page=${page}&limit=${limit}&sort_by=${sort_by}&order=${order}`,
+    `/api/data_sale?page=${page}&limit=${limit}`,
     (data: unknown) => {
       if (
         typeof data !== 'object' ||

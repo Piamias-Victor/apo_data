@@ -2,12 +2,7 @@ import { fetchSales } from "@/libs/sales";
 import { Sale } from "@/types/Sale";
 import { useState, useEffect } from "react";
 
-export const useSales = (
-  page: number = 1,
-  limit: number = 100,
-  sort_by: string = "stock", // Valeur par défaut pour le tri
-  order: string = "desc" // Valeur par défaut pour l'ordre
-) => {
+export const useSales = (page: number = 1, limit: number = 100) => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -17,7 +12,7 @@ export const useSales = (
     async function getSales() {
       try {
         setLoading(true);
-        const { sales: fetchedSales, total: fetchedTotal } = await fetchSales(page, limit, sort_by, order);
+        const { sales: fetchedSales, total: fetchedTotal } = await fetchSales(page, limit);
         setSales(fetchedSales);
         setTotal(fetchedTotal);
       } catch (err) {
@@ -28,7 +23,7 @@ export const useSales = (
       }
     }
     getSales();
-  }, [page, limit, sort_by, order]);
+  }, [page, limit]);
 
   return { sales, total, loading, error };
 };

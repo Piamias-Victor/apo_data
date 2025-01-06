@@ -4,8 +4,9 @@ import { SalesProvider } from '@/contexts/sales';
 import { StructureProvider } from '@/contexts/structure';
 import { SegmentationProvider } from '@/contexts/segmentation';
 import { LabDistributorsProvider } from '@/contexts/labDistributors';
-import { FamiliesProvider } from '@/contexts/familiesContext';
-import { SpecificitiesProvider } from '@/contexts/specificitiesContext';
+import { FamiliesProvider } from '@/contexts/families';
+import { SpecificitiesProvider } from '@/contexts/specificities';
+import { PharmaciesProvider } from '@/contexts/pharmacies';
 
 export default function MyApp({ Component, pageProps }: AppProps) {
     return <>
@@ -14,9 +15,11 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                 <LabDistributorsProvider>
                     <FamiliesProvider>
                         <SpecificitiesProvider>
-                            <SalesProvider>
-                                <Component {...pageProps} />
-                            </SalesProvider>
+                            <PharmaciesProvider>
+                                <SalesProvider>
+                                    <Component {...pageProps} />
+                                </SalesProvider>
+                            </PharmaciesProvider>
                         </SpecificitiesProvider>
                     </FamiliesProvider>
                 </LabDistributorsProvider>

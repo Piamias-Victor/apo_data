@@ -11,6 +11,7 @@ type SalesContextType = {
   sales: Sale[];
   loading: boolean;
   error: string | null;
+  total: number
 };
 
 /**
@@ -27,14 +28,15 @@ const SalesContext = createContext<SalesContextType | undefined>(undefined);
  * @returns Un composant React fournissant le contexte des ventes multiples.
  */
 export const SalesProvider = ({ children }: { children: ReactNode }) => {
-  const { sales, loading, error } = useSales();
+  const { sales, total, loading, error } = useSales();
 
   return (
-    <SalesContext.Provider value={{ sales, loading, error }}>
+    <SalesContext.Provider value={{ sales, total, loading, error }}>
       {children}
     </SalesContext.Provider>
   );
 };
+
 
 /**
  * Hook personnalisé pour consommer le contexte des ventes multiples.

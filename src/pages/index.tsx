@@ -1,7 +1,4 @@
 // src/pages/index.tsx
-
-import { SalesTable } from '@/components/SalesTable';
-import { StructureTable } from '@/components/StructureTable';
 import React from 'react';
 
 /**
@@ -14,15 +11,6 @@ import React from 'react';
  */
 export default function Home() {
   return <>
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="mb-12">
-        <h1 className="text-3xl font-bold mb-6 text-center">Structure</h1>
-        <StructureTable /> 
-      </div>
-      <div className="mb-12">
-        <h1 className="text-3xl font-bold mb-6 text-center">SalesTable</h1>
-        <SalesTable /> 
-      </div>
-    </div>
+    
   </>
 }
