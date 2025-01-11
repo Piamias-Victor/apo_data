@@ -1,16 +1,21 @@
 // src/pages/index.tsx
+
 import React from 'react';
+import SalesTable from './components/SalesTable';
 
 /**
  * Page d'accueil de l'application.
  * 
- * Enveloppe le contenu avec `SalesProvider` et `StructureProvider` pour fournir les contextes des ventes multiples et de la structure des tables.
- * Affiche les composants `SaleTable` et `StructureTable` pour montrer les ventes et la structure de la base de données.
+ * Affiche la liste des ventes récupérées via le contexte.
  * 
- * @returns Un élément JSX représentant la page d'accueil avec les tableaux des ventes et de la structure.
+ * @returns Un élément JSX représentant la page d'accueil avec la liste des ventes.
  */
 export default function Home() {
-  return <>
-    
-  </>
+  return (
+    <div>
+      <h1 className="text-3xl font-bold text-gray-800">Bienvenue sur Apo Data</h1>
+      <p className="text-gray-600 mt-2">Votre solution d analyse pour les pharmacies.</p>
+      <SalesTable/>
+    </div>
+  );
 }

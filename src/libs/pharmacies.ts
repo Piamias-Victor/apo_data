@@ -1,30 +1,38 @@
+// src/libs/pharmacies.ts
+
 import { Pharmacy } from '@/types/Pharmacy';
 import { fetchData } from './fetch';
 
 /**
- * Récupère toutes les pharmacies depuis l'API `/api/data_pharmacies`.
+ * Fonction pour récupérer les pharmacies depuis l'API.
  * 
- * @returns Une promesse résolvant en un tableau d'objets `Pharmacy`.
- * @throws Erreur si la requête échoue ou si les données sont invalides.
+ * @returns Promise avec la liste des pharmacies.
  */
 export const fetchPharmacies = async (): Promise<Pharmacy[]> => {
-  return await fetchData<Pharmacy[]>('/api/data_pharmacies', (data: unknown) => {
-    if (!Array.isArray(data)) {
-      throw new Error('Format de données invalide pour les pharmacies');
+  const data = await fetchData<{ pharmacies: Pharmacy[] }>('/api/pharmacies', (data: unknown) => {
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      !('pharmacies' in data) ||
+      !Array.isArray((data as { pharmacies: unknown }).pharmacies) ||
+      !(data as { pharmacies: Pharmacy[] }).pharmacies.every(item =>
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'created_at' in item &&
+        'updated_at' in item &&
+        'id_nat' in item &&
+        'name' in item &&
+        'ca' in item &&
+        'area' in item &&
+        'employees_count' in item &&
+        'address' in item
+      )
+    ) {
+      throw new Error('Format de données invalide');
     }
-
-    return data.map((item) => {
-      if (
-        typeof item !== 'object' ||
-        item === null ||
-        typeof (item as Pharmacy).id !== 'string' ||
-        typeof (item as Pharmacy).created_at !== 'string' ||
-        typeof (item as Pharmacy).updated_at !== 'string'
-      ) {
-        throw new Error('Données de pharmacie invalides');
-      }
-
-      return item as Pharmacy;
-    });
+    return data as { pharmacies: Pharmacy[] };
   });
+
+  return data.pharmacies;
 };

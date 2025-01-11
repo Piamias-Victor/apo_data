@@ -1,27 +1,30 @@
-import { Sale } from "@/types/Sale";
+// /libs/sales.ts
 import { fetchData } from "./fetch";
+import { GroupedSale } from "@/types/Sale";
 
-export const fetchSales = async (
-  page: number,
-  limit: number
-): Promise<{ sales: Sale[]; total: number }> => {
-  return await fetchData<{ sales: Sale[]; total: number }>(
-    `/api/data_sale?page=${page}&limit=${limit}`,
+export const fetchGroupedSales = async (): Promise<{
+  groupedSales: GroupedSale[];
+  total: number;
+}> => {
+  const url = new URL("/api/sales", window.location.origin);
+
+  // On n'ajoute pas de searchParams, car on ne gère pas de pagination
+  // ni de filtre supplémentaire
+
+  return await fetchData<{ groupedSales: GroupedSale[]; total: number }>(
+    url.toString(),
     (data: unknown) => {
       if (
-        typeof data !== 'object' ||
+        typeof data !== "object" ||
         data === null ||
-        !('sales' in data) ||
-        !('total' in data) ||
-        !Array.isArray((data as { sales: unknown }).sales) ||
-        typeof (data as { total: unknown }).total !== 'number'
+        !("groupedSales" in data) ||
+        !("total" in data) ||
+        !Array.isArray((data as { groupedSales: unknown }).groupedSales) ||
+        typeof (data as { total: unknown }).total !== "number"
       ) {
-        throw new Error('Invalid data format');
+        throw new Error("Invalid data format");
       }
-      return data as { sales: Sale[]; total: number };
+      return data as { groupedSales: GroupedSale[]; total: number };
     }
   );
 };
-
-
-
