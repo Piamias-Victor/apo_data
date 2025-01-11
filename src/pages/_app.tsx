@@ -8,6 +8,7 @@ import Layout from './components/layout/Layout';
 import { UniversesProvider } from '@/contexts/universesContext';
 import { LabDistributorsProvider } from '@/contexts/brandsContext';
 import { ProductsCode13Provider } from '@/contexts/productsContext';
+import { FilterProvider } from '@/contexts/filtersContext';
 
 
 /**
@@ -20,18 +21,20 @@ import { ProductsCode13Provider } from '@/contexts/productsContext';
  */
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
-        <SalesProvider>
-            <UniversesProvider>
-                <LabDistributorsProvider>
-                    <ProductsCode13Provider>
-                        <PharmaciesProvider>
-                            <Layout>
-                                <Component {...pageProps} />
-                            </Layout>
-                        </PharmaciesProvider> 
-                    </ProductsCode13Provider>
-                </LabDistributorsProvider>
-            </UniversesProvider>
-        </SalesProvider>
+        <FilterProvider>
+            <SalesProvider>
+                <UniversesProvider>
+                    <LabDistributorsProvider>
+                        <ProductsCode13Provider>
+                            <PharmaciesProvider>
+                                    <Layout>
+                                        <Component {...pageProps} />
+                                    </Layout>
+                            </PharmaciesProvider> 
+                        </ProductsCode13Provider>
+                    </LabDistributorsProvider>
+                </UniversesProvider>
+            </SalesProvider>
+        </FilterProvider>
     );
 }

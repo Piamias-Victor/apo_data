@@ -1,15 +1,42 @@
 // /libs/sales.ts
-import { fetchData } from "./fetch";
 import { GroupedSale } from "@/types/Sale";
+import { SalesFilters } from "@/types/Filter";
 
-export const fetchGroupedSales = async (): Promise<{
-  groupedSales: GroupedSale[];
-  total: number;
-}> => {
+// Fonction utilitaire pour effectuer la requête
+import { fetchData } from "./fetch";
+
+export const fetchGroupedSales = async (
+  filters?: SalesFilters
+): Promise<{ groupedSales: GroupedSale[]; total: number }> => {
+  // Construire l'URL avec les filtres en tant que paramètres de requête
   const url = new URL("/api/sales", window.location.origin);
 
-  // On n'ajoute pas de searchParams, car on ne gère pas de pagination
-  // ni de filtre supplémentaire
+  // Ajout des filtres dans l'URL en tant que paramètres de requête
+  if (filters?.pharmacy) {
+    url.searchParams.set("pharmacyId", filters.pharmacy);
+  }
+  if (filters?.universe) {
+    url.searchParams.set("universe", filters.universe);
+  }
+  if (filters?.category) {
+    url.searchParams.set("category", filters.category);
+  }
+  if (filters?.subCategory) {
+    url.searchParams.set("subCategory", filters.subCategory);
+  }
+  if (filters?.labDistributor) {
+    url.searchParams.set("labDistributor", filters.labDistributor);
+  }
+  if (filters?.brandLab) {
+    url.searchParams.set("brandLab", filters.brandLab);
+  }
+  if (filters?.rangeName) {
+    url.searchParams.set("rangeName", filters.rangeName);
+  }
+  // Ajoutez d'autres filtres si nécessaire
+
+  // Optionnel: Loguer l'URL pour débogage
+  console.log("Fetching grouped sales with URL:", url.toString());
 
   return await fetchData<{ groupedSales: GroupedSale[]; total: number }>(
     url.toString(),
@@ -22,7 +49,7 @@ export const fetchGroupedSales = async (): Promise<{
         !Array.isArray((data as { groupedSales: unknown }).groupedSales) ||
         typeof (data as { total: unknown }).total !== "number"
       ) {
-        throw new Error("Invalid data format");
+        throw new Error("Format de données invalide");
       }
       return data as { groupedSales: GroupedSale[]; total: number };
     }

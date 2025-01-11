@@ -1,3 +1,5 @@
+// /components/Header.tsx
+
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,9 +20,12 @@ import { LabDistributor, BrandLab, RangeName } from "@/types/Brand";
 import { useProductsCode13Context } from "@/contexts/productsContext";
 import { ProductCode13 } from "@/types/Product";
 
+// Contexte filtres (créé séparément)
+import { useFilterContext } from "@/contexts/filtersContext";
+import { SalesFilters } from "@/types/Filter";
 
 const Header: React.FC = () => {
-  // États pour contrôler les drawers (gauche & droite)
+  // États locaux pour contrôler l'ouverture/fermeture des drawers
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -31,8 +36,11 @@ const Header: React.FC = () => {
   const [searchPharmacy, setSearchPharmacy] = useState("");
   const [selectedPharmacy, setSelectedPharmacy] = useState<string | null>(null);
 
-  const { pharmacies, loading: pharmaciesLoading, error: pharmaciesError } =
-    usePharmaciesContext();
+  const {
+    pharmacies,
+    loading: pharmaciesLoading,
+    error: pharmaciesError,
+  } = usePharmaciesContext();
 
   const filteredPharmacies = pharmacies.filter((pharmacy) =>
     pharmacy.name?.toLowerCase().includes(searchPharmacy.toLowerCase())
@@ -54,12 +62,18 @@ const Header: React.FC = () => {
   const [searchCategory, setSearchCategory] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] = useState(false);
+  const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] =
+    useState(false);
   const [searchSubCategory, setSearchSubCategory] = useState("");
-  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<
+    string | null
+  >(null);
 
-  const { universes, loading: universesLoading, error: universesError } =
-    useUniversesContext();
+  const {
+    universes,
+    loading: universesLoading,
+    error: universesError,
+  } = useUniversesContext();
 
   // Filtrer univers
   const filteredUniverses = universes.filter((u) =>
@@ -109,20 +123,28 @@ const Header: React.FC = () => {
   // ========================================================================
   // == LAB DISTRIBUTORS / LABORATOIRE / GAMMES =============================
   // ========================================================================
-  const [isLabDistributorDropdownOpen, setIsLabDistributorDropdownOpen] = useState(false);
+  const [isLabDistributorDropdownOpen, setIsLabDistributorDropdownOpen] =
+    useState(false);
   const [searchLabDistributor, setSearchLabDistributor] = useState("");
-  const [selectedLabDistributor, setSelectedLabDistributor] = useState<LabDistributor | null>(null);
+  const [selectedLabDistributor, setSelectedLabDistributor] =
+    useState<LabDistributor | null>(null);
 
   const [isBrandLabDropdownOpen, setIsBrandLabDropdownOpen] = useState(false);
   const [searchBrandLab, setSearchBrandLab] = useState("");
-  const [selectedBrandLab, setSelectedBrandLab] = useState<BrandLab | null>(null);
+  const [selectedBrandLab, setSelectedBrandLab] = useState<BrandLab | null>(
+    null
+  );
 
   const [isRangeNameDropdownOpen, setIsRangeNameDropdownOpen] = useState(false);
   const [searchRangeName, setSearchRangeName] = useState("");
-  const [selectedRangeName, setSelectedRangeName] = useState<RangeName | null>(null);
+  const [selectedRangeName, setSelectedRangeName] =
+    useState<RangeName | null>(null);
 
-  const { labDistributors, loading: labDistLoading, error: labDistError } =
-    useLabDistributorsContext();
+  const {
+    labDistributors,
+    loading: labDistLoading,
+    error: labDistError,
+  } = useLabDistributorsContext();
 
   // Filtrer distributeurs
   const filteredLabDistributors = labDistributors.filter((ld) =>
@@ -170,16 +192,22 @@ const Header: React.FC = () => {
   // ========================================================================
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
   const [searchProduct, setSearchProduct] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<ProductCode13 | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductCode13 | null>(
+    null
+  );
 
   // Récupération via contexte
-  const { productsCode13, loading: productsLoading, error: productsError } =
-    useProductsCode13Context();
+  const {
+    productsCode13,
+    loading: productsLoading,
+    error: productsError,
+  } = useProductsCode13Context();
 
   // Filtrer par code_13_ref OU name
-  const filteredProducts = productsCode13.filter((p) =>
-    p.code_13_ref.toLowerCase().includes(searchProduct.toLowerCase()) ||
-    p.name.toLowerCase().includes(searchProduct.toLowerCase())
+  const filteredProducts = productsCode13.filter(
+    (p) =>
+      p.code_13_ref.toLowerCase().includes(searchProduct.toLowerCase()) ||
+      p.name.toLowerCase().includes(searchProduct.toLowerCase())
   );
 
   // Clear
@@ -189,11 +217,52 @@ const Header: React.FC = () => {
   };
 
   // === Pour tout réinitialiser en même temps ===
-  const handleClearAllFilters = () => {
+  const handleClearAllLocalStates = () => {
     clearPharmacy();
     clearUniverse();
+    clearCategory();
+    clearSubCategory();
     clearLabDistributor();
+    clearBrandLab();
+    clearRangeName();
     clearProduct();
+  };
+
+  // ========================================================================
+  // == FILTRE CONTEXT (Déjà créé séparément) ===============================
+  // ========================================================================
+  const { setFilters, handleClearAllFilters } = useFilterContext();
+
+  const handleApplyFilters = () => {
+    // Construire l'objet filters
+    const newFilters: SalesFilters = {
+      pharmacy: selectedPharmacy || undefined,
+      universe: selectedUniverse?.universe || undefined,
+      category: selectedCategory || undefined,
+      subCategory: selectedSubCategory || undefined,
+      labDistributor: selectedLabDistributor?.lab_distributor || undefined,
+      brandLab: selectedBrandLab?.brand_lab || undefined,
+      rangeName: selectedRangeName?.range_name || undefined,
+      // product: selectedProduct ? selectedProduct.code_13_ref : undefined,
+    };
+
+    // Mettre à jour le FilterContext => re-fetch des ventes
+    setFilters(newFilters);
+
+    // Optionnel: fermer le drawer
+    setIsFilterOpen(false);
+  };
+
+  // Nettoyage complet (contexte + local)
+  const handleClearAll = () => {
+    // Clear local states
+    handleClearAllLocalStates();
+
+    // Clear FilterContext
+    handleClearAllFilters();
+
+    // Optionnel: fermer le drawer
+    setIsFilterOpen(false);
   };
 
   return (
@@ -284,10 +353,9 @@ const Header: React.FC = () => {
         >
           <div className="text-lg font-bold text-primary">Filtres</div>
           <div className="mt-4 space-y-4">
-
-            {/* -------------------------------------------
-                DROPDOWN PHARMACIES
-               ------------------------------------------- */}
+            {/* ---------------------------------------------------------------- */}
+            {/*  PHARMACIES */}
+            {/* ---------------------------------------------------------------- */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -299,9 +367,10 @@ const Header: React.FC = () => {
                     setIsPharmacyDropdownOpen(!isPharmacyDropdownOpen);
                   }}
                 >
-                  {selectedPharmacy || "Sélectionner une pharmacie"}
+                  {selectedPharmacy
+                    ? pharmacies.find((p) => p.id === selectedPharmacy)?.name || "Sélectionner une pharmacie"
+                    : "Sélectionner une pharmacie"}
                 </div>
-
                 {isPharmacyDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -317,7 +386,9 @@ const Header: React.FC = () => {
                     />
                     <ul className="menu">
                       {pharmaciesLoading ? (
-                        <li className="text-gray-500 px-4 py-2">Chargement...</li>
+                        <li className="text-gray-500 px-4 py-2">
+                          Chargement...
+                        </li>
                       ) : pharmaciesError ? (
                         <li className="text-primary px-4 py-2">
                           Erreur de chargement
@@ -328,7 +399,7 @@ const Header: React.FC = () => {
                             key={pharmacy.id}
                             onMouseDown={(e) => {
                               e.stopPropagation();
-                              setSelectedPharmacy(pharmacy.name || "");
+                              setSelectedPharmacy(pharmacy.id || "");
                               setIsPharmacyDropdownOpen(false);
                             }}
                             className="hover:bg-primary hover:text-white transition cursor-pointer px-4 py-2 rounded-md"
@@ -345,7 +416,6 @@ const Header: React.FC = () => {
                   </div>
                 )}
               </div>
-
               <button
                 className="btn btn-xs btn-ghost text-primary hover:text-secondary shrink-0"
                 onClick={(e) => {
@@ -357,13 +427,12 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Séparateur entre Pharmacie et Univers */}
             <hr className="border-gray-300 my-2" />
 
-            {/* -------------------------------------------
-                DROPDOWN UNIVERS -> CAT -> SOUS-CAT
-               ------------------------------------------- */}
-            {/* Univers (toujours affiché) */}
+            {/* ---------------------------------------------------------------- */}
+            {/*  UNIVERS -> CAT -> SOUS-CAT */}
+            {/* ---------------------------------------------------------------- */}
+            {/* Univers */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -375,9 +444,10 @@ const Header: React.FC = () => {
                     setIsUniverseDropdownOpen(!isUniverseDropdownOpen);
                   }}
                 >
-                  {selectedUniverse?.universe || "Sélectionner un univers"}
+                  {selectedUniverse
+                    ? selectedUniverse.universe
+                    : "Sélectionner un univers"}
                 </div>
-
                 {isUniverseDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -393,7 +463,9 @@ const Header: React.FC = () => {
                     />
                     <ul className="menu">
                       {universesLoading ? (
-                        <li className="text-gray-500 px-4 py-2">Chargement...</li>
+                        <li className="text-gray-500 px-4 py-2">
+                          Chargement...
+                        </li>
                       ) : universesError ? (
                         <li className="text-primary px-4 py-2">
                           Erreur de chargement
@@ -435,7 +507,7 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Catégorie (toujours affichée) */}
+            {/* Catégorie */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -449,7 +521,6 @@ const Header: React.FC = () => {
                 >
                   {selectedCategory || "Sélectionner une catégorie"}
                 </div>
-
                 {isCategoryDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -500,7 +571,7 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Sous-catégorie (toujours affichée) */}
+            {/* Sous-catégorie */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -514,7 +585,6 @@ const Header: React.FC = () => {
                 >
                   {selectedSubCategory || "Sélectionner une sous-catégorie"}
                 </div>
-
                 {isSubCategoryDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -564,12 +634,12 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* -------------------------------------------
-                LAB DISTRIBUTORS => LABORATOIRE => GAMMES
-               ------------------------------------------- */}
             <hr className="border-gray-300 my-2" />
 
-            {/* Distributeur (toujours affiché) */}
+            {/* ---------------------------------------------------------------- */}
+            {/*  LAB DISTRIBUTORS => LABORATOIRE => GAMMES */}
+            {/* ---------------------------------------------------------------- */}
+            {/* Distributeur */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -578,12 +648,14 @@ const Header: React.FC = () => {
                   className="btn w-full bg-primary text-white hover:bg-secondary transition"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsLabDistributorDropdownOpen(!isLabDistributorDropdownOpen);
+                    setIsLabDistributorDropdownOpen(
+                      !isLabDistributorDropdownOpen
+                    );
                   }}
                 >
-                  {selectedLabDistributor?.lab_distributor || "Sélectionner un distributeur"}
+                  {selectedLabDistributor?.lab_distributor ||
+                    "Sélectionner un distributeur"}
                 </div>
-
                 {isLabDistributorDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -599,7 +671,9 @@ const Header: React.FC = () => {
                     />
                     <ul className="menu">
                       {labDistLoading ? (
-                        <li className="text-gray-500 px-4 py-2">Chargement...</li>
+                        <li className="text-gray-500 px-4 py-2">
+                          Chargement...
+                        </li>
                       ) : labDistError ? (
                         <li className="text-primary px-4 py-2">
                           Erreur de chargement
@@ -641,7 +715,7 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Laboratoire (toujours affiché) */}
+            {/* Laboratoire (brand_lab) */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -655,7 +729,6 @@ const Header: React.FC = () => {
                 >
                   {selectedBrandLab?.brand_lab || "Sélectionner un laboratoire"}
                 </div>
-
                 {isBrandLabDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -706,7 +779,7 @@ const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Gammes (toujours affiché) */}
+            {/* Gammes (range_name) */}
             <div className="flex items-center space-x-2">
               <div className="dropdown flex-1 relative">
                 <div
@@ -720,7 +793,6 @@ const Header: React.FC = () => {
                 >
                   {selectedRangeName?.range_name || "Sélectionner une gamme"}
                 </div>
-
                 {isRangeNameDropdownOpen && (
                   <div
                     className="dropdown-content bg-gray-100 shadow rounded-box w-60 absolute right-full top-0 mr-2 p-2 max-h-64 overflow-y-auto"
@@ -776,36 +848,18 @@ const Header: React.FC = () => {
             <div className="flex flex-col space-y-2 mt-4">
               <button
                 className="btn bg-primary text-white hover:bg-secondary transition w-full"
-                onClick={() => {
-                  alert(`
-Appliquer tous les filtres
-
-Pharmacie: ${selectedPharmacy}
-Univers: ${selectedUniverse?.universe}
-Catégorie: ${selectedCategory}
-Sous-catégorie: ${selectedSubCategory}
-Distributeur: ${selectedLabDistributor?.lab_distributor}
-Laboratoire: ${selectedBrandLab?.brand_lab}
-Gamme: ${selectedRangeName?.range_name}
-Produit: ${
-  selectedProduct
-    ? `${selectedProduct.code_13_ref} - ${selectedProduct.name}`
-    : ""
-}
-                  `);
-                }}
+                onClick={handleApplyFilters}
               >
                 Appliquer tous les filtres
               </button>
 
               <button
                 className="btn bg-primary text-white hover:bg-secondary transition w-full"
-                onClick={handleClearAllFilters}
+                onClick={handleClearAll}
               >
                 Effacer tous les filtres
               </button>
             </div>
-
           </div>
         </div>
       </div>
