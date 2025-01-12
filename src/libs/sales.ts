@@ -36,7 +36,6 @@ export const fetchGroupedSales = async (
   // Ajoutez d'autres filtres si nécessaire
 
   // Optionnel: Loguer l'URL pour débogage
-  console.log("Fetching grouped sales with URL:", url.toString());
 
   return await fetchData<{ groupedSales: GroupedSale[]; total: number }>(
     url.toString(),

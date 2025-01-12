@@ -36,8 +36,6 @@ export default async function handler(
       rangeName 
     } = req.query;
 
-    console.log('Received filters:', { pharmacyId, universe, category, subCategory, labDistributor, brandLab, rangeName });
-
     // Connexion à la base de données
     const client = await pool.connect();
 
@@ -64,7 +62,7 @@ export default async function handler(
         throw new Error('universe must be a string');
       }
       conditions.push(`gp.universe ILIKE $${paramIndex}`);
-      values.push(universe); // Suppression des %
+      values.push(universe);
       paramIndex++;
     }
 
@@ -74,7 +72,7 @@ export default async function handler(
         throw new Error('category must be a string');
       }
       conditions.push(`gp.category ILIKE $${paramIndex}`);
-      values.push(category); // Suppression des %
+      values.push(category);
       paramIndex++;
     }
 
@@ -84,7 +82,7 @@ export default async function handler(
         throw new Error('subCategory must be a string');
       }
       conditions.push(`gp.sub_category ILIKE $${paramIndex}`);
-      values.push(subCategory); // Suppression des %
+      values.push(subCategory);
       paramIndex++;
     }
 
@@ -94,7 +92,7 @@ export default async function handler(
         throw new Error('labDistributor must be a string');
       }
       conditions.push(`gp.lab_distributor ILIKE $${paramIndex}`);
-      values.push(labDistributor); // Suppression des %
+      values.push(labDistributor);
       paramIndex++;
     }
 
@@ -104,7 +102,7 @@ export default async function handler(
         throw new Error('brandLab must be a string');
       }
       conditions.push(`gp.brand_lab ILIKE $${paramIndex}`);
-      values.push(brandLab); // Suppression des %
+      values.push(brandLab);
       paramIndex++;
     }
 
@@ -114,14 +112,12 @@ export default async function handler(
         throw new Error('rangeName must be a string');
       }
       conditions.push(`gp.range_name ILIKE $${paramIndex}`);
-      values.push(rangeName); // Suppression des %
+      values.push(rangeName);
       paramIndex++;
     }
 
     // Construction de la clause WHERE
     const whereClause = "WHERE " + conditions.join(" AND ");
-    console.log('Generated WHERE clause:', whereClause);
-    console.log('Values for SQL query:', values);
 
     // 1) Calcul du total distinct
     const totalQuery = `
@@ -142,16 +138,6 @@ export default async function handler(
     const groupedSalesQuery = `
       SELECT 
         gp.code_13_ref AS code_13_ref,
-        COALESCE(gp.universe, 'N/A') AS universe,
-        COALESCE(gp.category, 'N/A') AS category,
-        COALESCE(gp.sub_category, 'N/A') AS sub_category,
-        COALESCE(gp.brand_lab, 'N/A') AS brand_lab,
-        COALESCE(gp.lab_distributor, 'N/A') AS lab_distributor,
-        COALESCE(gp.range_name, 'N/A') AS range_name,
-        COALESCE(gp.family, 'N/A') AS family,
-        COALESCE(gp.sub_family, 'N/A') AS sub_family,
-        COALESCE(gp.specificity, 'N/A') AS specificity,
-
         COALESCE(
           NULLIF(gp.name, 'Default Name'), 
           MIN(ip.name),
@@ -160,7 +146,8 @@ export default async function handler(
 
         SUM(s.quantity) AS total_quantity,
         COALESCE(AVG(i.price_with_tax), 0) AS avg_price_with_tax,
-        COALESCE(AVG(i.weighted_average_price), 0) AS avg_weighted_average_price
+        COALESCE(AVG(i.weighted_average_price), 0) AS avg_weighted_average_price,
+        COALESCE(MIN(ip."TVA"), 0) AS tva  -- Ajout de la TVA
 
       FROM data_sales s
       JOIN data_inventorysnapshot i

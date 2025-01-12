@@ -47,9 +47,6 @@ export default async function handler(
   try {
     const client = await pool.connect();
 
-    console.log("📌 Requête API sales :");
-    console.log("📌 Paramètres reçus :", { pageNumber, limitNumber, sortField, order, pharmacyId });
-
     // Construction dynamique du WHERE
     let whereClause = '';
     const params: any[] = [limitNumber, offset];
@@ -75,7 +72,6 @@ export default async function handler(
     );
 
     const total = parseInt(totalResult.rows[0]?.count || '0', 10);
-    console.log("📌 Total des ventes trouvées :", total);
 
     // Obtenir les ventes groupées avec les détails
     const groupedSalesQuery = `

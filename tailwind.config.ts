@@ -18,9 +18,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#1B301E",       // Couleur principale (ancien bg du header/footer)
-        secondary: "#2A7B3B",     // Couleur secondaire (accents, hover sur textes)
-        light: "#EFDEBA",         // Couleur hover ancienne background
+        primary: {
+          DEFAULT: "#1B301E",
+          100: "#E6F2EA", // Exemple de nuance claire
+          200: "#C3E6D3",
+          300: "#99D9BD",
+          400: "#66CCA6",
+          500: "#33BF90",
+        },
+        secondary: {
+          DEFAULT: "#2A7B3B",
+          100: "#D1F5DF",
+          200: "#A3EACF",
+          300: "#75DFC0",
+          400: "#47D3B0",
+          500: "#19C6A0",
+        },
+        light: "#EEE1BC",         // Couleur hover ancienne background
         background: "#F5FFF8",    // Fond principal blanc-vert clair
       },
     },

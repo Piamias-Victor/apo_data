@@ -16,16 +16,12 @@ export const useGroupedSales = () => {
   useEffect(() => {
     (async function getSales() {
       try {
-        console.log("Fetching grouped sales with filters:", filters);
         setLoading(true);
         setError(null); // Réinitialiser les erreurs avant une nouvelle requête
 
         const { groupedSales: fetchedGroupedSales, total: fetchedTotal } =
           await fetchGroupedSales(filters);
-        
-        console.log("Fetched grouped sales:", fetchedGroupedSales);
-        console.log("Total grouped sales:", fetchedTotal);
-
+      
         setGroupedSales(fetchedGroupedSales);
         setTotal(fetchedTotal);
       } catch (err) {
