@@ -1,29 +1,17 @@
-// /pages/api/sales.ts
+// /pages/api/sales-by-pharmacy.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import pool from '@/libs/db';
-import { GroupedSaleRaw } from '@/types/Sale';
+import { GroupedSaleByPharmacy, GroupedSaleByPharmacyRaw } from '@/types/Sale';
 
-export interface GroupedSalesResponse {
-  groupedSales: GroupedSaleRaw[];
+export interface GroupedSalesByPharmacyResponse {
+  groupedSales: GroupedSaleByPharmacy[];
   total: number;
 }
 
-/**
- * Endpoint pour récupérer TOUTES les ventes du dernier mois,
- * groupées par code_13_ref, SANS pagination.
- * 
- * Filtres optionnels :
- * - `pharmacyId` (UUID)
- * - `universe` (string)
- * - `category` (string)
- * - `subCategory` (string)
- * - `labDistributor` (string)
- * - `brandLab` (string)
- * - `rangeName` (string)
- */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GroupedSalesResponse | { error: string }>
+  res: NextApiResponse<GroupedSalesByPharmacyResponse | { error: string }>
 ) {
   try {
     const { 
@@ -120,9 +108,9 @@ export default async function handler(
     // Construction de la clause WHERE
     const whereClause = "WHERE " + conditions.join(" AND ");
 
-    // 1) Calcul du total distinct
+    // 1) Calcul du total distinct des pharmacies
     const totalQuery = `
-      SELECT COUNT(DISTINCT gp.code_13_ref) AS count
+      SELECT COUNT(DISTINCT ip.pharmacy_id) AS count
       FROM data_sales s
       JOIN data_inventorysnapshot i
         ON s.product_id = i.id
@@ -135,30 +123,15 @@ export default async function handler(
     const totalResult = await client.query<{ count: string }>(totalQuery, values);
     const total = parseInt(totalResult.rows[0]?.count || '0', 10);
 
-    // 2) Récupérer toutes les ventes groupées
+    // 2) Récupérer toutes les ventes groupées par pharmacy_id
     const groupedSalesQuery = `
       SELECT 
-        gp.code_13_ref AS code_13_ref,
-        COALESCE(gp.universe, 'N/A') AS universe,
-        COALESCE(gp.category, 'N/A') AS category,
-        COALESCE(gp.sub_category, 'N/A') AS sub_category,
-        COALESCE(gp.brand_lab, 'N/A') AS brand_lab,
-        COALESCE(gp.lab_distributor, 'N/A') AS lab_distributor,
-        COALESCE(gp.range_name, 'N/A') AS range_name,
-        COALESCE(gp.family, 'N/A') AS family,
-        COALESCE(gp.sub_family, 'N/A') AS sub_family,
-        COALESCE(gp.specificity, 'N/A') AS specificity,
-        COALESCE(
-          NULLIF(gp.name, 'Default Name'), 
-          MIN(ip.name),
-          'N/A'
-        ) AS name,
-
+        ip.pharmacy_id AS pharmacy_id,
+        p.name AS pharmacy_name, -- Ajouté pour récupérer le nom de la pharmacie
         SUM(s.quantity) AS total_quantity,
         COALESCE(AVG(i.price_with_tax), 0) AS avg_price_with_tax,
         COALESCE(AVG(i.weighted_average_price), 0) AS avg_weighted_average_price,
-        COALESCE(MIN(gp.tva_percentage), 0) AS tva  -- Ajout de la TVA
-
+        COALESCE(MIN(gp.tva_percentage), 0) AS tva  -- Correction ici pour utiliser tva_percentage
       FROM data_sales s
       JOIN data_inventorysnapshot i
         ON s.product_id = i.id
@@ -166,15 +139,18 @@ export default async function handler(
         ON i.product_id = ip.id
       JOIN data_globalproduct gp
         ON ip.code_13_ref_id = gp.code_13_ref
+      LEFT JOIN data_pharmacy p
+        ON ip.pharmacy_id = p.id
       ${whereClause}
-      GROUP BY gp.code_13_ref
+      GROUP BY ip.pharmacy_id, p.name
       ORDER BY SUM(s.quantity) DESC
     `;
-    const groupedSalesResult = await client.query<GroupedSaleRaw>(groupedSalesQuery, values);
+    const groupedSalesResult = await client.query<GroupedSaleByPharmacyRaw>(groupedSalesQuery, values);
 
     // Convertir les champs numériques de chaînes de caractères en nombres
-    const groupedSales: GroupedSaleRaw[] = groupedSalesResult.rows.map(row => ({
-      ...row,
+    const groupedSales: GroupedSaleByPharmacy[] = groupedSalesResult.rows.map(row => ({
+      pharmacy_id: row.pharmacy_id,
+      pharmacy_name: row.pharmacy_name || `Pharmacy ${row.pharmacy_id}`,
       total_quantity: parseFloat(row.total_quantity),
       avg_price_with_tax: parseFloat(row.avg_price_with_tax),
       avg_weighted_average_price: parseFloat(row.avg_weighted_average_price),
@@ -189,7 +165,7 @@ export default async function handler(
       total,
     });
   } catch (error) {
-    console.error('❌ Erreur API sales:', error);
+    console.error('❌ Erreur API sales-by-pharmacy:', error);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 }

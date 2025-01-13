@@ -6,6 +6,18 @@ import { SalesFilters } from '@/types/Filter'; // Importez l'interface des filtr
 import { FaTimes } from 'react-icons/fa'; // Pour l'icône de suppression
 import SalesTable from './components/SalesTable';
 import { usePharmaciesContext } from '@/contexts/pharmaciesContext';
+import { useSalesContext } from '@/contexts/salesContext';
+import TopCategoriesChart from './components/charts/TopCategoriesChart';
+import TopUniversesChart from './components/charts/TopUniversesChart';
+import TopLabDistributorsChart from './components/charts/TopLabDistributorsChart';
+import TopProductsChart from './components/charts/TopProductsChart';
+import TVADistributionChart from './components/charts/TVADistributionChart';
+import SalesByPharmacyChart from './components/charts/SalesByPharmacyChart';
+import DailySalesByPharmacyChart from './components/charts/DailySalesChart';
+import DailySalesChart from './components/charts/DailySalesChart';
+import PriceDistributionChart from './components/charts/PriceDistributionChart';
+import NegativeMarginChart from './components/charts/NegativeMarginChart';
+import StockEvolutionChart from './components/charts/StockEvolutionChart';
 
 /**
  * Composant pour afficher les filtres actifs sous forme de badges.
@@ -108,6 +120,9 @@ const capitalize = (str: string): string => {
  * @returns Un élément JSX représentant la page d'accueil avec les filtres et les ventes.
  */
 export default function Home() {
+
+  const { groupedSales, loading, error } = useSalesContext();
+  
   return (
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-3xl font-bold text-gray-800">Bienvenue sur Apo Data</h1>
@@ -117,7 +132,27 @@ export default function Home() {
       <ActiveFilters />
 
       {/* Tableau des ventes */}
-      <SalesTable />
+      <SalesTable groupedSales={groupedSales}/>
+
+      <TopUniversesChart groupedSales={groupedSales} />
+
+      <TopCategoriesChart groupedSales={groupedSales} />
+
+      <TopLabDistributorsChart groupedSales={groupedSales} />
+
+      <TopProductsChart groupedSales={groupedSales} />
+
+      <TVADistributionChart groupedSales={groupedSales} />
+
+      <SalesByPharmacyChart />
+
+      <DailySalesChart />
+
+      <PriceDistributionChart />
+
+      <NegativeMarginChart />
+
+      {/* <StockEvolutionChart /> */}
     </div>
   );
 }

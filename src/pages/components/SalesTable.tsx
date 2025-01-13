@@ -3,9 +3,15 @@
 import React from "react";
 import { useSalesContext } from "@/contexts/salesContext";
 import { FaDollarSign, FaShoppingCart, FaChartLine } from "react-icons/fa"; // Import des icônes depuis react-icons
+import { GroupedSale } from "@/types/Sale";
 
-const SalesTable: React.FC = () => {
-  const { groupedSales, total, loading, error } = useSalesContext();
+type SalesTableProps = {
+  groupedSales: GroupedSale[];
+};
+
+
+const SalesTable: React.FC<SalesTableProps> = ({ groupedSales }) => {
+  const { total, loading, error } = useSalesContext();
 
   if (loading) return <p className="text-center text-gray-500">Chargement des ventes...</p>;
   if (error) return <p className="text-center text-red-500">Erreur: {error}</p>;
@@ -92,7 +98,6 @@ const SalesTable: React.FC = () => {
       {/* Carte principale */}
       <div className="bg-white shadow-lg rounded-lg p-6">
         <h2 className="text-2xl font-semibold mb-4 text-primary">Ventes du dernier mois</h2>
-        <p className="text-gray-600 mb-6">Total groupements: {total}</p>
 
         {/* Cards pour les Totaux */}
         <div className="flex flex-col md:flex-row gap-6 mb-8">
@@ -130,19 +135,19 @@ const SalesTable: React.FC = () => {
             <thead className="bg-light sticky top-0 z-10">
               <tr>
                 <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">
-                  Code 13
+                  Ean13
                 </th>
                 <th className="w-1/12 px-6 py-3 text-left text-xs font-medium text-primary uppercase tracking-wider">
                   Nom
                 </th>
                 <th className="w-1/12 px-6 py-3 text-right text-xs font-medium text-primary uppercase tracking-wider">
-                  Qté totale
+                  Qté
                 </th>
                 <th className="w-1/12 px-6 py-3 text-right text-xs font-medium text-primary uppercase tracking-wider">
-                  Prix moyen TTC
+                  Prix TTC
                 </th>
                 <th className="w-1/12 px-6 py-3 text-right text-xs font-medium text-primary uppercase tracking-wider">
-                  Prix moyen pondéré
+                  Prix MP
                 </th>
                 {/* Suppression de la colonne TVA */}
                 <th className="w-1/12 px-6 py-3 text-right text-xs font-medium text-primary uppercase tracking-wider">

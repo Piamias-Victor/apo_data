@@ -9,6 +9,9 @@ import { UniversesProvider } from '@/contexts/universesContext';
 import { LabDistributorsProvider } from '@/contexts/brandsContext';
 import { ProductsCode13Provider } from '@/contexts/productsContext';
 import { FilterProvider } from '@/contexts/filtersContext';
+import { SalesByPharmacyProvider } from '@/contexts/salesByPharmacyContext';
+import { DailySalesProvider } from '@/contexts/dailySalesContext';
+import { StockEvolutionProvider } from '@/contexts/stockEvolutionContext';
 
 
 /**
@@ -23,17 +26,23 @@ export default function MyApp({ Component, pageProps }: AppProps) {
     return (
         <FilterProvider>
             <SalesProvider>
-                <UniversesProvider>
-                    <LabDistributorsProvider>
-                        <ProductsCode13Provider>
-                            <PharmaciesProvider>
-                                    <Layout>
-                                        <Component {...pageProps} />
-                                    </Layout>
-                            </PharmaciesProvider> 
-                        </ProductsCode13Provider>
-                    </LabDistributorsProvider>
-                </UniversesProvider>
+                <SalesByPharmacyProvider>
+                    <DailySalesProvider>
+                        <StockEvolutionProvider>
+                            <UniversesProvider>
+                                <LabDistributorsProvider>
+                                    <ProductsCode13Provider>
+                                        <PharmaciesProvider>
+                                                <Layout>
+                                                    <Component {...pageProps} />
+                                                </Layout>
+                                        </PharmaciesProvider> 
+                                    </ProductsCode13Provider>
+                                </LabDistributorsProvider>
+                            </UniversesProvider>
+                        </StockEvolutionProvider>
+                    </DailySalesProvider>
+                </SalesByPharmacyProvider>
             </SalesProvider>
         </FilterProvider>
     );
