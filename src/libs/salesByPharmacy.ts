@@ -1,15 +1,16 @@
-// /libs/sales.ts
-import { GroupedSale } from "@/types/Sale";
-import { SalesFilters } from "@/types/Filter";
+// /libs/salesByPharmacy.ts
+
+import { GroupedSaleByPharmacy } from "@/types/Sale";
+import { SalesFilters } from "@/types/Filter"; // Assurez-vous que ce type inclut les filtres nécessaires
 
 // Fonction utilitaire pour effectuer la requête
 import { fetchData } from "./fetch";
 
-export const fetchGroupedSales = async (
+export const fetchGroupedSalesByPharmacy = async (
   filters?: SalesFilters
-): Promise<{ groupedSales: GroupedSale[]; total: number }> => {
+): Promise<{ groupedSales: GroupedSaleByPharmacy[]; total: number }> => {
   // Construire l'URL avec les filtres en tant que paramètres de requête
-  const url = new URL("/api/sales", window.location.origin);
+  const url = new URL("/api/sales-by-pharmacy", window.location.origin);
 
   // Ajout des filtres dans l'URL en tant que paramètres de requête
   if (filters?.pharmacy) {
@@ -36,8 +37,9 @@ export const fetchGroupedSales = async (
   // Ajoutez d'autres filtres si nécessaire
 
   // Optionnel: Loguer l'URL pour débogage
+  console.log("Fetching sales by pharmacy from URL:", url.toString());
 
-  return await fetchData<{ groupedSales: GroupedSale[]; total: number }>(
+  return await fetchData<{ groupedSales: GroupedSaleByPharmacy[]; total: number }>(
     url.toString(),
     (data: unknown) => {
       if (
@@ -50,7 +52,7 @@ export const fetchGroupedSales = async (
       ) {
         throw new Error("Format de données invalide");
       }
-      return data as { groupedSales: GroupedSale[]; total: number };
+      return data as { groupedSales: GroupedSaleByPharmacy[]; total: number };
     }
   );
 };

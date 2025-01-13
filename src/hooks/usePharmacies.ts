@@ -1,3 +1,5 @@
+// src/hooks/usePharmacies.ts
+
 import { useEffect, useState } from 'react';
 import { fetchPharmacies } from '@/libs/pharmacies';
 import { Pharmacy } from '@/types/Pharmacy';
@@ -5,7 +7,7 @@ import { Pharmacy } from '@/types/Pharmacy';
 /**
  * Hook personnalisé pour récupérer les pharmacies depuis l'API.
  * 
- * @returns Un objet contenant le tableau des pharmacies (`Pharmacy[]`), l'état de chargement (`boolean`) et les erreurs éventuelles (`string | null`).
+ * @returns Un objet contenant le tableau des pharmacies, l'état de chargement et les erreurs éventuelles.
  */
 export const usePharmacies = () => {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);

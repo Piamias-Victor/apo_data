@@ -1,14 +1,14 @@
-/**
- * Type définissant une pharmacie.
- */
-export type Pharmacy = {
-    id: string;
-    created_at: string;
-    updated_at: string;
-    name: string | null;
-    ca: number | null;
-    area: string | null;
-    employees_count: number | null;
-    address: string | null;
-    id_nat: string | null;
-  };
+// src/types/Pharmacy.ts
+
+export interface Pharmacy {
+    id: string; // UUID
+    created_at: string; // ISO string
+    updated_at: string; // ISO string
+    id_nat?: string;
+    name?: string;
+    ca?: number;
+    area?: string;
+    employees_count?: number;
+    address?: string;
+  }
+  
