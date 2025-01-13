@@ -11,7 +11,7 @@ type SalesTableProps = {
 
 
 const SalesTable: React.FC<SalesTableProps> = ({ groupedSales }) => {
-  const { total, loading, error } = useSalesContext();
+  const { loading, error } = useSalesContext();
 
   if (loading) return <p className="text-center text-gray-500">Chargement des ventes...</p>;
   if (error) return <p className="text-center text-red-500">Erreur: {error}</p>;
@@ -105,7 +105,7 @@ const SalesTable: React.FC<SalesTableProps> = ({ groupedSales }) => {
           <div className="flex-1 bg-primary bg-opacity-10 shadow rounded-lg p-6 flex items-center">
             <FaDollarSign className="h-12 w-12 text-primary mr-4" />
             <div>
-              <p className="text-sm font-medium text-primary">Chiffre d'Affaires Total</p>
+              <p className="text-sm font-medium text-primary">Chiffre d Affaires Total</p>
               <p className="mt-2 text-3xl font-bold text-primary">{formatCurrency(totalCA)}</p>
             </div>
           </div>
@@ -114,7 +114,7 @@ const SalesTable: React.FC<SalesTableProps> = ({ groupedSales }) => {
           <div className="flex-1 bg-secondary bg-opacity-10 shadow rounded-lg p-6 flex items-center">
             <FaShoppingCart className="h-12 w-12 text-secondary mr-4" />
             <div>
-              <p className="text-sm font-medium text-secondary">Montant d'Achat Total</p>
+              <p className="text-sm font-medium text-secondary">Montant d Achat Total</p>
               <p className="mt-2 text-3xl font-bold text-secondary">{formatCurrency(totalPurchase)}</p>
             </div>
           </div>

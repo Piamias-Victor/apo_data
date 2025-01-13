@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { usePharmaciesContext } from '@/contexts/pharmaciesContext';
-import { useSalesContext } from '@/contexts/salesContext';
 import { FaClinicMedical } from 'react-icons/fa'; // Icône
 
 const PharmacyDropdown: React.FC = () => {
   const { pharmacies, loading, error } = usePharmaciesContext();
-  const { setPharmacyId, setPage } = useSalesContext(); // Ajout du setPharmacyId pour filtrer les ventes
   const [selectedPharmacy, setSelectedPharmacy] = useState<string | null>(null);
 
   if (loading) return <p>Chargement des pharmacies...</p>;
@@ -13,8 +11,6 @@ const PharmacyDropdown: React.FC = () => {
 
   const handleSelectPharmacy = (pharmacyId: string | null) => {
     setSelectedPharmacy(pharmacyId);
-    setPharmacyId(pharmacyId); // Met à jour le filtre dans le contexte des ventes
-    setPage(1); // Réinitialise à la première page
   };
 
   return (

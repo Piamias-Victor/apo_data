@@ -17,8 +17,6 @@ import { useLabDistributorsContext } from "@/contexts/brandsContext";
 import { LabDistributor, BrandLab, RangeName } from "@/types/Brand";
 
 // Contexte products code_13
-import { useProductsCode13Context } from "@/contexts/productsContext";
-import { ProductCode13 } from "@/types/Product";
 
 // Contexte filtres (créé séparément)
 import { useFilterContext } from "@/contexts/filtersContext";
@@ -190,31 +188,11 @@ const Header: React.FC = () => {
   // ========================================================================
   // == PRODUCTS (code_13_ref, name) ========================================
   // ========================================================================
-  const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false);
-  const [searchProduct, setSearchProduct] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<ProductCode13 | null>(
-    null
-  );
 
   // Récupération via contexte
-  const {
-    productsCode13,
-    loading: productsLoading,
-    error: productsError,
-  } = useProductsCode13Context();
 
   // Filtrer par code_13_ref OU name
-  const filteredProducts = productsCode13.filter(
-    (p) =>
-      p.code_13_ref.toLowerCase().includes(searchProduct.toLowerCase()) ||
-      p.name.toLowerCase().includes(searchProduct.toLowerCase())
-  );
 
-  // Clear
-  const clearProduct = () => {
-    setSelectedProduct(null);
-    setSearchProduct("");
-  };
 
   // === Pour tout réinitialiser en même temps ===
   const handleClearAllLocalStates = () => {
@@ -225,7 +203,6 @@ const Header: React.FC = () => {
     clearLabDistributor();
     clearBrandLab();
     clearRangeName();
-    clearProduct();
   };
 
   // ========================================================================

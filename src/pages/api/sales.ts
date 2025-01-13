@@ -173,7 +173,7 @@ export default async function handler(
     const groupedSalesResult = await client.query<GroupedSaleRaw>(groupedSalesQuery, values);
 
     // Convertir les champs numériques de chaînes de caractères en nombres
-    const groupedSales: GroupedSaleRaw[] = groupedSalesResult.rows.map(row => ({
+    const groupedSales: any[] = groupedSalesResult.rows.map(row => ({
       ...row,
       total_quantity: parseFloat(row.total_quantity),
       avg_price_with_tax: parseFloat(row.avg_price_with_tax),

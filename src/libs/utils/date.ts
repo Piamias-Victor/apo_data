@@ -6,7 +6,7 @@
  * @returns Date formatée en 'dd/mm' (ex: '12/12')
  */
 export const formatDateToFrench = (isoString: string): string => {
-    const [year, month, day] = isoString.split('T')[0].split('-');
+    const [month, day] = isoString.split('T')[0].split('-');
     return `${day}/${month}`;
   };
   

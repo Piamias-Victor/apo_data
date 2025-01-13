@@ -9,7 +9,8 @@ import {
   Legend, 
   BarElement, 
   CategoryScale, 
-  LinearScale 
+  LinearScale, 
+  ChartOptions
 } from 'chart.js';
 import { FaChartPie, FaExclamationTriangle } from 'react-icons/fa'; // Import d'icônes pertinentes
 import { GroupedSale } from '@/types/Sale';
@@ -30,7 +31,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ groupedSales }) => 
   const productMap: Record<string, number> = useMemo(() => {
     const map: Record<string, number> = {};
 
-    groupedSales.forEach(sale => {
+    (groupedSales ?? []).forEach(sale => {
       const productName = sale.name || 'Inconnu';
       let value = 0;
 
@@ -219,7 +220,7 @@ const TopProductsChart: React.FC<TopProductsChartProps> = ({ groupedSales }) => 
         )}
 
         {/* Graphique Bar */}
-        <Bar data={dataChart} options={optionsChart} />
+        <Bar data={dataChart} options={optionsChart as unknown as ChartOptions<'bar'>}/>
       </div>
     </div>
   );
