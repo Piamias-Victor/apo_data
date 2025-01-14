@@ -32,7 +32,7 @@ const TopCategoriesChart: React.FC<TopCategoriesChartProps> = ({ groupedSales })
     const map: Record<string, number> = {};
 
     (groupedSales ?? []).forEach(sale => {
-      const category = sale.category || 'Inconnu';
+      const category = sale.category || 'Inconnu ';
       let value = 0;
 
       switch (chartMetric) {
