@@ -24,7 +24,7 @@ const PharmacyDropdown: React.FC = () => {
           className="bg-primary text-white hover:bg-secondary cursor-pointer"
           onClick={() => handleSelectPharmacy(null)}
         >
-          <a>Toutes les pharmacies</a>
+          <a>Toutes les pharmacies </a>
         </li>
         {pharmacies.map((pharmacy, index) => (
           <li
