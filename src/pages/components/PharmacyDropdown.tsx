@@ -15,7 +15,7 @@ const PharmacyDropdown: React.FC = () => {
 
   return (
     <div className="dropdown">
-      <label tabIndex={0} className="btn m-1 flex items-center">
+      <label tabIndex={0} className="btn m-1 flex items-center ">
         <FaClinicMedical className="mr-2" />
         {selectedPharmacy ? pharmacies.find(p => p.id === selectedPharmacy)?.name : "Sélectionnez une pharmacie"}
       </label>
