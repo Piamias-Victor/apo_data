@@ -29,7 +29,7 @@ const DailySalesChart: React.FC = () => {
   const salesDistribution = useMemo(() => {
     const map: Record<string, { totalCA: number; totalQty: number; totalMargin: number }> = {};
 
-    dailySales.forEach((sale) => {
+    dailySales.forEach((sale : any) => {
       const date = sale.date;
       const qty = sale.total_quantity || 0;
       const priceWithTax = sale.avg_price_with_tax || 0;

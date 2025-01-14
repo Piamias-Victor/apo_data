@@ -34,7 +34,7 @@ const TVADistributionChart: React.FC<TVADistributionChartProps> = ({
     const tvaMap: Record<string, { totalCA: number; totalQty: number; totalMargin: number }> = {};
 
     // Pour chaque vente, déterminer le taux de TVA associé et cumuler les valeurs
-    groupedSales.forEach((sale) => {
+    (groupedSales ?? []).forEach(sale => {
       const tvaRate = ((sale.tva) * 100).toString(); // Convertir TVA en pourcentage entier
       const qty = sale.total_quantity || 0;
       const priceWithTax = sale.avg_price_with_tax || 0;

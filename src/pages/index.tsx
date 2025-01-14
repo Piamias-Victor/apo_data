@@ -13,11 +13,9 @@ import TopLabDistributorsChart from './components/charts/TopLabDistributorsChart
 import TopProductsChart from './components/charts/TopProductsChart';
 import TVADistributionChart from './components/charts/TVADistributionChart';
 import SalesByPharmacyChart from './components/charts/SalesByPharmacyChart';
-import DailySalesByPharmacyChart from './components/charts/DailySalesChart';
 import DailySalesChart from './components/charts/DailySalesChart';
 import PriceDistributionChart from './components/charts/PriceDistributionChart';
 import NegativeMarginChart from './components/charts/NegativeMarginChart';
-import StockEvolutionChart from './components/charts/StockEvolutionChart';
 
 /**
  * Composant pour afficher les filtres actifs sous forme de badges.
@@ -39,10 +37,6 @@ const ActiveFilters: React.FC = () => {
   };
 
   // Fonction utilitaire pour capitaliser la première lettre d'une chaîne
-  const capitalize = (str: string): string => {
-    if (str.length === 0) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
 
   // Fonction pour obtenir le nom lisible d'un filtre
   const getFilterDisplayName = (key: keyof SalesFilters, value: string): string => {
@@ -101,17 +95,6 @@ const ActiveFilters: React.FC = () => {
   );
 };
 
-
-/**
- * Fonction utilitaire pour capitaliser la première lettre d'une chaîne.
- * @param str Chaîne à capitaliser.
- * @returns Chaîne avec la première lettre en majuscule.
- */
-const capitalize = (str: string): string => {
-  if (str.length === 0) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
-
 /**
  * Page d'accueil de l'application.
  * 
@@ -121,7 +104,7 @@ const capitalize = (str: string): string => {
  */
 export default function Home() {
 
-  const { groupedSales, loading, error } = useSalesContext();
+  const { groupedSales } = useSalesContext();
   
   return (
     <div className="container mx-auto px-4 py-6">
