@@ -8,7 +8,8 @@ export type SalesFilters = {
   labDistributor?: string;
   brandLab?: string;
   rangeName?: string;
-  product?: string; // ou un ID ?
+  product?: string;
   startDate?: string; // Format 'YYYY-MM-DD'
   endDate?: string;   // Format 'YYYY-MM-DD'
+  selectedCategory?: "global" | "medicaments" | "parapharmacie"; // Ajout de la nouvelle variable
 };

@@ -1,4 +1,3 @@
-// /contexts/filtersContext.tsx
 import { SalesFilters } from "@/types/Filter";
 import React, { createContext, useContext, ReactNode, useState } from "react";
 
@@ -10,24 +9,19 @@ type FilterContextType = {
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
-/** 
- * FilterProvider : stocke et expose l'objet `filters` + un setter.
- */
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
-  const [filters, setFiltersState] = useState<SalesFilters>({});
+  const [filters, setFiltersState] = useState<SalesFilters>({
+    selectedCategory: "global", // Par défaut, catégorie globale
+  });
 
-  /** 
-   * setFilters : met à jour tous les filtres.
-   */
   const setFilters = (newFilters: SalesFilters) => {
-    setFiltersState(newFilters);
+    setFiltersState((prev) => ({ ...prev, ...newFilters }));
   };
 
-  /**
-   * handleClearAllFilters : réinitialise tous les filtres.
-   */
   const handleClearAllFilters = () => {
-    setFiltersState({});
+    setFiltersState({
+      selectedCategory: "global", // Réinitialiser à "global"
+    });
   };
 
   return (
@@ -43,9 +37,6 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-/**
- * Hook personnalisé pour consommer le contexte.
- */
 export const useFilterContext = () => {
   const context = useContext(FilterContext);
   if (!context) {

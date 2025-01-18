@@ -1,35 +1,32 @@
-import { fetchFinancialData } from "@/libs/financialData";
+import { fetchFinancialData, FinancialData } from "@/libs/financialData";
 import { useEffect, useState } from "react";
-
-interface FinancialData {
-  totalRevenue: number;
-  totalPurchase: number;
-}
+import { useFilterContext } from "@/contexts/filtersContext";
 
 /**
- * Hook pour récupérer les données financières.
+ * Hook pour récupérer les données financières dynamiques basées sur les filtres.
  * 
- * @returns Un objet contenant les données financières, le statut de chargement et les erreurs éventuelles.
+ * @returns Données financières, statut de chargement et erreurs éventuelles.
  */
 export const useFinancialData = () => {
+  const { filters } = useFilterContext(); // Récupérer les filtres du contexte
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async function getFinancialData() {
+    (async () => {
       try {
         setLoading(true);
-        const fetchedData = await fetchFinancialData();
+        const fetchedData = await fetchFinancialData(filters); // Utilisation des filtres
         setFinancialData(fetchedData);
       } catch (err) {
         console.error("Erreur lors de la récupération des données financières :", err);
-        setError("Échec de la récupération des données financières.");
+        setError("Impossible de récupérer les données financières.");
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [filters]); // Recharge les données si les filtres changent
 
   return { financialData, loading, error };
 };

@@ -13,7 +13,8 @@ import { SalesByPharmacyProvider } from '@/contexts/salesByPharmacyContext';
 import { DailySalesProvider } from '@/contexts/dailySalesContext';
 import { StockEvolutionProvider } from '@/contexts/stockEvolutionContext';
 import { StockoutUniversProvider } from '@/contexts/stockoutContext';
-import { RevenueProvider } from '@/contexts/FinancialContext';
+import { FinancialProvider } from '@/contexts/FinancialContext';
+import { StockProvider } from '@/contexts/StockContext';
 
 
 /**
@@ -29,25 +30,27 @@ export default function MyApp({ Component, pageProps }: AppProps) {
         <FilterProvider>
             <SalesProvider>
                 <SalesByPharmacyProvider>
-                    <RevenueProvider>
-                        <DailySalesProvider>
-                            <StockEvolutionProvider>
-                                <StockoutUniversProvider>
-                                    <UniversesProvider>
-                                        <LabDistributorsProvider>
-                                            <ProductsCode13Provider>
-                                                <PharmaciesProvider>
-                                                        <Layout>
-                                                            <Component {...pageProps} />
-                                                        </Layout>
-                                                </PharmaciesProvider> 
-                                            </ProductsCode13Provider>
-                                        </LabDistributorsProvider>
-                                    </UniversesProvider>
-                                </StockoutUniversProvider>
-                            </StockEvolutionProvider>
-                        </DailySalesProvider>
-                    </RevenueProvider>
+                    <FinancialProvider>
+                        <StockProvider>
+                            <DailySalesProvider>
+                                <StockEvolutionProvider>
+                                    <StockoutUniversProvider>
+                                        <UniversesProvider>
+                                            <LabDistributorsProvider>
+                                                <ProductsCode13Provider>
+                                                    <PharmaciesProvider>
+                                                            <Layout>
+                                                                <Component {...pageProps} />
+                                                            </Layout>
+                                                    </PharmaciesProvider> 
+                                                </ProductsCode13Provider>
+                                            </LabDistributorsProvider>
+                                        </UniversesProvider>
+                                    </StockoutUniversProvider>
+                                </StockEvolutionProvider>
+                            </DailySalesProvider>
+                        </StockProvider>
+                    </FinancialProvider>
                 </SalesByPharmacyProvider>
             </SalesProvider>
         </FilterProvider>

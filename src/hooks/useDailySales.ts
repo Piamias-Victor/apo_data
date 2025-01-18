@@ -25,13 +25,13 @@ export const useDailySales = () => {
         const today = new Date();
         const priorDate = new Date();
         priorDate.setMonth(today.getMonth() - 1);
-        const defaultStartDate = priorDate.toISOString().split('T')[0]; // Format 'YYYY-MM-DD'
-        const defaultEndDate = today.toISOString().split('T')[0];
+        // const defaultStartDate = priorDate.toISOString().split('T')[0]; // Format 'YYYY-MM-DD'
+        // const defaultEndDate = today.toISOString().split('T')[0];
 
         const { dailySales: fetchedDailySales, total: fetchedTotal } =
           await fetchDailySales({
-            startDate: filters?.startDate || defaultStartDate,
-            endDate: filters?.endDate || defaultEndDate,
+            startDate: filters?.startDate,
+            endDate: filters?.endDate,
             pharmacy: filters?.pharmacy,
             universe: filters?.universe,
             category: filters?.category,
