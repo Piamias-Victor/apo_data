@@ -1,24 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/db";
 
-interface FinancialDataResponse {
-  totalRevenue: number;
-  totalPurchase: number;
-  totalMargin: number;
-  totalQuantity: number;
-  averageSellingPrice: number;
-  averagePurchasePrice: number;
-  marginPercentage: number;
+interface SalesByMonthResponse {
+  months: string[]; // Liste des mois au format "YYYY-MM"
+  quantities: number[]; // Quantité vendue par mois
+  revenues: number[]; // Revenu total par mois
+  margins: number[]; // Marge totale par mois
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<FinancialDataResponse | { error: string }>
+  res: NextApiResponse<SalesByMonthResponse | { error: string }>
 ) {
   try {
-    const client = await pool.connect();
-
-    // Récupérer les filtres passés via req.query
     const {
       pharmacy,
       universe,
@@ -33,12 +27,11 @@ export default async function handler(
       selectedCategory,
     } = req.query;
 
-    // Construire les clauses WHERE dynamiques en fonction des filtres
     const whereClauses: string[] = ["s.quantity > 0"];
     const values: any[] = [];
     let paramIndex = 1;
 
-    // Filtres dynamiques
+    // Application des filtres dynamiques
     if (startDate) {
       whereClauses.push(`s.date >= $${paramIndex}::date`);
       values.push(startDate);
@@ -74,7 +67,9 @@ export default async function handler(
       paramIndex++;
     }
     if (labDistributor) {
-      const labDistributorArray = Array.isArray(labDistributor) ? labDistributor : labDistributor.split(",");
+      const labDistributorArray = Array.isArray(labDistributor)
+        ? labDistributor
+        : labDistributor.split(",");
       whereClauses.push(`gp.lab_distributor = ANY($${paramIndex}::text[])`);
       values.push(labDistributorArray);
       paramIndex++;
@@ -98,65 +93,55 @@ export default async function handler(
       paramIndex++;
     }
 
-    // Ajouter des conditions spécifiques basées sur `selectedCategory`
+    // Gestion du filtre par catégorie sélectionnée
     if (selectedCategory === "medicaments") {
       whereClauses.push(`ip.code_13_ref_id LIKE '34009%'`);
     } else if (selectedCategory === "parapharmacie") {
       whereClauses.push(`ip.code_13_ref_id NOT LIKE '34009%'`);
     }
 
-    // Combiner les clauses WHERE
-    const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+    const whereClause =
+      whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
+    // Requête SQL
     const query = `
       SELECT 
-        SUM(s.quantity * COALESCE(i.price_with_tax, 0)) AS totalRevenue,
-        SUM(s.quantity * COALESCE(i.weighted_average_price, 0)) AS totalPurchase,
+        TO_CHAR(s.date, 'YYYY-MM') AS month,
+        SUM(s.quantity) AS quantity,
+        SUM(s.quantity * COALESCE(i.price_with_tax, 0)) AS revenue,
         SUM(
           s.quantity * (
-            COALESCE(i.price_with_tax, 0) / (1 + COALESCE(ip."TVA", 0) / 100) 
+            COALESCE(i.price_with_tax, 0) / (1 + COALESCE(ip."TVA", 0) / 100)
             - COALESCE(i.weighted_average_price, 0)
           )
-        ) AS totalMargin,
-        SUM(s.quantity) AS totalQuantity
+        ) AS margin
       FROM data_sales s
       JOIN data_inventorysnapshot i ON s.product_id = i.id
       JOIN data_internalproduct ip ON i.product_id = ip.id
       JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
-      ${whereClause};
+      ${whereClause}
+      GROUP BY TO_CHAR(s.date, 'YYYY-MM')
+      ORDER BY TO_CHAR(s.date, 'YYYY-MM');
     `;
 
+    const client = await pool.connect();
     const result = await client.query<{
-      totalrevenue: string;
-      totalpurchase: string;
-      totalmargin: string;
-      totalquantity: string;
+      month: string;
+      quantity: string;
+      revenue: string;
+      margin: string;
     }>(query, values);
-
     client.release();
 
-    // Convertir correctement les résultats en nombres
-    const totalRevenue = parseFloat(result.rows[0]?.totalrevenue || "0");
-    const totalPurchase = parseFloat(result.rows[0]?.totalpurchase || "0");
-    const totalMargin = parseFloat(result.rows[0]?.totalmargin || "0");
-    const totalQuantity = parseFloat(result.rows[0]?.totalquantity || "0");
+    // Mise en forme des résultats
+    const months = result.rows.map((row) => row.month);
+    const quantities = result.rows.map((row) => parseInt(row.quantity, 10));
+    const revenues = result.rows.map((row) => parseFloat(row.revenue));
+    const margins = result.rows.map((row) => parseFloat(row.margin));
 
-    // Calcul des métriques
-    const averageSellingPrice = totalQuantity > 0 ? totalRevenue / totalQuantity : 0;
-    const averagePurchasePrice = totalQuantity > 0 ? totalPurchase / totalQuantity : 0;
-    const marginPercentage = totalRevenue > 0 ? (totalMargin / totalRevenue) * 100 : 0;
-
-    res.status(200).json({
-      totalRevenue,
-      totalPurchase,
-      totalMargin,
-      totalQuantity,
-      averageSellingPrice,
-      averagePurchasePrice,
-      marginPercentage,
-    });
+    res.status(200).json({ months, quantities, revenues, margins });
   } catch (error) {
-    console.error("Erreur lors de la récupération des données financières :", error);
+    console.error("Erreur lors de la récupération des ventes par mois avec marges :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }

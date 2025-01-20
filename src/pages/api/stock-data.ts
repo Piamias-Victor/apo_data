@@ -22,7 +22,7 @@ export default async function handler(
       product,
       startDate,
       endDate,
-      selectedCategory, // Nouveau filtre
+      selectedCategory,
     } = req.query;
 
     // Clauses WHERE dynamiques
@@ -45,51 +45,61 @@ export default async function handler(
       paramIndex++;
     }
     if (pharmacy) {
-      soldWhereClauses.push(`ip.pharmacy_id = $${paramIndex}::uuid`);
-      inventoryWhereClauses.push(`ip.pharmacy_id = $${paramIndex}::uuid`);
-      values.push(pharmacy);
+      const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
+      soldWhereClauses.push(`ip.pharmacy_id = ANY($${paramIndex}::uuid[])`);
+      inventoryWhereClauses.push(`ip.pharmacy_id = ANY($${paramIndex}::uuid[])`);
+      values.push(pharmacyArray);
       paramIndex++;
     }
     if (universe) {
-      soldWhereClauses.push(`gp.universe ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.universe ILIKE $${paramIndex}`);
-      values.push(`%${universe}%`);
+      const universeArray = Array.isArray(universe) ? universe : universe.split(",");
+      soldWhereClauses.push(`gp.universe = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.universe = ANY($${paramIndex}::text[])`);
+      values.push(universeArray);
       paramIndex++;
     }
     if (category) {
-      soldWhereClauses.push(`gp.category ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.category ILIKE $${paramIndex}`);
-      values.push(`%${category}%`);
+      const categoryArray = Array.isArray(category) ? category : category.split(",");
+      soldWhereClauses.push(`gp.category = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.category = ANY($${paramIndex}::text[])`);
+      values.push(categoryArray);
       paramIndex++;
     }
     if (subCategory) {
-      soldWhereClauses.push(`gp.sub_category ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.sub_category ILIKE $${paramIndex}`);
-      values.push(`%${subCategory}%`);
+      const subCategoryArray = Array.isArray(subCategory) ? subCategory : subCategory.split(",");
+      soldWhereClauses.push(`gp.sub_category = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.sub_category = ANY($${paramIndex}::text[])`);
+      values.push(subCategoryArray);
       paramIndex++;
     }
     if (labDistributor) {
-      soldWhereClauses.push(`gp.lab_distributor ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.lab_distributor ILIKE $${paramIndex}`);
-      values.push(`%${labDistributor}%`);
+      const labDistributorArray = Array.isArray(labDistributor)
+        ? labDistributor
+        : labDistributor.split(",");
+      soldWhereClauses.push(`gp.lab_distributor = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.lab_distributor = ANY($${paramIndex}::text[])`);
+      values.push(labDistributorArray);
       paramIndex++;
     }
     if (brandLab) {
-      soldWhereClauses.push(`gp.brand_lab ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.brand_lab ILIKE $${paramIndex}`);
-      values.push(`%${brandLab}%`);
+      const brandLabArray = Array.isArray(brandLab) ? brandLab : brandLab.split(",");
+      soldWhereClauses.push(`gp.brand_lab = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.brand_lab = ANY($${paramIndex}::text[])`);
+      values.push(brandLabArray);
       paramIndex++;
     }
     if (rangeName) {
-      soldWhereClauses.push(`gp.range_name ILIKE $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.range_name ILIKE $${paramIndex}`);
-      values.push(`%${rangeName}%`);
+      const rangeNameArray = Array.isArray(rangeName) ? rangeName : rangeName.split(",");
+      soldWhereClauses.push(`gp.range_name = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.range_name = ANY($${paramIndex}::text[])`);
+      values.push(rangeNameArray);
       paramIndex++;
     }
     if (product) {
-      soldWhereClauses.push(`gp.code_13_ref = $${paramIndex}`);
-      inventoryWhereClauses.push(`gp.code_13_ref = $${paramIndex}`);
-      values.push(product);
+      const productArray = Array.isArray(product) ? product : product.split(",");
+      soldWhereClauses.push(`gp.code_13_ref = ANY($${paramIndex}::text[])`);
+      inventoryWhereClauses.push(`gp.code_13_ref = ANY($${paramIndex}::text[])`);
+      values.push(productArray);
       paramIndex++;
     }
 

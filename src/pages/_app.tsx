@@ -1,7 +1,6 @@
 // src/pages/_app.tsx
 
 import type { AppProps } from 'next/app';
-import { SalesProvider } from '@/contexts/salesContext';
 import "../styles/globals.css";
 import { PharmaciesProvider } from '@/contexts/pharmaciesContext';
 import Layout from './components/layout/Layout';
@@ -9,12 +8,13 @@ import { UniversesProvider } from '@/contexts/universesContext';
 import { LabDistributorsProvider } from '@/contexts/brandsContext';
 import { ProductsCode13Provider } from '@/contexts/productsContext';
 import { FilterProvider } from '@/contexts/filtersContext';
-import { SalesByPharmacyProvider } from '@/contexts/salesByPharmacyContext';
-import { DailySalesProvider } from '@/contexts/dailySalesContext';
-import { StockEvolutionProvider } from '@/contexts/stockEvolutionContext';
-import { StockoutUniversProvider } from '@/contexts/stockoutContext';
 import { FinancialProvider } from '@/contexts/FinancialContext';
 import { StockProvider } from '@/contexts/StockContext';
+import { SalesByMonthProvider } from '@/contexts/SalesByMonthContext';
+import { SalesByCategoryProvider } from '@/contexts/SalesByCategoryContext';
+import { SalesByUniverseProvider } from '@/contexts/SalesByUniverseContext';
+import { SalesByLabDistributorsProvider } from '@/contexts/SalesByLabDistributorsContext';
+import { TopProductsProvider } from '@/contexts/TopProductsContext';
 
 
 /**
@@ -28,31 +28,31 @@ import { StockProvider } from '@/contexts/StockContext';
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
         <FilterProvider>
-            <SalesProvider>
-                <SalesByPharmacyProvider>
                     <FinancialProvider>
                         <StockProvider>
-                            <DailySalesProvider>
-                                <StockEvolutionProvider>
-                                    <StockoutUniversProvider>
-                                        <UniversesProvider>
-                                            <LabDistributorsProvider>
-                                                <ProductsCode13Provider>
-                                                    <PharmaciesProvider>
-                                                            <Layout>
-                                                                <Component {...pageProps} />
-                                                            </Layout>
-                                                    </PharmaciesProvider> 
-                                                </ProductsCode13Provider>
-                                            </LabDistributorsProvider>
-                                        </UniversesProvider>
-                                    </StockoutUniversProvider>
-                                </StockEvolutionProvider>
-                            </DailySalesProvider>
+                            <SalesByMonthProvider>
+                                    <SalesByUniverseProvider>
+                                        <SalesByCategoryProvider>
+                                            <SalesByLabDistributorsProvider>
+                                                <TopProductsProvider>
+                                                    <UniversesProvider>
+                                                        <LabDistributorsProvider>
+                                                            <ProductsCode13Provider>
+                                                                <PharmaciesProvider>
+                                                                        <Layout>
+                                                                            <Component {...pageProps} />
+                                                                        </Layout>
+                                                                </PharmaciesProvider> 
+                                                            </ProductsCode13Provider>
+                                                        </LabDistributorsProvider>
+                                                    </UniversesProvider>
+                                                </TopProductsProvider>
+                                            </SalesByLabDistributorsProvider>
+                                        </SalesByCategoryProvider>
+                                    </SalesByUniverseProvider>
+                            </SalesByMonthProvider>
                         </StockProvider>
                     </FinancialProvider>
-                </SalesByPharmacyProvider>
-            </SalesProvider>
         </FilterProvider>
     );
 }

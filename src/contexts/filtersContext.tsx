@@ -3,7 +3,7 @@ import React, { createContext, useContext, ReactNode, useState } from "react";
 
 type FilterContextType = {
   filters: SalesFilters;
-  setFilters: (newFilters: SalesFilters) => void;
+  setFilters: (newFilters: Partial<SalesFilters>) => void; // Permet de ne modifier qu'une partie des filtres
   handleClearAllFilters: () => void;
 };
 
@@ -11,16 +11,36 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [filters, setFiltersState] = useState<SalesFilters>({
-    selectedCategory: "global", // Par défaut, catégorie globale
+    selectedCategory: "global", // Par défaut
+    pharmacy: [],
+    universe: [],
+    category: [],
+    subCategory: [],
+    labDistributor: [],
+    brandLab: [],
+    rangeName: [],
+    product: [],
+    startDate: undefined,
+    endDate: undefined,
   });
 
-  const setFilters = (newFilters: SalesFilters) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }));
+  const setFilters = (newFilters: Partial<SalesFilters>) => {
+    setFiltersState((prev: SalesFilters) => ({ ...prev, ...newFilters }));
   };
 
   const handleClearAllFilters = () => {
     setFiltersState({
-      selectedCategory: "global", // Réinitialiser à "global"
+      selectedCategory: "global",
+      pharmacy: [],
+      universe: [],
+      category: [],
+      subCategory: [],
+      labDistributor: [],
+      brandLab: [],
+      rangeName: [],
+      product: [],
+      startDate: undefined,
+      endDate: undefined,
     });
   };
 
