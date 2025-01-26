@@ -8,13 +8,16 @@ import { fetchLowSalesProducts, LowSalesProductsData } from "@/libs/fetch/sell-o
  * @param maxSalesThreshold - Nombre maximal de ventes pour filtrer les produits.
  * @returns Données des produits à faibles ventes, statut de chargement et erreurs éventuelles.
  */
-export const useLowSalesProducts = (maxSalesThreshold: number = 1) => {
+export const useLowSalesProducts = (maxSalesThreshold: number = 1, skip = false) => {
   const { filters } = useFilterContext();
   const [lowSalesProductsData, setLowSalesProductsData] = useState<LowSalesProductsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     (async () => {
       try {
         setLoading(true);
@@ -27,7 +30,7 @@ export const useLowSalesProducts = (maxSalesThreshold: number = 1) => {
         setLoading(false);
       }
     })();
-  }, [filters, maxSalesThreshold]); // Re-fetch si maxSalesThreshold change
+  }, [filters, maxSalesThreshold,skip]); // Re-fetch si maxSalesThreshold change
 
   return { lowSalesProductsData, loading, error };
 };

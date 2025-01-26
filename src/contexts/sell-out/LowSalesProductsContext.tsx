@@ -1,5 +1,7 @@
 import React, { createContext, useContext, ReactNode, useState } from "react";
 import { useLowSalesProducts } from "@/hooks/sell-out/useLowSalesProducts";
+import { useTopProducts } from "@/hooks/sell-out/useTopProducts";
+import { useTopProductsContext } from "./TopProductsContext";
 
 export interface LowSalesProductsContextType {
   lowSalesProducts: {
@@ -25,8 +27,13 @@ const LowSalesProductsContext = createContext<LowSalesProductsContextType | unde
  * Provider pour le contexte des produits à faibles ventes.
  */
 export const LowSalesProductsProvider = ({ children }: { children: ReactNode }) => {
+  
+  const { loading: loadingPrev,error: errorPrev } = useTopProductsContext();
+      
+    const skipFetch = loadingPrev || !!errorPrev;
+
   const [maxSalesThreshold, setMaxSalesThreshold] = useState<number>(1); // État pour le seuil
-  const { lowSalesProductsData, loading, error } = useLowSalesProducts(maxSalesThreshold);
+  const { lowSalesProductsData, loading, error } = useLowSalesProducts(maxSalesThreshold, skipFetch);
 
   const lowSalesProducts = lowSalesProductsData?.lowSalesProducts || [];
 

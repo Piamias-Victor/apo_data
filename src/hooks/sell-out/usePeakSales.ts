@@ -7,13 +7,16 @@ import { fetchPeakSales, PeakSalesData } from "@/libs/fetch/sell-out/fetchPeakSa
  *
  * @returns Données des périodes de pics de vente, statut de chargement et erreurs éventuelles.
  */
-export const usePeakSales = () => {
+export const usePeakSales = (skip = false) => {
   const { filters } = useFilterContext();
   const [peakSalesData, setPeakSalesData] = useState<PeakSalesData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     (async () => {
       try {
         setLoading(true);
@@ -26,7 +29,7 @@ export const usePeakSales = () => {
         setLoading(false);
       }
     })();
-  }, [filters]);
+  }, [filters, skip]);
 
   return { peakSalesData, loading, error };
 };
