@@ -7,13 +7,16 @@ import { fetchGrowthProducts, GrowthProductsData } from "@/libs/fetch/sell-out/f
  *
  * @returns Données des produits en croissance, statut de chargement et erreurs éventuelles.
  */
-export const useGrowthProducts = () => {
+export const useGrowthProducts = (skip = false) => {
   const { filters } = useFilterContext();
   const [growthProductsData, setGrowthProductsData] = useState<GrowthProductsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     (async () => {
       try {
         setLoading(true);
@@ -26,7 +29,7 @@ export const useGrowthProducts = () => {
         setLoading(false);
       }
     })();
-  }, [filters]);
+  }, [filters, skip]);
 
   return { growthProductsData, loading, error };
 };

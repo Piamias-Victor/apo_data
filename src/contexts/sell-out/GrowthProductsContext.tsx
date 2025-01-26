@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useGrowthProducts } from "@/hooks/sell-out/useGrowthProducts";
+import { usePeakSalesContext } from "./PeakSalesContext";
 
 export interface GrowthProductsContextType {
   growthProducts: {
@@ -23,7 +24,10 @@ const GrowthProductsContext = createContext<GrowthProductsContextType | undefine
  * Provider pour le contexte des produits en croissance.
  */
 export const GrowthProductsProvider = ({ children }: { children: ReactNode }) => {
-  const { growthProductsData, loading, error } = useGrowthProducts();
+   const { loading: loadingPrev,error: errorPrev } = usePeakSalesContext();
+        
+  const skipFetch = loadingPrev || !!errorPrev;
+  const { growthProductsData, loading, error } = useGrowthProducts(skipFetch);
 
   const growthProducts = growthProductsData?.growthProducts || [];
 

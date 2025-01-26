@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { usePeakSales } from "@/hooks/sell-out/usePeakSales";
+import { useLowSalesProductsContext } from "./LowSalesProductsContext";
 
 export interface PeakSalesContextType {
   peakSales: {
@@ -22,7 +23,10 @@ const PeakSalesContext = createContext<PeakSalesContextType | undefined>(undefin
  * Provider pour le contexte des périodes de pics de vente.
  */
 export const PeakSalesProvider = ({ children }: { children: ReactNode }) => {
-  const { peakSalesData, loading, error } = usePeakSales();
+  const { loading: loadingPrev,error: errorPrev } = useLowSalesProductsContext();
+      
+  const skipFetch = loadingPrev || !!errorPrev;
+  const { peakSalesData, loading, error } = usePeakSales(skipFetch);
 
   const peakSales = peakSalesData?.peakSales || [];
 

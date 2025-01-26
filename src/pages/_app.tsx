@@ -37,7 +37,9 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                         <SalesByCategoryProvider>
                                             <SalesByLabDistributorsProvider>
                                                 <TopProductsProvider>
-                                                    
+                                                    <LowSalesProductsProvider>
+                                                        <PeakSalesProvider>
+                                                            <GrowthProductsProvider>
                                                             <UniversesProvider>
                                                                 <LabDistributorsProvider>
                                                                         <PharmaciesProvider>
@@ -47,7 +49,9 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                                                         </PharmaciesProvider> 
                                                                 </LabDistributorsProvider>
                                                             </UniversesProvider>
-                                                            
+                                                            </GrowthProductsProvider>
+                                                        </PeakSalesProvider>
+                                                    </LowSalesProductsProvider>
                                                 </TopProductsProvider>
                                             </SalesByLabDistributorsProvider>
                                         </SalesByCategoryProvider>
