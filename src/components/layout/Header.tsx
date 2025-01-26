@@ -207,7 +207,7 @@ const Header: React.FC = () => {
     <div className="text-lg font-bold text-gray-700 mb-6">Menu</div>
     <ul className="space-y-6">
       <li>
-        <Link href="/sell-out">
+        <Link href="/sell-out" onClick={() => setIsMenuOpen(false)}>
           <div className="flex items-center gap-4 p-4 bg-indigo-100 hover:bg-indigo-200 shadow-md rounded-lg transition-all">
             <FaChartBar className="text-indigo-500 h-6 w-6" />
             <span className="font-medium text-indigo-600">Sell-out</span>
@@ -215,7 +215,7 @@ const Header: React.FC = () => {
         </Link>
       </li>
       <li>
-        <Link href="/sell-in">
+        <Link href="/sell-in" onClick={() => setIsMenuOpen(false)}>
           <div className="flex items-center gap-4 p-4 bg-green-100 hover:bg-green-200 shadow-md rounded-lg transition-all">
             <FaShoppingCart className="text-green-500 h-6 w-6" />
             <span className="font-medium text-green-600">Sell-in</span>
@@ -223,7 +223,7 @@ const Header: React.FC = () => {
         </Link>
       </li>
       <li>
-        <Link href="/stock">
+        <Link href="/stock" onClick={() => setIsMenuOpen(false)}>
           <div className="flex items-center gap-4 p-4 bg-orange-100 hover:bg-orange-200 shadow-md rounded-lg transition-all">
             <FaWarehouse className="text-orange-500 h-6 w-6" />
             <span className="font-medium text-orange-600">Stock</span>
@@ -231,7 +231,7 @@ const Header: React.FC = () => {
         </Link>
       </li>
       <li>
-        <Link href="/achat">
+        <Link href="/achat" onClick={() => setIsMenuOpen(false)}>
           <div className="flex items-center gap-4 p-4 bg-sky-100 hover:bg-sky-200 shadow-md rounded-lg transition-all">
             <FaClipboardList className="text-sky-500 h-6 w-6" />
             <span className="font-medium text-sky-600">Achat</span>
@@ -239,7 +239,7 @@ const Header: React.FC = () => {
         </Link>
       </li>
       <li>
-        <Link href="/generiques">
+        <Link href="/generiques" onClick={() => setIsMenuOpen(false)}>
           <div className="flex items-center gap-4 p-4 bg-purple-100 hover:bg-purple-200 shadow-md rounded-lg transition-all">
             <FaPills className="text-purple-500 h-6 w-6" />
             <span className="font-medium text-purple-600">Génériques</span>
