@@ -1,26 +1,20 @@
-import React from "react";
 import { useFilterContext } from "@/contexts/global/filtersContext";
 import { useFinancialContext } from "@/contexts/global/FinancialContext";
-import { useSalesByMonthContext } from "@/contexts/sell-out/SalesByMonthContext";
-import { useSalesByUniverseContext } from "@/contexts/sell-out/SalesByUniverseContext";
 import { useSalesByCategoryContext } from "@/contexts/sell-out/SalesByCategoryContext";
 import { useSalesByLabDistributorsContext } from "@/contexts/sell-out/SalesByLabDistributorsContext";
-import { useTopProductsContext } from "@/contexts/sell-out/TopProductsContext";
+import { useSalesByMonthContext } from "@/contexts/sell-out/SalesByMonthContext";
 import { useStockContext } from "@/contexts/global/StockContext";
+import { useTopProductsContext } from "@/contexts/sell-out/TopProductsContext";
 import { FaGlobe, FaPills, FaSoap } from "react-icons/fa";
-import SalesByMonthChart from "../components/sell-out/global/SalesByMonthChart";
-import SalesByUniverseChart from "../components/sell-out/univers/SalesByUniverseChart";
-import SalesByCategoryChart from "../components/sell-out/categories/SalesByCategoryChart";
-import SalesByLabDistributorsChart from "../components/sell-out/labs/SalesByLabDistributorsChart";
-import StatsCards from "../components/global/StatsCards";
-import TopLabDistributorsList from "../components/sell-out/labs/TopLabDistributorsList";
-import TopCategoriesList from "../components/sell-out/categories/TopCategoriesList";
-import FlopCategoriesList from "../components/sell-out/categories/FlopCategoriesList";
-import FlopLabDistributorsList from "../components/sell-out/labs/FlopLabDistributorsList";
-import FlopProductsList from "../components/sell-out/products/flopProductsDisplay";
-import TopProductsList from "../components/sell-out/products/topProductsDisplay";
+import SalesByCategoryChart from "./sell-out/categories/SalesByCategoryChart";
+import SalesByLabDistributorsChart from "./sell-out/labs/SalesByLabDistributorsChart";
+import SalesByMonthChart from "./sell-out/global/SalesByMonthChart";
+import StatsCards from "./global/StatsCards";
+import TopProductsChart from "./sell-out/products/topProductsDisplay";
 
-const Dashboard = () => {
+
+
+const UniversDashboard = () => {
   const {
     totalRevenue,
     totalPurchase,
@@ -50,12 +44,6 @@ const Dashboard = () => {
   } = useSalesByMonthContext();
 
   const {
-    universes,
-    loading: universeLoading,
-    error: universeError,
-  } = useSalesByUniverseContext();
-
-  const {
     categories,
     loading: categoryLoading,
     error: categoryError,
@@ -68,11 +56,10 @@ const Dashboard = () => {
   } = useSalesByLabDistributorsContext();
 
   const {
-    topProducts,
-    flopProducts,
+    products: topProducts,
     loading: topProductsLoading,
     error: topProductsError,
-  } = useTopProductsContext();
+  } = useTopProductsContext(); // Utilisation du contexte TopProducts
 
   const { filters, setFilters } = useFilterContext();
 
@@ -84,7 +71,6 @@ const Dashboard = () => {
     financialError ||
     stockError ||
     salesError ||
-    universeError ||
     categoryError ||
     labDistributorError ||
     topProductsError
@@ -95,7 +81,6 @@ const Dashboard = () => {
         {financialError ||
           stockError ||
           salesError ||
-          universeError ||
           categoryError ||
           labDistributorError ||
           topProductsError}
@@ -168,9 +153,9 @@ const Dashboard = () => {
         loading={financialLoading || stockLoading}
       />
 
-      {/* Graphiques */}
+      {/* Première ligne de graphiques */}
       <div className="mt-8 flex flex-row gap-4 h-[550px]">
-        <div className="w-full lg:w-8/12 flex flex-col h-full">
+        <div className="w-full lg:w-6/12 flex flex-col h-full">
           <SalesByMonthChart
             months={months}
             quantities={quantities}
@@ -179,14 +164,18 @@ const Dashboard = () => {
             loading={salesLoading}
           />
         </div>
-        <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByUniverseChart universes={universes} loading={universeLoading} />
+        <div className="w-full lg:w-6/12 flex flex-col h-full">
+          <SalesByCategoryChart categories={categories} loading={categoryLoading} />
         </div>
       </div>
 
+      {/* Deuxième ligne avec trois graphiques */}
       <div className="mt-8 flex flex-row gap-4 h-[550px]">
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByCategoryChart categories={categories} loading={categoryLoading} />
+          <SalesByLabDistributorsChart
+              labDistributors={labDistributors}
+              loading={labDistributorLoading}
+            />
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
           <SalesByLabDistributorsChart
@@ -195,11 +184,11 @@ const Dashboard = () => {
           />
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <TopProductsList products={topProducts} loading={topProductsLoading} />
+          <TopProductsChart products={topProducts} loading={topProductsLoading} />
         </div>
       </div>
     </div>
   );
 };
 
-export default Dashboard;
+export default UniversDashboard;
