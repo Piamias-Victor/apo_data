@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useSalesByLabDistributors } from "@/hooks/sell-out/useSalesByLabDistributors";
+import { useSalesByCategoryContext } from "./SalesByCategoryContext";
 
 export interface SalesByLabDistributorsContextType {
   labDistributors: { labDistributor: string; quantity: number; revenue: number; margin: number }[];
@@ -18,7 +19,12 @@ const SalesByLabDistributorsContext = createContext<
  * Provider pour le contexte des ventes par lab distributors.
  */
 export const SalesByLabDistributorsProvider = ({ children }: { children: ReactNode }) => {
-  const { salesByLabDistributorsData, loading, error } = useSalesByLabDistributors();
+
+  const { loading: loadingPrev,error: errorPrev } = useSalesByCategoryContext();
+    
+  const skipFetch = loadingPrev || !!errorPrev;
+  
+  const { salesByLabDistributorsData, loading, error } = useSalesByLabDistributors(skipFetch);
 
   const labDistributors = salesByLabDistributorsData?.labDistributors || [];
 

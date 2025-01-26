@@ -7,15 +7,19 @@ import { fetchTopProducts, TopProductsData } from "@/libs/fetch/sell-out/fetchTo
  *
  * @returns Données des produits, statut de chargement et erreurs éventuelles.
  */
-export const useTopProducts = () => {
+export const useTopProducts = (skip = false) => {
   const { filters } = useFilterContext();
   const [topProductsData, setTopProductsData] = useState<TopProductsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     (async () => {
       try {
+        console.log('on rentre du useTopProducts')
         setLoading(true);
         const fetchedData = await fetchTopProducts(filters);
         setTopProductsData(fetchedData);
@@ -23,10 +27,11 @@ export const useTopProducts = () => {
         console.error("Erreur lors de la récupération des produits :", err);
         setError("Impossible de récupérer les données des produits.");
       } finally {
+        console.log('on sort du useTopProducts')
         setLoading(false);
       }
     })();
-  }, [filters]);
+  }, [filters, skip]);
 
   return { topProductsData, loading, error };
 };

@@ -7,7 +7,7 @@ import { fetchSalesByLabDistributors, SalesByLabDistributorsData } from "@/libs/
  *
  * @returns Données des ventes par lab distributors, statut de chargement et erreurs éventuelles.
  */
-export const useSalesByLabDistributors = () => {
+export const useSalesByLabDistributors = (skip = false) => {
   const { filters } = useFilterContext();
   const [salesByLabDistributorsData, setSalesByLabDistributorsData] =
     useState<SalesByLabDistributorsData | null>(null);
@@ -15,8 +15,12 @@ export const useSalesByLabDistributors = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) {
+      return;
+    }
     (async () => {
       try {
+        console.log('on rentre du useSalesByLabDistributors')
         setLoading(true);
         const fetchedData = await fetchSalesByLabDistributors(filters);
         setSalesByLabDistributorsData(fetchedData);
@@ -24,10 +28,11 @@ export const useSalesByLabDistributors = () => {
         console.error("Erreur lors de la récupération des ventes par lab distributors :", err);
         setError("Impossible de récupérer les données des ventes par lab distributors.");
       } finally {
+        console.log('on sort du useSalesByLabDistributors')
         setLoading(false);
       }
     })();
-  }, [filters]);
+  }, [filters, skip]);
 
   return { salesByLabDistributorsData, loading, error };
 };
