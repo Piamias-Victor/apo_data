@@ -2,19 +2,21 @@
 
 import type { AppProps } from 'next/app';
 import "../styles/globals.css";
-import { PharmaciesProvider } from '@/contexts/pharmaciesContext';
-import Layout from './components/layout/Layout';
-import { UniversesProvider } from '@/contexts/universesContext';
-import { LabDistributorsProvider } from '@/contexts/brandsContext';
-import { ProductsCode13Provider } from '@/contexts/productsContext';
-import { FilterProvider } from '@/contexts/filtersContext';
-import { FinancialProvider } from '@/contexts/FinancialContext';
-import { StockProvider } from '@/contexts/StockContext';
-import { SalesByMonthProvider } from '@/contexts/SalesByMonthContext';
-import { SalesByCategoryProvider } from '@/contexts/SalesByCategoryContext';
-import { SalesByUniverseProvider } from '@/contexts/SalesByUniverseContext';
-import { SalesByLabDistributorsProvider } from '@/contexts/SalesByLabDistributorsContext';
-import { TopProductsProvider } from '@/contexts/TopProductsContext';
+import { PharmaciesProvider } from '@/contexts/segmentation/pharmaciesContext';
+import Layout from '../components/layout/Layout';
+import { UniversesProvider } from '@/contexts/segmentation/universesContext';
+import { LabDistributorsProvider } from '@/contexts/segmentation/brandsContext';
+import { FilterProvider } from '@/contexts/global/filtersContext';
+import { FinancialProvider } from '@/contexts/global/FinancialContext';
+import { StockProvider } from '@/contexts/global/StockContext';
+import { SalesByMonthProvider } from '@/contexts/sell-out/SalesByMonthContext';
+import { SalesByCategoryProvider } from '@/contexts/sell-out/SalesByCategoryContext';
+import { SalesByUniverseProvider } from '@/contexts/sell-out/SalesByUniverseContext';
+import { SalesByLabDistributorsProvider } from '@/contexts/sell-out/SalesByLabDistributorsContext';
+import { TopProductsProvider } from '@/contexts/sell-out/TopProductsContext';
+import { LowSalesProductsProvider } from '@/contexts/sell-out/LowSalesProductsContext';
+import { PeakSalesProvider } from '@/contexts/sell-out/PeakSalesContext';
+import { GrowthProductsProvider } from '@/contexts/sell-out/GrowthProductsContext';
 
 
 /**
@@ -35,17 +37,21 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                         <SalesByCategoryProvider>
                                             <SalesByLabDistributorsProvider>
                                                 <TopProductsProvider>
-                                                    <UniversesProvider>
-                                                        <LabDistributorsProvider>
-                                                            <ProductsCode13Provider>
-                                                                <PharmaciesProvider>
-                                                                        <Layout>
-                                                                            <Component {...pageProps} />
-                                                                        </Layout>
-                                                                </PharmaciesProvider> 
-                                                            </ProductsCode13Provider>
-                                                        </LabDistributorsProvider>
-                                                    </UniversesProvider>
+                                                    <LowSalesProductsProvider>
+                                                        <PeakSalesProvider>
+                                                            <GrowthProductsProvider>
+                                                            <UniversesProvider>
+                                                                <LabDistributorsProvider>
+                                                                        <PharmaciesProvider>
+                                                                                <Layout>
+                                                                                    <Component {...pageProps} />
+                                                                                </Layout>
+                                                                        </PharmaciesProvider> 
+                                                                </LabDistributorsProvider>
+                                                            </UniversesProvider>
+                                                            </GrowthProductsProvider>
+                                                        </PeakSalesProvider>
+                                                    </LowSalesProductsProvider>
                                                 </TopProductsProvider>
                                             </SalesByLabDistributorsProvider>
                                         </SalesByCategoryProvider>

@@ -19,6 +19,11 @@ import FlopCategoriesList from "../components/sell-out/categories/FlopCategories
 import FlopLabDistributorsList from "../components/sell-out/labs/FlopLabDistributorsList";
 import FlopProductsList from "../components/sell-out/products/flopProductsDisplay";
 import TopProductsList from "../components/sell-out/products/topProductsDisplay";
+import LowSalesProductsChart from "@/components/sell-out/products/LowSalesProductsChart";
+import PeakSalesBubbleChart from "@/components/sell-out/products/PeakSalesHeatmap";
+import { usePeakSalesContext } from "@/contexts/sell-out/PeakSalesContext";
+import { useGrowthProductsContext } from "@/contexts/sell-out/GrowthProductsContext";
+import GrowingProductsList from "@/components/sell-out/products/GrowingProductsList";
 
 const Dashboard = () => {
   const {
@@ -73,6 +78,14 @@ const Dashboard = () => {
     loading: topProductsLoading,
     error: topProductsError,
   } = useTopProductsContext();
+
+  const {
+    growthProducts,
+    loading: growthLoading,
+  } = useGrowthProductsContext();
+
+  const { peakSales, loading } = usePeakSalesContext();
+
 
   const { filters, setFilters } = useFilterContext();
 
@@ -195,9 +208,67 @@ const Dashboard = () => {
           />
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <TopProductsList products={topProducts} loading={topProductsLoading} />
+          <SalesByLabDistributorsChart
+            labDistributors={labDistributors}
+            loading={labDistributorLoading}
+          />
         </div>
       </div>
+
+      {/* Section Les Tops */}
+      <div className="mt-12">
+        <div className="flex flex-row gap-4">
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopCategoriesList categories={categories} loading={categoryLoading} />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopLabDistributorsList distributors={labDistributors} loading={labDistributorLoading} />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopProductsList products={topProducts} loading={topProductsLoading} />
+          </div>
+        </div>
+      </div>
+
+      {/* Section Les Flops */}
+      <div className="mt-12">
+        <div className="flex flex-row gap-4">
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopCategoriesList categories={categories} loading={categoryLoading} />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopLabDistributorsList distributors={labDistributors} loading={labDistributorLoading} />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopProductsList products={flopProducts} loading={topProductsLoading} />
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto p-6">
+        <LowSalesProductsChart />
+      </div>
+
+      <div className="container mx-auto p-6">
+        <PeakSalesBubbleChart data={peakSales} />
+      </div>
+
+      <div className="mt-12">
+      <div className="flex flex-row gap-4">
+      <div className="w-full lg:w-8/12 flex flex-col h-[450px]">
+      <GrowingProductsList
+        products={growthProducts.map((item) => ({
+          name: item.product, // Convertir `product` en `name`
+          code: item.code,
+          previousQuantity: item.previousQuantity,
+          currentQuantity: item.currentQuantity,
+          growthRate: item.growthRate,
+        }))}
+        loading={growthLoading}
+      />
+     </div>
+  </div>
+</div>
     </div>
   );
 };
