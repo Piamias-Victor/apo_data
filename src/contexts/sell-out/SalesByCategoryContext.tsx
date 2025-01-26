@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useSalesByCategory } from "@/hooks/sell-out/useSalesByCategory";
+import { useSalesByUniverseContext } from "./SalesByUniverseContext";
 
 export interface SalesByCategoryContextType {
   categories: { category: string; quantity: number; revenue: number; margin: number }[];
@@ -16,7 +17,12 @@ const SalesByCategoryContext = createContext<SalesByCategoryContextType | undefi
  * Provider pour le contexte des ventes par catégorie.
  */
 export const SalesByCategoryProvider = ({ children }: { children: ReactNode }) => {
-  const { salesByCategoryData, loading, error } = useSalesByCategory();
+
+  const { loading: loadingPrev,error: errorPrev } = useSalesByUniverseContext();
+    
+  const skipFetch = loadingPrev || !!errorPrev;
+
+  const { salesByCategoryData, loading, error } = useSalesByCategory(skipFetch);
 
   const categories = salesByCategoryData?.categories || [];
 

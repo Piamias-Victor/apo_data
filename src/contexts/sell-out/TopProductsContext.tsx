@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useTopProducts } from "@/hooks/sell-out/useTopProducts";
+import { useSalesByLabDistributorsContext } from "./SalesByLabDistributorsContext";
 
 export interface TopProductsContextType {
   topProducts: {
@@ -29,7 +30,12 @@ const TopProductsContext = createContext<TopProductsContextType | undefined>(und
  * Provider pour le contexte des top et flop produits.
  */
 export const TopProductsProvider = ({ children }: { children: ReactNode }) => {
-  const { topProductsData, loading, error } = useTopProducts();
+
+  const { loading: loadingPrev,error: errorPrev } = useSalesByLabDistributorsContext();
+    
+  const skipFetch = loadingPrev || !!errorPrev;
+
+  const { topProductsData, loading, error } = useTopProducts(skipFetch);
 
   const topProducts = topProductsData?.topProducts || [];
   const flopProducts = topProductsData?.flopProducts || [];

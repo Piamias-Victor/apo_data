@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from "react";
 import { useStockData } from "@/hooks/global/useStockData";
+import { useFinancialContext } from "./FinancialContext";
 
 export interface StockContextType {
   stockValue: number | null;
@@ -11,7 +12,13 @@ export interface StockContextType {
 const StockContext = createContext<StockContextType | undefined>(undefined);
 
 export const StockProvider = ({ children }: { children: ReactNode }) => {
-  const { stockData, loading, error } = useStockData();
+
+  const { loading: financialLoading, error: financialError } = useFinancialContext();
+
+  const skipFetch = financialLoading || !!financialError;
+
+  const { stockData, loading, error } = useStockData(skipFetch);
+
 
   const stockValue = stockData?.stockValue || null;
   const soldReferencesCount = stockData?.soldReferencesCount || null;

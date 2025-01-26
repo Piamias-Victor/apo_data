@@ -33,7 +33,8 @@ const StatsCards = ({
   marginPercentage,
   stockValue,
   soldReferencesCount,
-  loading,
+  financialLoading,
+  stockLoading
 }: {
   totalCA: number | null;
   totalPurchase: number | null;
@@ -44,7 +45,8 @@ const StatsCards = ({
   marginPercentage: number | null;
   stockValue: number | null;
   soldReferencesCount: number | null;
-  loading: boolean; // Nouveau prop pour indiquer l'état de chargement
+  financialLoading: boolean; // Nouveau prop pour indiquer l'état de chargement
+  stockLoading: boolean; 
 }) => {
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-lg p-8">
@@ -58,7 +60,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-indigo-500">Chiffre d'Affaires Total</p>
               <p className="mt-2 text-3xl font-bold text-indigo-600">
-                {loading ? "Chargement..." : totalCA !== null ? formatLargeNumber(totalCA) : "N/A"}
+                {financialLoading ? "Chargement..." : totalCA !== null ? formatLargeNumber(totalCA) : "N/A"}
               </p>
             </div>
           </div>
@@ -69,7 +71,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-green-500">Montant d'Achat Total</p>
               <p className="mt-2 text-3xl font-bold text-green-600">
-                {loading ? "Chargement..." : totalPurchase !== null ? formatLargeNumber(totalPurchase) : "N/A"}
+                {financialLoading ? "Chargement..." : totalPurchase !== null ? formatLargeNumber(totalPurchase) : "N/A"}
               </p>
             </div>
           </div>
@@ -80,7 +82,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-amber-500">Marge Totale</p>
               <p className="mt-2 text-3xl font-bold text-amber-600">
-                {loading ? "Chargement..." : totalMargin !== null ? formatLargeNumber(totalMargin) : "N/A"}
+                {financialLoading ? "Chargement..." : totalMargin !== null ? formatLargeNumber(totalMargin) : "N/A"}
               </p>
             </div>
           </div>
@@ -94,7 +96,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-purple-500">Prix de Vente Moyen</p>
               <p className="mt-2 text-3xl font-extrabold text-purple-600">
-                {loading ? "Chargement..." : averageSellingPrice !== null ? formatLargeNumber(averageSellingPrice) : "N/A"}
+                {financialLoading ? "Chargement..." : averageSellingPrice !== null ? formatLargeNumber(averageSellingPrice) : "N/A"}
               </p>
             </div>
           </div>
@@ -105,7 +107,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-teal-500">Prix d'Achat Moyen</p>
               <p className="mt-2 text-3xl font-extrabold text-teal-600">
-                {loading ? "Chargement..." : averagePurchasePrice !== null ? formatLargeNumber(averagePurchasePrice) : "N/A"}
+                {financialLoading ? "Chargement..." : averagePurchasePrice !== null ? formatLargeNumber(averagePurchasePrice) : "N/A"}
               </p>
             </div>
           </div>
@@ -116,7 +118,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-rose-500">Pourcentage de Marge</p>
               <p className="mt-2 text-3xl font-extrabold text-rose-600">
-                {loading ? "Chargement..." : marginPercentage !== null ? `${marginPercentage.toFixed(2)}%` : "N/A"}
+                {financialLoading ? "Chargement..." : marginPercentage !== null ? `${marginPercentage.toFixed(2)}%` : "N/A"}
               </p>
             </div>
           </div>
@@ -130,7 +132,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-orange-500">Quantité Totale</p>
               <p className="mt-2 text-3xl font-extrabold text-orange-600">
-                {loading ? "Chargement..." : totalQuantity !== null ? formatNumber(totalQuantity) : "N/A"}
+                {financialLoading ? "Chargement..." : totalQuantity !== null ? formatNumber(totalQuantity) : "N/A"}
               </p>
             </div>
           </div>
@@ -141,7 +143,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-sky-500">Valeur de Stock</p>
               <p className="mt-2 text-3xl font-extrabold text-sky-600">
-                {loading ? "Chargement..." : stockValue !== null ? formatLargeNumber(stockValue) : "N/A"}
+                {stockLoading ? "Chargement..." : stockValue !== null ? formatLargeNumber(stockValue) : "N/A"}
               </p>
             </div>
           </div>
@@ -152,7 +154,7 @@ const StatsCards = ({
             <div>
               <p className="text-lg font-medium text-red-500">Références Vendues</p>
               <p className="mt-2 text-3xl font-extrabold text-red-600">
-                {loading ? "Chargement..." : soldReferencesCount !== null ? formatNumber(soldReferencesCount) : "N/A"}
+                {stockLoading ? "Chargement..." : soldReferencesCount !== null ? formatNumber(soldReferencesCount) : "N/A"}
               </p>
             </div>
           </div>

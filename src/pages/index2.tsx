@@ -50,28 +50,29 @@ const Dashboard = () => {
   } = useSalesByMonthContext();
 
   const {
-      universes,
-      loading: universeLoading,
-      error: universeError,
-    } = useSalesByUniverseContext();
-  
-    const {
-      categories,
-      loading: categoryLoading,
-      error: categoryError,
-    } = useSalesByCategoryContext();
-  
-    const {
-      labDistributors,
-      loading: labDistributorLoading,
-      error: labDistributorError,
-    } = useSalesByLabDistributorsContext();
-  
-    const {
-      topProducts,
-      loading: topProductsLoading,
-      error: topProductsError,
-    } = useTopProductsContext();
+    universes,
+    loading: universeLoading,
+    error: universeError,
+  } = useSalesByUniverseContext();
+
+  const {
+    categories,
+    loading: categoryLoading,
+    error: categoryError,
+  } = useSalesByCategoryContext();
+
+  const {
+    labDistributors,
+    loading: labDistributorLoading,
+    error: labDistributorError,
+  } = useSalesByLabDistributorsContext();
+
+  const {
+    topProducts,
+    flopProducts,
+    loading: topProductsLoading,
+    error: topProductsError,
+  } = useTopProductsContext();
 
   const { filters, setFilters } = useFilterContext();
 
@@ -164,12 +165,11 @@ const Dashboard = () => {
         marginPercentage={marginPercentage}
         stockValue={stockValue}
         soldReferencesCount={soldReferencesCount}
-        financialLoading={financialLoading}
-        stockLoading={stockLoading}
+        loading={financialLoading || stockLoading}
       />
 
       {/* Graphiques */}
-      <div className="mt-8 flex flex-row gap-4 h-[550px]">
+      {/* <div className="mt-8 flex flex-row gap-4 h-[550px]">
         <div className="w-full lg:w-8/12 flex flex-col h-full">
           <SalesByMonthChart
             months={months}
@@ -197,7 +197,7 @@ const Dashboard = () => {
         <div className="w-full lg:w-4/12 flex flex-col h-full">
           <TopProductsList products={topProducts} loading={topProductsLoading} />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
