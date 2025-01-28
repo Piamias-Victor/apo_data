@@ -1,36 +1,46 @@
+// src/components/sell-out/categories/DecreasingCategoriesList.tsx
 import React from "react";
 import { FaArrowDown } from "react-icons/fa";
 
-interface FlopProductsListProps {
-  products: { name: string; code: string; quantity: number; revenue: number; margin: number }[];
+interface DecreasingCategory {
+  category: string;
+  regressionRate: number; // Taux potentiellement négatif
+  currentQuantity: number;
+  previousQuantity: number;
+  totalRevenue: number; // optionnel
+}
+
+interface DecreasingCategoriesListProps {
+  categories: DecreasingCategory[];
   loading: boolean;
 }
 
-// Fonction pour tronquer le nom si trop long
+// Tronquer le nom si trop long
 const truncateName = (name: string, maxLength: number) => {
   return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
 };
 
-const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
-  const MAX_NAME_LENGTH = 20; // Longueur maximale pour le nom du produit
+const DecreasingCategoriesList: React.FC<DecreasingCategoriesListProps> = ({ categories, loading }) => {
+  const MAX_NAME_LENGTH = 20;
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-lg p-4 h-full">
       <div className="flex items-center gap-4 mb-4">
         <FaArrowDown className="h-8 w-8 text-red-500" />
-        <h2 className="text-lg font-bold text-gray-800">Flop 10 Produits</h2>
+        <h2 className="text-lg font-bold text-gray-800">Catégories en Régression</h2>
       </div>
+
       {loading ? (
         <p className="text-center text-gray-500 text-sm">Chargement...</p>
       ) : (
         <div className="overflow-y-auto h-[85%]">
           <ul className="space-y-2">
-            {products.map((product, index) => (
+            {categories.map((catItem, index) => (
               <li
-                key={product.code}
+                key={catItem.category}
                 className="flex items-center justify-between p-2 bg-white shadow-md rounded-lg hover:shadow-lg transition"
               >
-                {/* Index avec couleur */}
+                {/* Classement */}
                 <span
                   className={`text-xl font-bold ${
                     index === 0
@@ -44,23 +54,32 @@ const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
                 >
                   #{index + 1}
                 </span>
-                {/* Détails produit */}
+
+                {/* Nom de la catégorie */}
                 <div className="flex flex-col flex-grow ml-2">
                   <span className="text-sm font-medium text-gray-800 truncate">
-                    {truncateName(product.name, MAX_NAME_LENGTH)}
+                    {truncateName(catItem.category, MAX_NAME_LENGTH)}
                   </span>
-                  <span className="text-xs text-gray-500">Code: {product.code}</span>
                 </div>
-                {/* Metrics */}
+
+                {/* Stats de régression */}
                 <div className="flex flex-col items-end text-xs">
                   <span className="font-semibold text-gray-800">
-                    {product.quantity.toLocaleString()} unités
+                    Avant: {catItem.previousQuantity.toLocaleString()} unités
                   </span>
-                  <span className="text-gray-500">
-                    CA: {product.revenue.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                  <span className="font-semibold text-gray-800">
+                    Maintenant: {catItem.currentQuantity.toLocaleString()} unités
                   </span>
-                  <span className="text-gray-500">
-                    Marge: {product.margin.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                  <span
+                    className={`text-sm font-bold ${
+                      catItem.regressionRate < 0 ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    Régression: {catItem.regressionRate > 0 ? "+" : ""}
+                    {catItem.regressionRate.toFixed(2)}%
+                  </span>
+                  <span className="text-xs text-gray-600">
+                    CA : {catItem.totalRevenue.toLocaleString()} €
                   </span>
                 </div>
               </li>
@@ -72,4 +91,4 @@ const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
   );
 };
 
-export default FlopProductsList;
+export default DecreasingCategoriesList;

@@ -1,3 +1,5 @@
+// src/components/sell-out/anomalies/StatsCards.tsx
+
 import React from "react";
 import {
   FaDollarSign,
@@ -11,9 +13,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 
-const formatNumber = (value: number | null | undefined): number =>
-  value !== null && value !== undefined ? Number(value.toFixed(2)) : 0;
-
+// Fonction pour formater les nombres en Euro
 const formatLargeNumber = (value: number): string => {
   if (value >= 1_000_000) {
     return `${(value / 1_000_000).toFixed(2).replace(".", ",")} M€`;
@@ -22,6 +22,34 @@ const formatLargeNumber = (value: number): string => {
   }
   return `${value.toFixed(2).replace(".", ",")} €`;
 };
+
+// Fonction pour formater les nombres (sans décimales)
+const formatNumber = (value: number | null | undefined): string => {
+  return value !== null && value !== undefined
+    ? value.toLocaleString("fr-FR")
+    : "0";
+};
+
+// Composant pour les cartes statistiques
+const StatCard: React.FC<{
+  icon: React.ReactElement;
+  title: string;
+  value: string;
+  bgGradient: string;
+  iconColor: string;
+  titleColor: string;
+  valueColor: string;
+}> = ({ icon, title, value, bgGradient, iconColor, titleColor, valueColor }) => (
+  <div
+    className={`flex items-center p-6 rounded-2xl shadow-lg ${bgGradient} transition-transform transform hover:scale-105 hover:shadow-xl duration-300`}
+  >
+    <div className={`text-4xl ${iconColor} mr-6`}>{icon}</div>
+    <div>
+      <p className={`text-lg font-semibold ${titleColor}`}>{title}</p>
+      <p className={`mt-2 text-2xl font-bold ${valueColor}`}>{value}</p>
+    </div>
+  </div>
+);
 
 const StatsCards = ({
   totalCA,
@@ -34,7 +62,7 @@ const StatsCards = ({
   stockValue,
   soldReferencesCount,
   financialLoading,
-  stockLoading
+  stockLoading,
 }: {
   totalCA: number | null;
   totalPurchase: number | null;
@@ -45,120 +73,159 @@ const StatsCards = ({
   marginPercentage: number | null;
   stockValue: number | null;
   soldReferencesCount: number | null;
-  financialLoading: boolean; // Nouveau prop pour indiquer l'état de chargement
-  stockLoading: boolean; 
+  financialLoading: boolean;
+  stockLoading: boolean;
 }) => {
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-lg p-8">
+    <div className="bg-gradient-to-br from-white to-gray-100 shadow-2xl rounded-2xl p-8">
       {/* Conteneur des cartes */}
-      <div className="flex flex-col gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Première rangée */}
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* CA Total */}
-          <div className="flex-1 bg-indigo-100 hover:bg-indigo-200 shadow-lg rounded-lg p-6 flex items-center hover:shadow-xl transition-shadow duration-300">
-            <FaDollarSign className="h-12 w-12 text-indigo-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-indigo-500">Chiffre d'Affaires Total</p>
-              <p className="mt-2 text-3xl font-bold text-indigo-600">
-                {financialLoading ? "Chargement..." : totalCA !== null ? formatLargeNumber(totalCA) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaDollarSign />}
+          title="Chiffre d'Affaires Total"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : totalCA !== null
+              ? formatLargeNumber(totalCA)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-indigo-100 via-indigo-200 to-indigo-300"
+          iconColor="text-indigo-600"
+          titleColor="text-indigo-700"
+          valueColor="text-indigo-800"
+        />
 
-          {/* Montant d'Achat Total */}
-          <div className="flex-1 bg-green-100 hover:bg-green-200 shadow-lg rounded-lg p-6 flex items-center hover:shadow-xl transition-shadow duration-300">
-            <FaShoppingCart className="h-12 w-12 text-green-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-green-500">Montant d'Achat Total</p>
-              <p className="mt-2 text-3xl font-bold text-green-600">
-                {financialLoading ? "Chargement..." : totalPurchase !== null ? formatLargeNumber(totalPurchase) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaShoppingCart />}
+          title="Montant d'Achat Total"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : totalPurchase !== null
+              ? formatLargeNumber(totalPurchase)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-green-100 via-green-200 to-green-300"
+          iconColor="text-green-600"
+          titleColor="text-green-700"
+          valueColor="text-green-800"
+        />
 
-          {/* Marge Totale */}
-          <div className="flex-1 bg-amber-100 hover:bg-amber-200 shadow-lg rounded-lg p-6 flex items-center hover:shadow-xl transition-shadow duration-300">
-            <FaChartLine className="h-12 w-12 text-amber-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-amber-500">Marge Totale</p>
-              <p className="mt-2 text-3xl font-bold text-amber-600">
-                {financialLoading ? "Chargement..." : totalMargin !== null ? formatLargeNumber(totalMargin) : "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={<FaChartLine />}
+          title="Marge Totale"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : totalMargin !== null
+              ? formatLargeNumber(totalMargin)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-amber-100 via-amber-200 to-amber-300"
+          iconColor="text-amber-600"
+          titleColor="text-amber-700"
+          valueColor="text-amber-800"
+        />
 
         {/* Deuxième rangée */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Prix de Vente Moyen */}
-          <div className="flex-1 bg-purple-100 hover:bg-purple-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaClipboardList className="h-14 w-14 text-purple-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-purple-500">Prix de Vente Moyen</p>
-              <p className="mt-2 text-3xl font-extrabold text-purple-600">
-                {financialLoading ? "Chargement..." : averageSellingPrice !== null ? formatLargeNumber(averageSellingPrice) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaClipboardList />}
+          title="Prix de Vente Moyen"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : averageSellingPrice !== null
+              ? formatLargeNumber(averageSellingPrice)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-purple-100 via-purple-200 to-purple-300"
+          iconColor="text-purple-600"
+          titleColor="text-purple-700"
+          valueColor="text-purple-800"
+        />
 
-          {/* Prix d'Achat Moyen */}
-          <div className="flex-1 bg-teal-100 hover:bg-teal-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaBoxes className="h-14 w-14 text-teal-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-teal-500">Prix d'Achat Moyen</p>
-              <p className="mt-2 text-3xl font-extrabold text-teal-600">
-                {financialLoading ? "Chargement..." : averagePurchasePrice !== null ? formatLargeNumber(averagePurchasePrice) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaBoxes />}
+          title="Prix d'Achat Moyen"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : averagePurchasePrice !== null
+              ? formatLargeNumber(averagePurchasePrice)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-teal-100 via-teal-200 to-teal-300"
+          iconColor="text-teal-600"
+          titleColor="text-teal-700"
+          valueColor="text-teal-800"
+        />
 
-          {/* Pourcentage de Marge */}
-          <div className="flex-1 bg-rose-100 hover:bg-rose-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaPercentage className="h-14 w-14 text-rose-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-rose-500">Pourcentage de Marge</p>
-              <p className="mt-2 text-3xl font-extrabold text-rose-600">
-                {financialLoading ? "Chargement..." : marginPercentage !== null ? `${marginPercentage.toFixed(2)}%` : "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={<FaPercentage />}
+          title="Pourcentage de Marge"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : marginPercentage !== null
+              ? `${marginPercentage.toFixed(2)}%`
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-rose-100 via-rose-200 to-rose-300"
+          iconColor="text-rose-600"
+          titleColor="text-rose-700"
+          valueColor="text-rose-800"
+        />
 
         {/* Troisième rangée */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Quantité Totale */}
-          <div className="flex-1 bg-orange-100 hover:bg-orange-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaWarehouse className="h-14 w-14 text-orange-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-orange-500">Quantité Totale</p>
-              <p className="mt-2 text-3xl font-extrabold text-orange-600">
-                {financialLoading ? "Chargement..." : totalQuantity !== null ? formatNumber(totalQuantity) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaWarehouse />}
+          title="Quantité Totale"
+          value={
+            financialLoading
+              ? "Chargement..."
+              : totalQuantity !== null
+              ? formatNumber(totalQuantity)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-orange-100 via-orange-200 to-orange-300"
+          iconColor="text-orange-600"
+          titleColor="text-orange-700"
+          valueColor="text-orange-800"
+        />
 
-          {/* Valeur de Stock */}
-          <div className="flex-1 bg-sky-100 hover:bg-sky-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaChartBar className="h-14 w-14 text-sky-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-sky-500">Valeur de Stock</p>
-              <p className="mt-2 text-3xl font-extrabold text-sky-600">
-                {stockLoading ? "Chargement..." : stockValue !== null ? formatLargeNumber(stockValue) : "N/A"}
-              </p>
-            </div>
-          </div>
+        <StatCard
+          icon={<FaChartBar />}
+          title="Valeur de Stock"
+          value={
+            stockLoading
+              ? "Chargement..."
+              : stockValue !== null
+              ? formatLargeNumber(stockValue)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-sky-100 via-sky-200 to-sky-300"
+          iconColor="text-sky-600"
+          titleColor="text-sky-700"
+          valueColor="text-sky-800"
+        />
 
-          {/* Références Vendues */}
-          <div className="flex-1 bg-red-100 hover:bg-red-200 shadow-lg rounded-xl p-6 flex items-center transition-all duration-300">
-            <FaInfoCircle className="h-14 w-14 text-red-500 mr-4" />
-            <div>
-              <p className="text-lg font-medium text-red-500">Références Vendues</p>
-              <p className="mt-2 text-3xl font-extrabold text-red-600">
-                {stockLoading ? "Chargement..." : soldReferencesCount !== null ? formatNumber(soldReferencesCount) : "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          icon={<FaInfoCircle />}
+          title="Références Vendues"
+          value={
+            stockLoading
+              ? "Chargement..."
+              : soldReferencesCount !== null
+              ? formatNumber(soldReferencesCount)
+              : "N/A"
+          }
+          bgGradient="bg-gradient-to-r from-red-100 via-red-200 to-red-300"
+          iconColor="text-red-600"
+          titleColor="text-red-700"
+          valueColor="text-red-800"
+        />
       </div>
     </div>
   );

@@ -76,7 +76,7 @@ const LowSalesProductsChart = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 shadow-xl rounded-lg p-8 h-full">
+    <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-lg p-8 h-full">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <FaChartBar className="h-12 w-12 text-blue-500" />

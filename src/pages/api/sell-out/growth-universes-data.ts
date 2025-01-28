@@ -1,20 +1,22 @@
+// src/pages/api/sell-out/growth-universes-data.ts
+
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
-interface RegressionProductsResponse {
-  regressionProducts: {
-    product: string;
-    code: string;
-    regressionRate: number;
-    currentQuantity: number;
-    previousQuantity: number;
-    totalRevenue: number;
+/** Interface pour la réponse “growthUniverses” */
+interface GrowthUniversesResponse {
+  growthUniverses: {
+    universe: string;
+    growthRate: number;      // % de croissance
+    currentQuantity: number; // Ventes dans la période courante
+    previousQuantity: number;// Ventes dans la période précédente
+    totalRevenue: number;    // CA cumulé
   }[];
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<RegressionProductsResponse | { error: string }>
+  res: NextApiResponse<GrowthUniversesResponse | { error: string }>
 ) {
   try {
     const {
@@ -28,7 +30,7 @@ export default async function handler(
       product,
     } = req.query;
 
-    // 1) Préparation des filtres dynamiques
+    // 1) Filtres dynamiques
     const whereClauses: string[] = ["s.quantity > 0"];
     const values: any[] = [];
     let paramIndex = 1;
@@ -82,50 +84,34 @@ export default async function handler(
       paramIndex++;
     }
 
-    // 2) Clause WHERE
+    // Générer la clause WHERE
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // 3) Calcul des dates
+    // 2) Calcul dynamique des périodes
     const now = new Date();
-    // Période courante : [startLast3Months, endLast3Months]
     const startLast3Months = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
     const endLast3Months = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
-    // Période précédente : [startPrevious3Months, endPrevious3Months]
     const startPrevious3Months = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split("T")[0];
     const endPrevious3Months = new Date(now.getFullYear(), now.getMonth() - 3, 0).toISOString().split("T")[0];
 
-    // On push les 4 dates (previous, current) dans le tableau 'values'
+    // Pousser les 4 dates dans “values”
     values.push(startPrevious3Months, endPrevious3Months, startLast3Months, endLast3Months);
 
-    // 4) Requête SQL avec conversion en décimal pour calculer le taux correctement
+    // 3) Requête SQL : group by gp.universe
     const query = `
-      WITH sales_regression AS (
+      WITH universes_growth AS (
         SELECT
-          gp.code_13_ref AS code,
-          CASE
-            WHEN gp.name = 'Default Name'
-              THEN (
-                SELECT ip.name
-                FROM data_internalproduct ip
-                WHERE ip.code_13_ref_id = gp.code_13_ref
-                LIMIT 1
-              )
-            ELSE gp.name
-          END AS product,
-          -- période précédente
+          gp.universe AS universe,
           SUM(
             CASE
               WHEN s.date BETWEEN $${paramIndex} AND $${paramIndex + 1}
-              THEN s.quantity
-              ELSE 0
+              THEN s.quantity ELSE 0
             END
           ) AS previous_quantity,
-          -- période courante
           SUM(
             CASE
               WHEN s.date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3}
-              THEN s.quantity
-              ELSE 0
+              THEN s.quantity ELSE 0
             END
           ) AS current_quantity,
           SUM(s.quantity * COALESCE(i.price_with_tax, 0)) AS total_revenue
@@ -134,70 +120,50 @@ export default async function handler(
         JOIN data_internalproduct ip ON i.product_id = ip.id
         JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
         ${whereClause}
-        GROUP BY gp.code_13_ref, gp.name
+        GROUP BY gp.universe
       )
       SELECT
-        product,
-        code,
-        current_quantity,
+        universe,
         previous_quantity,
-        -- Forcer la division flottante pour éviter l'arrondi à 0
-        COALESCE(
-          (
-            ((current_quantity * 1.0) - (previous_quantity * 1.0))
-            / NULLIF((previous_quantity * 1.0), 0)
-          ) * 100,
-          0
-        ) AS regression_rate,
-        total_revenue
-      FROM sales_regression
-      WHERE
-        current_quantity > 0
-        -- ET si vous voulez vraiment filtrer les < 0, ajouter:
-        -- AND COALESCE(
-        --   (
-        --     (current_quantity * 1.0 - previous_quantity * 1.0)
-        --     / NULLIF(previous_quantity * 1.0, 0)
-        --   ) * 100,
-        --   0
-        -- ) < 0
-      ORDER BY
+        current_quantity,
         COALESCE(
           (
             (current_quantity * 1.0 - previous_quantity * 1.0)
             / NULLIF(previous_quantity * 1.0, 0)
           ) * 100,
           0
-        ) ASC
+        ) AS growth_rate,
+        total_revenue
+      FROM universes_growth
+      WHERE current_quantity > 0
+      ORDER BY growth_rate DESC
       LIMIT 10;
     `;
 
-    // 5) Exécution
+    // 4) Exécution
     const client = await pool.connect();
     const result = await client.query<{
-      product: string;
-      code: string;
-      regression_rate: string;
+      universe: string;
+      growth_rate: string;
       current_quantity: string;
       previous_quantity: string;
       total_revenue: string;
     }>(query, values);
     client.release();
 
-    // 6) Formatage
-    const regressionProducts = result.rows.map((row) => ({
-      product: row.product,
-      code: row.code,
-      // parseFloat pour transformer la string PG en nombre JS
-      regressionRate: parseFloat(row.regression_rate),
+    // 5) Formatage final
+    const growthUniverses = result.rows.map((row) => ({
+      universe: row.universe ?? "Inconnu",
+      growthRate: parseFloat(row.growth_rate),
       currentQuantity: parseInt(row.current_quantity, 10),
       previousQuantity: parseInt(row.previous_quantity, 10),
       totalRevenue: parseFloat(row.total_revenue),
     }));
 
-    res.status(200).json({ regressionProducts });
+    // 6) Réponse JSON
+    res.status(200).json({ growthUniverses });
   } catch (error) {
-    console.error("Erreur lors de l'analyse des régressions des produits :", error);
+    console.error("Erreur lors de l'analyse de la croissance des univers :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }

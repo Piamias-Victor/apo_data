@@ -13,11 +13,6 @@ import SalesByUniverseChart from "../components/sell-out/univers/SalesByUniverse
 import SalesByCategoryChart from "../components/sell-out/categories/SalesByCategoryChart";
 import SalesByLabDistributorsChart from "../components/sell-out/labs/SalesByLabDistributorsChart";
 import StatsCards from "../components/global/StatsCards";
-import TopLabDistributorsList from "../components/sell-out/labs/TopLabDistributorsList";
-import TopCategoriesList from "../components/sell-out/categories/TopCategoriesList";
-import FlopCategoriesList from "../components/sell-out/categories/FlopCategoriesList";
-import FlopLabDistributorsList from "../components/sell-out/labs/FlopLabDistributorsList";
-import FlopProductsList from "../components/sell-out/products/flopProductsDisplay";
 import TopProductsList from "../components/sell-out/products/topProductsDisplay";
 
 const Dashboard = () => {
