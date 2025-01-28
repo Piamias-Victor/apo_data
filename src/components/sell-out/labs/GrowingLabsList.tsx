@@ -1,14 +1,16 @@
 import React from "react";
 import { FaChartLine } from "react-icons/fa";
 
-interface GrowingProductsListProps {
-  products: {
-    name: string;
-    code: string;
-    previousQuantity: number;
-    currentQuantity: number;
-    growthRate: number;
-  }[];
+interface GrowingLab {
+  lab: string;
+  growthRate: number;
+  currentQuantity: number;
+  previousQuantity: number;
+  totalRevenue: number; // si besoin d'afficher
+}
+
+interface GrowingLabsListProps {
+  labs: GrowingLab[];
   loading: boolean;
 }
 
@@ -17,7 +19,7 @@ const truncateName = (name: string, maxLength: number) => {
   return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
 };
 
-const GrowingProductsList: React.FC<GrowingProductsListProps> = ({ products, loading }) => {
+const GrowingLabsList: React.FC<GrowingLabsListProps> = ({ labs, loading }) => {
   const MAX_NAME_LENGTH = 20; // Limite pour tronquer les noms
 
   return (
@@ -25,7 +27,7 @@ const GrowingProductsList: React.FC<GrowingProductsListProps> = ({ products, loa
       {/* En-tête avec icône + titre */}
       <div className="flex items-center gap-4 mb-4">
         <FaChartLine className="h-8 w-8 text-green-500" />
-        <h2 className="text-lg font-bold text-gray-800">Produits en Croissance</h2>
+        <h2 className="text-lg font-bold text-gray-800">Laboratoires en Croissance</h2>
       </div>
 
       {/* Loader ou liste */}
@@ -34,9 +36,9 @@ const GrowingProductsList: React.FC<GrowingProductsListProps> = ({ products, loa
       ) : (
         <div className="overflow-y-auto h-[85%]">
           <ul className="space-y-2">
-            {products.map((product, index) => (
+            {labs.map((labItem, index) => (
               <li
-                key={product.code}
+                key={labItem.lab}
                 className="flex items-center justify-between p-2 bg-white shadow-md rounded-lg hover:shadow-lg transition"
               >
                 {/* Index avec couleur dépendant du rang (1er, 2e, 3e, etc.) */}
@@ -54,30 +56,34 @@ const GrowingProductsList: React.FC<GrowingProductsListProps> = ({ products, loa
                   #{index + 1}
                 </span>
 
-                {/* Détails du produit (nom, code) */}
+                {/* Détails du laboratoire (nom) */}
                 <div className="flex flex-col flex-grow ml-2">
                   <span className="text-sm font-medium text-gray-800 truncate">
-                    {truncateName(product.name, MAX_NAME_LENGTH)}
+                    {truncateName(labItem.lab, MAX_NAME_LENGTH)}
                   </span>
-                  <span className="text-xs text-gray-500">Code: {product.code}</span>
+                  {/* Si vous avez un code spécifique au labo, vous pouvez l'afficher ici */}
+                  {/* <span className="text-xs text-gray-500">Code: {labItem.someCode}</span> */}
                 </div>
 
                 {/* Statistiques de croissance */}
                 <div className="flex flex-col items-end text-xs">
                   <span className="font-semibold text-gray-800">
-                    Avant: {product.previousQuantity.toLocaleString()} unités
+                    Avant: {labItem.previousQuantity.toLocaleString()} unités
                   </span>
                   <span className="font-semibold text-gray-800">
-                    Maintenant: {product.currentQuantity.toLocaleString()} unités
+                    Maintenant: {labItem.currentQuantity.toLocaleString()} unités
                   </span>
                   <span
                     className={`text-sm font-bold ${
-                      product.growthRate > 0 ? "text-green-500" : "text-red-500"
+                      labItem.growthRate > 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >
                     {/* Si le growthRate est positif, on affiche un + */}
-                    Croissance: {product.growthRate > 0 ? "+" : ""}
-                    {product.growthRate.toFixed(2)}%
+                    Croissance: {labItem.growthRate > 0 ? "+" : ""}
+                    {labItem.growthRate.toFixed(2)}%
+                  </span>
+                  <span className="text-gray-600">
+                    CA: {labItem.totalRevenue.toLocaleString()} €
                   </span>
                 </div>
               </li>
@@ -89,4 +95,4 @@ const GrowingProductsList: React.FC<GrowingProductsListProps> = ({ products, loa
   );
 };
 
-export default GrowingProductsList;
+export default GrowingLabsList;

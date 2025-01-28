@@ -17,6 +17,16 @@ import { TopProductsProvider } from '@/contexts/sell-out/TopProductsContext';
 import { LowSalesProductsProvider } from '@/contexts/sell-out/LowSalesProductsContext';
 import { PeakSalesProvider } from '@/contexts/sell-out/PeakSalesContext';
 import { GrowthProductsProvider } from '@/contexts/sell-out/GrowthProductsContext';
+import { RegressionProductsProvider } from '@/contexts/sell-out/RegressionProductsContext';
+import { BestLabsGrowthProvider } from '@/contexts/sell-out/BestLabsGrowthContext';
+import { WorstLabsRegressionProvider } from '@/contexts/sell-out/WorstLabsRegressionContext';
+import { BestCategoriesGrowthProvider } from '@/contexts/sell-out/BestCategoriesGrowthContext';
+import { WorstCategoriesRegressionProvider } from '@/contexts/sell-out/WorstCategoriesRegressionContext';
+import { BestUniversesGrowthProvider } from '@/contexts/sell-out/BestUniversesGrowthContext';
+import { WorstUniversesRegressionProvider } from '@/contexts/sell-out/WorstUniversesRegressionContext';
+import { SalesByPharmacyProvider } from '@/contexts/sell-out/SalesByPharmacyContext';
+import { NegativeMarginSalesProvider } from '@/contexts/sell-out/NegativeMarginSalesContext';
+import { PriceAnomaliesProvider } from '@/contexts/sell-out/PriceAnomaliesContext';
 
 
 /**
@@ -36,10 +46,20 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                     <SalesByUniverseProvider>
                                         <SalesByCategoryProvider>
                                             <SalesByLabDistributorsProvider>
+                                                <SalesByPharmacyProvider>
                                                 <TopProductsProvider>
                                                     <LowSalesProductsProvider>
                                                         <PeakSalesProvider>
                                                             <GrowthProductsProvider>
+                                                            <RegressionProductsProvider>
+                                                            <BestLabsGrowthProvider>
+                                                            <WorstLabsRegressionProvider>
+                                                            <BestCategoriesGrowthProvider>
+                                                            <WorstCategoriesRegressionProvider>
+                                                            <BestUniversesGrowthProvider>
+                                                            <WorstUniversesRegressionProvider>
+                                                            <NegativeMarginSalesProvider>
+                                                            <PriceAnomaliesProvider>
                                                             <UniversesProvider>
                                                                 <LabDistributorsProvider>
                                                                         <PharmaciesProvider>
@@ -49,10 +69,20 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                                                         </PharmaciesProvider> 
                                                                 </LabDistributorsProvider>
                                                             </UniversesProvider>
+                                                            </PriceAnomaliesProvider>
+                                                            </NegativeMarginSalesProvider>
+                                                            </WorstUniversesRegressionProvider>
+                                                            </BestUniversesGrowthProvider>
+                                                            </WorstCategoriesRegressionProvider>
+                                                            </BestCategoriesGrowthProvider>
+                                                            </WorstLabsRegressionProvider>
+                                                            </BestLabsGrowthProvider>
+                                                            </RegressionProductsProvider>
                                                             </GrowthProductsProvider>
                                                         </PeakSalesProvider>
                                                     </LowSalesProductsProvider>
                                                 </TopProductsProvider>
+                                                </SalesByPharmacyProvider>
                                             </SalesByLabDistributorsProvider>
                                         </SalesByCategoryProvider>
                                     </SalesByUniverseProvider>

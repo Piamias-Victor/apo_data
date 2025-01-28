@@ -1,34 +1,25 @@
-// pages/api/products/prices/anomalies.ts
+// src/pages/api/sell-out/sales-with-negative-margin-data.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
-interface PriceAnomaly {
-  code: string; // Code de référence à 13 caractères
-  productName: string;
-  previousPrice: number;
-  currentPrice: number;
-  dateOfChange: string; // Format: YYYY-MM-DD
-  percentageChange: number; // En pourcentage
+interface NegativeMarginResponse {
+  products: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    revenue: number;
+    margin: number;
+    averageSellingPrice: number;
+    averagePurchasePrice: number;
+  }[];
 }
 
-interface PriceAnomaliesResponse {
-  anomalies: PriceAnomaly[];
-}
-
-/**
- * Handler pour récupérer les anomalies de prix.
- * @param req - Requête HTTP
- * @param res - Réponse HTTP
- */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<PriceAnomaliesResponse | { error: string }>
+  res: NextApiResponse<NegativeMarginResponse | { error: string }>
 ) {
   try {
-    const client = await pool.connect();
-
-    // Récupérer les filtres passés via req.query
     const {
       pharmacy,
       universe,
@@ -41,13 +32,8 @@ export default async function handler(
       startDate,
       endDate,
       selectedCategory,
-      threshold,
     } = req.query;
 
-    // Seuil par défaut de 10% si non spécifié
-    const priceChangeThreshold = threshold ? parseFloat(threshold as string) : 10;
-
-    // Construire les clauses WHERE dynamiques en fonction des filtres
     const whereClauses: string[] = ["s.quantity > 0"];
     const values: any[] = [];
     let paramIndex = 1;
@@ -112,7 +98,7 @@ export default async function handler(
       paramIndex++;
     }
 
-    // Ajouter des conditions spécifiques basées sur `selectedCategory`
+    // Conditions spécifiques basées sur `selectedCategory`
     if (selectedCategory === "medicaments") {
       whereClauses.push(`ip.code_13_ref_id LIKE '34009%'`);
     } else if (selectedCategory === "parapharmacie") {
@@ -122,67 +108,69 @@ export default async function handler(
     // Combiner les clauses WHERE
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // Requête SQL optimisée pour identifier les anomalies de changement de prix
+    // Requête SQL pour les produits avec marges négatives
     const query = `
-      WITH price_changes AS (
-        SELECT 
-          gp.code_13_ref AS code,
-          CASE 
-            WHEN gp.name = 'Default Name' THEN ip.name 
-            ELSE gp.name 
-          END AS product_name,
-          s.date,
-          i.price_with_tax AS current_price,
-          LAG(i.price_with_tax) OVER (PARTITION BY gp.code_13_ref ORDER BY s.date) AS previous_price
-        FROM data_sales s
-        JOIN data_inventorysnapshot i ON s.product_id = i.id
-        JOIN data_internalproduct ip ON i.product_id = ip.id
-        JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
-        ${whereClause}
-      )
-      SELECT
-        pc.code,
-        pc.product_name,
-        pc.previous_price,
-        pc.current_price,
-        pc.date AS date_of_change,
-        ROUND(((pc.current_price - pc.previous_price) / pc.previous_price) * 100, 2) AS percentage_change
-      FROM price_changes pc
-      WHERE pc.previous_price IS NOT NULL
-        AND pc.previous_price != 0
-        AND ABS(((pc.current_price - pc.previous_price) / pc.previous_price) * 100) >= $${paramIndex}
-      ORDER BY percentage_change DESC, pc.product_name, date_of_change;
+      SELECT 
+        gp.code_13_ref AS product_id,
+        CASE 
+          WHEN gp.name <> 'Default Name' THEN gp.name 
+          ELSE (
+            SELECT ip.name 
+            FROM data_internalproduct ip 
+            WHERE ip.code_13_ref_id = gp.code_13_ref 
+            LIMIT 1
+          )
+        END AS product_name,
+        SUM(s.quantity) AS quantity,
+        SUM(s.quantity * COALESCE(i.price_with_tax, 0)) AS revenue,
+        SUM(
+          s.quantity * (
+            COALESCE(i.price_with_tax, 0) / (1 + COALESCE(ip."TVA", 0) / 100) 
+            - COALESCE(i.weighted_average_price, 0)
+          )
+        ) AS margin,
+        SUM(s.quantity * COALESCE(i.price_with_tax, 0)) / NULLIF(SUM(s.quantity), 0) AS average_selling_price,
+        SUM(s.quantity * COALESCE(i.weighted_average_price, 0)) / NULLIF(SUM(s.quantity), 0) AS average_purchase_price
+      FROM data_sales s
+      JOIN data_inventorysnapshot i ON s.product_id = i.id
+      JOIN data_internalproduct ip ON i.product_id = ip.id
+      JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
+      ${whereClause}
+      GROUP BY gp.code_13_ref, gp.name
+      HAVING SUM(
+        s.quantity * (
+          COALESCE(i.price_with_tax, 0) / (1 + COALESCE(ip."TVA", 0) / 100) 
+          - COALESCE(i.weighted_average_price, 0)
+        )
+      ) < 0
+      ORDER BY margin ASC;
     `;
 
-    // Ajouter le seuil comme dernier paramètre
-    values.push(priceChangeThreshold);
-
-    // Exécution de la requête SQL
+    const client = await pool.connect();
     const result = await client.query<{
-      code: string;
+      product_id: string;
       product_name: string;
-      previous_price: string;
-      current_price: string;
-      date_of_change: string;
-      percentage_change: string;
+      quantity: string;
+      revenue: string;
+      margin: string;
+      average_selling_price: string;
+      average_purchase_price: string;
     }>(query, values);
-
     client.release();
 
-    // Transformer les résultats en format numérique
-    const anomalies: PriceAnomaly[] = result.rows.map((row) => ({
-      code: row.code, // Utilisation de `code` au lieu de `productId`
-      productName: row.product_name, // Le nom est déjà remplacé si nécessaire
-      previousPrice: parseFloat(row.previous_price),
-      currentPrice: parseFloat(row.current_price),
-      dateOfChange: row.date_of_change,
-      percentageChange: parseFloat(row.percentage_change),
+    const products = result.rows.map((row) => ({
+      productId: row.product_id || "Inconnu",
+      productName: row.product_name || "Inconnu",
+      quantity: parseInt(row.quantity, 10),
+      revenue: parseFloat(row.revenue),
+      margin: parseFloat(row.margin),
+      averageSellingPrice: parseFloat(row.average_selling_price),
+      averagePurchasePrice: parseFloat(row.average_purchase_price),
     }));
 
-    // Retour de la réponse
-    res.status(200).json({ anomalies });
+    res.status(200).json({ products });
   } catch (error) {
-    console.error("Erreur lors de la récupération des anomalies de prix :", error);
+    console.error("Erreur lors de la récupération des ventes avec marges négatives :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }

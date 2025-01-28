@@ -42,10 +42,14 @@ export default async function handler(
       endDate,
       selectedCategory,
       threshold,
+      limit, // Nouveau paramètre pour limiter les résultats
     } = req.query;
 
     // Seuil par défaut de 10% si non spécifié
     const priceChangeThreshold = threshold ? parseFloat(threshold as string) : 10;
+
+    // Limite par défaut de 100 si non spécifiée
+    const resultLimit = limit ? parseInt(limit as string, 10) : 100;
 
     // Construire les clauses WHERE dynamiques en fonction des filtres
     const whereClauses: string[] = ["s.quantity > 0"];
@@ -151,11 +155,13 @@ export default async function handler(
       WHERE pc.previous_price IS NOT NULL
         AND pc.previous_price != 0
         AND ABS(((pc.current_price - pc.previous_price) / pc.previous_price) * 100) >= $${paramIndex}
-      ORDER BY percentage_change DESC, pc.product_name, date_of_change;
+      ORDER BY percentage_change DESC, pc.product_name, date_of_change
+      LIMIT $${paramIndex + 1};
     `;
 
-    // Ajouter le seuil comme dernier paramètre
-    values.push(priceChangeThreshold);
+    // Ajouter le seuil et la limite comme derniers paramètres
+    values.push(priceChangeThreshold, resultLimit);
+    paramIndex += 1;
 
     // Exécution de la requête SQL
     const result = await client.query<{
@@ -171,8 +177,8 @@ export default async function handler(
 
     // Transformer les résultats en format numérique
     const anomalies: PriceAnomaly[] = result.rows.map((row) => ({
-      code: row.code, // Utilisation de `code` au lieu de `productId`
-      productName: row.product_name, // Le nom est déjà remplacé si nécessaire
+      code: row.code, // string
+      productName: row.product_name, // string
       previousPrice: parseFloat(row.previous_price),
       currentPrice: parseFloat(row.current_price),
       dateOfChange: row.date_of_change,

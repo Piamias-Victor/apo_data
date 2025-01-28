@@ -1,36 +1,47 @@
+// src/components/sell-out/labs/DecreasingLabsList.tsx
 import React from "react";
 import { FaArrowDown } from "react-icons/fa";
 
-interface FlopProductsListProps {
-  products: { name: string; code: string; quantity: number; revenue: number; margin: number }[];
+interface DecreasingLab {
+  lab: string;
+  regressionRate: number; // Taux négatif (ou tri asc)
+  currentQuantity: number;
+  previousQuantity: number;
+  totalRevenue: number; // optionnel
+}
+
+interface DecreasingLabsListProps {
+  labs: DecreasingLab[];
   loading: boolean;
 }
 
-// Fonction pour tronquer le nom si trop long
+// Pour tronquer si le nom du labo est trop long
 const truncateName = (name: string, maxLength: number) => {
   return name.length > maxLength ? `${name.slice(0, maxLength)}...` : name;
 };
 
-const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
-  const MAX_NAME_LENGTH = 20; // Longueur maximale pour le nom du produit
+const DecreasingLabsList: React.FC<DecreasingLabsListProps> = ({ labs, loading }) => {
+  const MAX_NAME_LENGTH = 20;
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-lg p-4 h-full">
+      {/* Titre */}
       <div className="flex items-center gap-4 mb-4">
         <FaArrowDown className="h-8 w-8 text-red-500" />
-        <h2 className="text-lg font-bold text-gray-800">Flop 10 Produits</h2>
+        <h2 className="text-lg font-bold text-gray-800">Laboratoires en Régression</h2>
       </div>
+
       {loading ? (
         <p className="text-center text-gray-500 text-sm">Chargement...</p>
       ) : (
         <div className="overflow-y-auto h-[85%]">
           <ul className="space-y-2">
-            {products.map((product, index) => (
+            {labs.map((labItem, index) => (
               <li
-                key={product.code}
+                key={labItem.lab}
                 className="flex items-center justify-between p-2 bg-white shadow-md rounded-lg hover:shadow-lg transition"
               >
-                {/* Index avec couleur */}
+                {/* Classement (#1, #2, etc.) */}
                 <span
                   className={`text-xl font-bold ${
                     index === 0
@@ -44,23 +55,33 @@ const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
                 >
                   #{index + 1}
                 </span>
-                {/* Détails produit */}
+
+                {/* Nom du labo */}
                 <div className="flex flex-col flex-grow ml-2">
                   <span className="text-sm font-medium text-gray-800 truncate">
-                    {truncateName(product.name, MAX_NAME_LENGTH)}
+                    {truncateName(labItem.lab, MAX_NAME_LENGTH)}
                   </span>
-                  <span className="text-xs text-gray-500">Code: {product.code}</span>
                 </div>
-                {/* Metrics */}
+
+                {/* Infos */}
                 <div className="flex flex-col items-end text-xs">
                   <span className="font-semibold text-gray-800">
-                    {product.quantity.toLocaleString()} unités
+                    Avant: {labItem.previousQuantity.toLocaleString()} unités
                   </span>
-                  <span className="text-gray-500">
-                    CA: {product.revenue.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                  <span className="font-semibold text-gray-800">
+                    Maintenant: {labItem.currentQuantity.toLocaleString()} unités
                   </span>
-                  <span className="text-gray-500">
-                    Marge: {product.margin.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                  <span
+                    className={`text-sm font-bold ${
+                      labItem.regressionRate < 0 ? "text-red-500" : "text-green-500"
+                    }`}
+                  >
+                    {/* On affiche + si c'est positif */}
+                    Régression: {labItem.regressionRate > 0 ? "+" : ""}
+                    {labItem.regressionRate.toFixed(2)}%
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    CA: {labItem.totalRevenue.toLocaleString()} €
                   </span>
                 </div>
               </li>
@@ -72,4 +93,4 @@ const FlopProductsList = ({ products, loading }: FlopProductsListProps) => {
   );
 };
 
-export default FlopProductsList;
+export default DecreasingLabsList;
