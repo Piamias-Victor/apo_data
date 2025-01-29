@@ -15,10 +15,12 @@ export const useGrowthProducts = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {
       try {
+        console.log("on rentre du useGrowthProducts");
         setLoading(true);
         const fetchedData = await fetchGrowthProducts(filters);
         setGrowthProductsData(fetchedData);
@@ -26,6 +28,7 @@ export const useGrowthProducts = (skip = false) => {
         console.error("Erreur lors de la récupération des produits en croissance :", err);
         setError("Impossible de récupérer les données des produits en croissance.");
       } finally {
+        console.log("on sort du useGrowthProducts");
         setLoading(false);
       }
     })();

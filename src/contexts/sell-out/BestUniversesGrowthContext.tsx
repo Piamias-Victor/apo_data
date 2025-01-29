@@ -1,6 +1,7 @@
 // src/contexts/sell-out/BestUniversesGrowthContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useBestUniversesGrowth } from "@/hooks/sell-out/useBestUniversesGrowth";
+import { useSalesByPharmacyContext } from "./SalesByPharmacyContext";
 
 export interface UniverseGrowth {
   universe: string;
@@ -20,7 +21,9 @@ const BestUniversesGrowthContext = createContext<BestUniversesGrowthContextType 
 
 export const BestUniversesGrowthProvider = ({ children }: { children: ReactNode }) => {
   // si besoin d'un skip en fonction d'un parent
-  const skipFetch = false;
+  const { loading: financialLoading, error: financialError } = useSalesByPharmacyContext();
+  
+  const skipFetch = financialLoading || !!financialError;
 
   const { universesData, loading, error } = useBestUniversesGrowth(skipFetch);
 

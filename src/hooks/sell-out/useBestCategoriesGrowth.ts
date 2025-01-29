@@ -19,12 +19,13 @@ export const useBestCategoriesGrowth = (skip = false) => {
   useEffect(() => {
     // Si on doit "skipper", on ne fait rien
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useBestCategoriesGrowth");
         setLoading(true);
         const fetched = await fetchBestCategoriesGrowth(filters);
         setCategoriesData(fetched);
@@ -32,6 +33,7 @@ export const useBestCategoriesGrowth = (skip = false) => {
         console.error("Erreur lors de la récupération de la croissance des catégories :", err);
         setError("Impossible de récupérer la croissance des catégories.");
       } finally {
+        console.log("on sort du useBestCategoriesGrowth");
         setLoading(false);
       }
     })();

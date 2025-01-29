@@ -18,13 +18,16 @@ export const useRegressionProducts = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      
       // Si skip = true, on ne fetch pas (cascade)
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useRegressionProducts");
+
         setLoading(true);
         const fetched = await fetchRegressionProducts(filters);
         setRegressionData(fetched);
@@ -32,6 +35,8 @@ export const useRegressionProducts = (skip = false) => {
         console.error("Erreur lors de la récupération des produits en régression :", err);
         setError("Impossible de récupérer les données des produits en régression.");
       } finally {
+        console.log("on sort du useRegressionProducts");
+
         setLoading(false);
       }
     })();

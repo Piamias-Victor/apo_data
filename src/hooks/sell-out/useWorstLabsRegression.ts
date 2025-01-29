@@ -15,12 +15,13 @@ export const useWorstLabsRegression = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useWorstLabsRegression");
         setLoading(true);
         const fetched = await fetchWorstLabsRegression(filters);
         setLabsData(fetched);
@@ -28,6 +29,7 @@ export const useWorstLabsRegression = (skip = false) => {
         console.error("Erreur lors de la récupération de la régression des labs :", err);
         setError("Impossible de récupérer les données de régression des laboratoires.");
       } finally {
+        console.log("on sort du useWorstLabsRegression");
         setLoading(false);
       }
     })();

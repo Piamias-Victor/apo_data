@@ -1,6 +1,7 @@
 // src/contexts/sell-out/RegressionProductsContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useRegressionProducts } from "@/hooks/sell-out/useRegressionProducts";
+import { useWorstLabsRegressionContext } from "./WorstLabsRegressionContext";
 
 export interface RegressionProduct {
   product: string;
@@ -25,7 +26,9 @@ export const RegressionProductsProvider = ({ children }: { children: ReactNode }
   // const skipFetch = peakLoading || !!peakError;
 
   // Pour l'exemple, on part du principe qu’on fetch direct (skip = false).
-  const skipFetch = false;
+       const { loading: loadingPrev,error: errorPrev } = useWorstLabsRegressionContext();
+            
+      const skipFetch = loadingPrev || !!errorPrev;
 
   const { regressionProductsData, loading, error } = useRegressionProducts(skipFetch);
 

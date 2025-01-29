@@ -15,6 +15,7 @@ export const useTopProducts = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {

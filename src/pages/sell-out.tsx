@@ -49,11 +49,8 @@ import SalesByPharmacyChart from "@/components/sell-out/pharmacies/SalesByPharma
 import { useSalesByPharmacyContext } from "@/contexts/sell-out/SalesByPharmacyContext";
 
 // Import du nouveau composant et du provider
-import { NegativeMarginSalesProvider } from "@/contexts/sell-out/NegativeMarginSalesContext";
-import { PharmaciesProvider } from "@/contexts/segmentation/pharmaciesContext";
-import { SalesByPharmacyProvider } from "@/contexts/sell-out/SalesByPharmacyContext";
 import NegativeMarginSalesList from "@/components/sell-out/products/NegativeMarginSalesList";
-import PriceAnomaliesList from "@/components/sell-out/products/PriceAnomaliesList";
+import { SellOutProviders } from "@/contexts/SellOutProviders";
 
 const Dashboard: React.FC = () => {
   // -- Récupération des filtres & data context
@@ -473,15 +470,6 @@ const Dashboard: React.FC = () => {
       {/* <ReturnRateAnomaliesChart /> */}
       {/* <DiscountRateAnomaliesChart /> */}
     </div>
-    <div className="mt-12 grid grid-cols-1 gap-8">
-      {/* Graphique des Produits avec Marges Négatives */}
-      <PriceAnomaliesList />
-      {/* Vous pouvez ajouter d'autres graphiques d'anomalies ici */}
-      {/* Exemple : */}
-      {/* <SalesSuddenDropChart /> */}
-      {/* <ReturnRateAnomaliesChart /> */}
-      {/* <DiscountRateAnomaliesChart /> */}
-    </div>
     </>
     
   );
@@ -530,7 +518,7 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto p-6">
       {/* Envelopper les contextes nécessaires */}
             {/* Ajoutez d'autres providers si vous avez plus de graphiques d'anomalies */}
-            <Tabs tabs={tabItems} defaultIndex={0} />
+              <Tabs tabs={tabItems} defaultIndex={0} />            
     </div>
   );
 };

@@ -14,6 +14,7 @@ import SalesByCategoryChart from "../components/sell-out/categories/SalesByCateg
 import SalesByLabDistributorsChart from "../components/sell-out/labs/SalesByLabDistributorsChart";
 import StatsCards from "../components/global/StatsCards";
 import TopProductsList from "../components/sell-out/products/topProductsDisplay";
+import { DashboardProviders } from "@/contexts/DashboardProviders";
 
 const Dashboard = () => {
   const {
@@ -98,7 +99,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+      <div className="container mx-auto p-6">
       {/* Filtres par catégorie */}
       <div className="flex justify-center gap-4 mb-8">
         <button
@@ -193,7 +194,7 @@ const Dashboard = () => {
           <TopProductsList products={topProducts} loading={topProductsLoading} />
         </div>
       </div>
-    </div>
+    </div>    
   );
 };
 

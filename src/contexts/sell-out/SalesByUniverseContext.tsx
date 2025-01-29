@@ -20,7 +20,7 @@ const SalesByUniverseContext = createContext<SalesByUniverseContextType | undefi
  */
 export const SalesByUniverseProvider = ({ children }: { children: ReactNode }) => {
 
-  const { loading: loadingPrev,error: errorPrev } = useStockContext();
+  const { loading: loadingPrev,error: errorPrev } = useSalesByMonthContext();
   
   const skipFetch = loadingPrev || !!errorPrev;
 
