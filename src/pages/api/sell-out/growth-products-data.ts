@@ -1,34 +1,20 @@
-// pages/api/products/prices/anomalies.ts
-
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
-
-interface PriceAnomaly {
-  code: string; // Code de référence à 13 caractères
-  productName: string;
-  previousPrice: number;
-  currentPrice: number;
-  dateOfChange: string; // Format: YYYY-MM-DD
-  percentageChange: number; // En pourcentage
+interface GrowthProductsResponse {
+  growthProducts: {
+    product: string;
+    code: string;
+    growthRate: number;
+    currentQuantity: number;
+    previousQuantity: number;
+    totalRevenue: number;
+  }[];
 }
-
-interface PriceAnomaliesResponse {
-  anomalies: PriceAnomaly[];
-}
-
-/**
- * Handler pour récupérer les anomalies de prix.
- * @param req - Requête HTTP
- * @param res - Réponse HTTP
- */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<PriceAnomaliesResponse | { error: string }>
+  res: NextApiResponse<GrowthProductsResponse | { error: string }>
 ) {
   try {
-    const client = await pool.connect();
-
-    // Récupérer les filtres passés via req.query
     const {
       pharmacy,
       universe,
@@ -38,31 +24,11 @@ export default async function handler(
       brandLab,
       rangeName,
       product,
-      startDate,
-      endDate,
-      selectedCategory,
-      threshold,
     } = req.query;
-
-    // Seuil par défaut de 10% si non spécifié
-    const priceChangeThreshold = threshold ? parseFloat(threshold as string) : 10;
-
-    // Construire les clauses WHERE dynamiques en fonction des filtres
     const whereClauses: string[] = ["s.quantity > 0"];
     const values: any[] = [];
     let paramIndex = 1;
-
-    // Filtres dynamiques
-    if (startDate) {
-      whereClauses.push(`s.date >= $${paramIndex}::date`);
-      values.push(startDate);
-      paramIndex++;
-    }
-    if (endDate) {
-      whereClauses.push(`s.date <= $${paramIndex}::date`);
-      values.push(endDate);
-      paramIndex++;
-    }
+    // Application des filtres
     if (pharmacy) {
       const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
       whereClauses.push(`ip.pharmacy_id = ANY($${paramIndex}::uuid[])`);
@@ -111,78 +77,72 @@ export default async function handler(
       values.push(productArray);
       paramIndex++;
     }
-
-    // Ajouter des conditions spécifiques basées sur `selectedCategory`
-    if (selectedCategory === "medicaments") {
-      whereClauses.push(`ip.code_13_ref_id LIKE '34009%'`);
-    } else if (selectedCategory === "parapharmacie") {
-      whereClauses.push(`ip.code_13_ref_id NOT LIKE '34009%'`);
-    }
-
-    // Combiner les clauses WHERE
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-
-    // Requête SQL optimisée pour identifier les anomalies de changement de prix
+    // Calcul dynamique des périodes
+    const now = new Date();
+    const startLast3Months = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
+    const endLast3Months = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
+    const startPrevious3Months = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split("T")[0];
+    const endPrevious3Months = new Date(now.getFullYear(), now.getMonth() - 3, 0).toISOString().split("T")[0];
+    // Ajout des périodes au tableau des valeurs
+    values.push(startPrevious3Months, endPrevious3Months, startLast3Months, endLast3Months);
+    // Requête SQL mise à jour
     const query = `
-      WITH price_changes AS (
-        SELECT 
+      WITH sales_growth AS (
+        SELECT
           gp.code_13_ref AS code,
-          CASE 
-            WHEN gp.name = 'Default Name' THEN ip.name 
-            ELSE gp.name 
-          END AS product_name,
-          s.date,
-          i.price_with_tax AS current_price,
-          LAG(i.price_with_tax) OVER (PARTITION BY gp.code_13_ref ORDER BY s.date) AS previous_price
+          CASE
+            WHEN gp.name = 'Default Name' THEN 
+              (SELECT ip.name FROM data_internalproduct ip WHERE ip.code_13_ref_id = gp.code_13_ref LIMIT 1)
+            ELSE gp.name
+          END AS product,
+          SUM(CASE WHEN s.date BETWEEN $${paramIndex} AND $${paramIndex + 1} THEN s.quantity ELSE 0 END) AS previous_quantity,
+          SUM(CASE WHEN s.date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3} THEN s.quantity ELSE 0 END) AS current_quantity,
+          SUM(s.quantity * COALESCE(i.price_with_tax, 0)) AS total_revenue
         FROM data_sales s
         JOIN data_inventorysnapshot i ON s.product_id = i.id
         JOIN data_internalproduct ip ON i.product_id = ip.id
         JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
         ${whereClause}
+        GROUP BY gp.code_13_ref, gp.name
       )
       SELECT
-        pc.code,
-        pc.product_name,
-        pc.previous_price,
-        pc.current_price,
-        pc.date AS date_of_change,
-        ROUND(((pc.current_price - pc.previous_price) / pc.previous_price) * 100, 2) AS percentage_change
-      FROM price_changes pc
-      WHERE pc.previous_price IS NOT NULL
-        AND pc.previous_price != 0
-        AND ABS(((pc.current_price - pc.previous_price) / pc.previous_price) * 100) >= $${paramIndex}
-      ORDER BY percentage_change DESC, pc.product_name, date_of_change;
+        product,
+        code,
+        current_quantity,
+        previous_quantity,
+        COALESCE(((current_quantity - previous_quantity) / NULLIF(previous_quantity, 0)) * 100, 0) AS growth_rate,
+        total_revenue
+      FROM sales_growth
+      WHERE 
+        current_quantity > 0 
+        AND previous_quantity >= 1000 -- Exclure les produits avec une quantité précédente trop faible
+        AND COALESCE(((current_quantity - previous_quantity) / NULLIF(previous_quantity, 0)) * 100, 0) < 1000 -- Limiter les taux de croissance
+      ORDER BY growth_rate DESC
+      LIMIT 10;
     `;
-
-    // Ajouter le seuil comme dernier paramètre
-    values.push(priceChangeThreshold);
-
-    // Exécution de la requête SQL
+    const client = await pool.connect();
     const result = await client.query<{
+      product: string;
       code: string;
-      product_name: string;
-      previous_price: string;
-      current_price: string;
-      date_of_change: string;
-      percentage_change: string;
+      growth_rate: string;
+      current_quantity: string;
+      previous_quantity: string;
+      total_revenue: string;
     }>(query, values);
-
     client.release();
-
-    // Transformer les résultats en format numérique
-    const anomalies: PriceAnomaly[] = result.rows.map((row) => ({
-      code: row.code, // Utilisation de `code` au lieu de `productId`
-      productName: row.product_name, // Le nom est déjà remplacé si nécessaire
-      previousPrice: parseFloat(row.previous_price),
-      currentPrice: parseFloat(row.current_price),
-      dateOfChange: row.date_of_change,
-      percentageChange: parseFloat(row.percentage_change),
+    // Formatage des données
+    const growthProducts = result.rows.map((row) => ({
+      product: row.product,
+      code: row.code,
+      growthRate: parseFloat(row.growth_rate),
+      currentQuantity: parseInt(row.current_quantity, 10),
+      previousQuantity: parseInt(row.previous_quantity, 10),
+      totalRevenue: parseFloat(row.total_revenue),
     }));
-
-    // Retour de la réponse
-    res.status(200).json({ anomalies });
+    res.status(200).json({ growthProducts });
   } catch (error) {
-    console.error("Erreur lors de la récupération des anomalies de prix :", error);
+    console.error("Erreur lors de l'analyse des produits en croissance :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }
