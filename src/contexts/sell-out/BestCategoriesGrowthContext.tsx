@@ -1,6 +1,7 @@
 // src/contexts/sell-out/BestCategoriesGrowthContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useBestCategoriesGrowth } from "@/hooks/sell-out/useBestCategoriesGrowth";
+import { useBestUniversesGrowthContext } from "./BestUniversesGrowthContext";
 
 export interface CategoryGrowth {
   category: string;
@@ -22,7 +23,10 @@ export const BestCategoriesGrowthProvider = ({ children }: { children: ReactNode
   // Si vous dépendez d'un autre contexte (ex PeakSales), vous pouvez skip si ce parent est en loading
   // const { loading: parentLoading, error: parentError } = useSomethingContext();
   // const skipFetch = parentLoading || !!parentError;
-  const skipFetch = false;
+
+  const { loading: financialLoading, error: financialError } = useBestUniversesGrowthContext();
+  
+  const skipFetch = financialLoading || !!financialError;
 
   // On utilise notre hook
   const { categoriesData, loading, error } = useBestCategoriesGrowth(skipFetch);

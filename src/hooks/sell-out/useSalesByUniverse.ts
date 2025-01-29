@@ -15,6 +15,7 @@ export const useSalesByUniverse = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {

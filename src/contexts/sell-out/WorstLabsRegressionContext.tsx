@@ -1,6 +1,7 @@
 // src/contexts/sell-out/WorstLabsRegressionContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useWorstLabsRegression } from "@/hooks/sell-out/useWorstLabsRegression";
+import { useWorstCategoriesRegressionContext } from "./WorstCategoriesRegressionContext";
 
 export interface LabRegression {
   lab: string;
@@ -22,7 +23,9 @@ export const WorstLabsRegressionProvider = ({ children }: { children: ReactNode 
   // si vous voulez dépendre d'un autre contexte, par ex. 'bestLabs', etc.
   // const { loading: somethingLoading, error: somethingError } = useSomethingContext();
   // const skipFetch = somethingLoading || !!somethingError;
-  const skipFetch = false;
+       const { loading: loadingPrev,error: errorPrev } = useWorstCategoriesRegressionContext();
+            
+      const skipFetch = loadingPrev || !!errorPrev;
 
   const { labsData, loading, error } = useWorstLabsRegression(skipFetch);
 

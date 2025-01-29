@@ -1,6 +1,7 @@
 // src/contexts/sell-out/WorstCategoriesRegressionContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useWorstCategoriesRegression } from "@/hooks/sell-out/useWorstCategoriesRegression";
+import { useWorstUniversesRegressionContext } from "./WorstUniversesRegressionContext";
 
 export interface CategoryRegression {
   category: string;
@@ -20,7 +21,9 @@ const WorstCategoriesRegressionContext = createContext<WorstCategoriesRegression
 
 export const WorstCategoriesRegressionProvider = ({ children }: { children: ReactNode }) => {
   // si vous dépendez d’un autre contexte pour la cascade, par ex. skip = parentLoading...
-  const skipFetch = false;
+       const { loading: loadingPrev,error: errorPrev } = useWorstUniversesRegressionContext();
+            
+      const skipFetch = loadingPrev || !!errorPrev;
 
   // On utilise le hook
   const { categoriesData, loading, error } = useWorstCategoriesRegression(skipFetch);

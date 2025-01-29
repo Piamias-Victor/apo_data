@@ -13,17 +13,18 @@ import { fetchNegativeMarginSales, NegativeMarginSalesData } from "@/libs/fetch/
 export const useNegativeMarginSales = (skip = false) => {
   const { filters } = useFilterContext();
   const [negativeMarginSalesData, setNegativeMarginSalesData] = useState<NegativeMarginSalesData | null>(null);
-  const [loading, setLoading] = useState<boolean>(!skip);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useNegativeMarginSales");
         setLoading(true);
         const data = await fetchNegativeMarginSales(filters);
         setNegativeMarginSalesData(data);
@@ -32,6 +33,7 @@ export const useNegativeMarginSales = (skip = false) => {
         console.error("Erreur lors de la récupération des ventes avec marges négatives :", err);
         setError("Impossible de récupérer les données des ventes avec marges négatives.");
       } finally {
+        console.log("on sort du useNegativeMarginSales");
         setLoading(false);
       }
     })();

@@ -1,6 +1,7 @@
 // src/contexts/sell-out/WorstUniversesRegressionContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useWorstUniversesRegression } from "@/hooks/sell-out/useWorstUniversesRegression";
+import { useGrowthProductsContext } from "./GrowthProductsContext";
 
 export interface UniverseRegression {
   universe: string;
@@ -20,7 +21,9 @@ const WorstUniversesRegressionContext = createContext<WorstUniversesRegressionCo
 
 export const WorstUniversesRegressionProvider = ({ children }: { children: ReactNode }) => {
   // si vous voulez un skip en fonction d’un parent contexte
-  const skipFetch = false;
+     const { loading: loadingPrev,error: errorPrev } = useGrowthProductsContext();
+          
+    const skipFetch = loadingPrev || !!errorPrev;
 
   const { universesData, loading, error } = useWorstUniversesRegression(skipFetch);
 

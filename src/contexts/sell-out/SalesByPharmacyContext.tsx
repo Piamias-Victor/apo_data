@@ -1,6 +1,7 @@
 // src/contexts/sell-out/SalesByPharmacyContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useSalesByPharmacy } from "@/hooks/sell-out/useSalesByPharmacy";
+import { useTopProductsContext } from "./TopProductsContext";
 
 export interface SalesByPharmacyContextType {
   pharmacies: {
@@ -19,7 +20,9 @@ export const SalesByPharmacyProvider = ({ children }: { children: ReactNode }) =
   // Si vous dépendez d'un autre contexte pour skip
   // ex. const { loading: prevLoading, error: prevError } = useSomethingContext();
   // const skipFetch = prevLoading || !!prevError;
-  const skipFetch = false;
+  const { loading: financialLoading, error: financialError } = useTopProductsContext();
+  
+  const skipFetch = financialLoading || !!financialError;
 
   const { salesByPharmacyData, loading, error } = useSalesByPharmacy(skipFetch);
 

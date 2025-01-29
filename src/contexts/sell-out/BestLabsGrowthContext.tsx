@@ -1,6 +1,7 @@
 // src/contexts/sell-out/BestLabsGrowthContext.tsx
 import React, { createContext, useContext, ReactNode } from "react";
 import { useBestLabsGrowth } from "@/hooks/sell-out/useBestLabsGrowth";
+import { useBestCategoriesGrowthContext } from "./BestCategoriesGrowthContext";
 
 export interface LabGrowth {
   lab: string;
@@ -22,7 +23,9 @@ export const BestLabsGrowthProvider = ({ children }: { children: ReactNode }) =>
   // Ex si vous voulez dépendre d'un autre contexte, ex: 'peakSales'
   // const { loading: peakLoading, error: peakError } = usePeakSalesContext();
   // const skipFetch = peakLoading || !!peakError;
-  const skipFetch = false; // ou la cascade que vous voulez
+  const { loading: financialLoading, error: financialError } = useBestCategoriesGrowthContext();
+  
+  const skipFetch = financialLoading || !!financialError;
 
   const { labsData, loading, error } = useBestLabsGrowth(skipFetch);
 

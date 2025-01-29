@@ -16,6 +16,7 @@ export const useSalesByLabDistributors = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {

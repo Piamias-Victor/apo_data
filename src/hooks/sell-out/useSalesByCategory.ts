@@ -15,11 +15,12 @@ export const useSalesByCategory = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {
       try {
-        console.log('on rentre du useSalesByCategory')
+        console.log("on rentre du useSalesByCategory");
         setLoading(true);
         const fetchedData = await fetchSalesByCategory(filters);
         setSalesByCategoryData(fetchedData);
@@ -27,7 +28,7 @@ export const useSalesByCategory = (skip = false) => {
         console.error("Erreur lors de la récupération des ventes par catégorie :", err);
         setError("Impossible de récupérer les données des ventes par catégorie.");
       } finally {
-        console.log('on sort du useSalesByCategory')
+        console.log("on sort du useSalesByCategory");
         setLoading(false);
       }
     })();

@@ -18,12 +18,13 @@ export const useWorstUniversesRegression = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useWorstUniversesRegression");
         setLoading(true);
         const fetched = await fetchWorstUniversesRegression(filters);
         setUniversesData(fetched);
@@ -31,6 +32,7 @@ export const useWorstUniversesRegression = (skip = false) => {
         console.error("Erreur lors de la récupération de la régression des univers :", err);
         setError("Impossible de récupérer la régression des univers.");
       } finally {
+        console.log("on rentre du useWorstUniversesRegression");
         setLoading(false);
       }
     })();

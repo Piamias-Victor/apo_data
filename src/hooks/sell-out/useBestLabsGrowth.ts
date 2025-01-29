@@ -15,19 +15,21 @@ export const useBestLabsGrowth = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
         setLoading(true);
+        console.log("on rentre du useBestLabsGrowth");
         const fetched = await fetchBestLabsGrowth(filters);
         setLabsData(fetched);
       } catch (err) {
         console.error("Erreur lors de la récupération de la croissance des labs :", err);
         setError("Impossible de récupérer les données de croissance des laboratoires.");
       } finally {
+        console.log("on sort du useBestLabsGrowth");
         setLoading(false);
       }
     })();

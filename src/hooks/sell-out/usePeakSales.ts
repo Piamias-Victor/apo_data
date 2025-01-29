@@ -15,10 +15,12 @@ export const usePeakSales = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
+      setLoading(true);
       return;
     }
     (async () => {
       try {
+        console.log("on rentre du usePeakSales");
         setLoading(true);
         const fetchedData = await fetchPeakSales(filters);
         setPeakSalesData(fetchedData);
@@ -26,6 +28,7 @@ export const usePeakSales = (skip = false) => {
         console.error("Erreur lors de la récupération des périodes de pics de vente :", err);
         setError("Impossible de récupérer les données des périodes de pics de vente.");
       } finally {
+        console.log("on sot du usePeakSales");
         setLoading(false);
       }
     })();

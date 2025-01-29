@@ -18,19 +18,21 @@ export const useWorstCategoriesRegression = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
         setLoading(true);
+        console.log("on rentre du useWorstCategoriesRegression");
         const fetched = await fetchWorstCategoriesRegression(filters);
         setCategoriesData(fetched);
       } catch (err) {
         console.error("Erreur lors de la récupération de la régression des catégories :", err);
         setError("Impossible de récupérer la régression des catégories.");
       } finally {
+        console.log("on sort du useWorstCategoriesRegression");
         setLoading(false);
       }
     })();

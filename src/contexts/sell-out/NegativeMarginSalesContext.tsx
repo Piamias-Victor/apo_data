@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from "react";
 import { useNegativeMarginSales } from "@/hooks/sell-out/useNegativeMarginSales";
+import { useRegressionProductsContext } from "./RegressionProductsContext"; // Exemple : dépendance
 
 export interface NegativeMarginSalesContextType {
   products: {
@@ -25,7 +26,13 @@ const NegativeMarginSalesContext = createContext<NegativeMarginSalesContextType 
  * @param children - Composants enfants.
  */
 export const NegativeMarginSalesProvider = ({ children }: { children: ReactNode }) => {
-  const { negativeMarginSalesData, loading, error } = useNegativeMarginSales();
+  // Dépendance à un autre contexte (ex: RegressionProducts)
+  const { loading: regressionLoading, error: regressionError } = useRegressionProductsContext();
+
+  // On skip si le contexte parent est encore en chargement ou en erreur
+  const skipFetch = regressionLoading || !!regressionError;
+
+  const { negativeMarginSalesData, loading, error } = useNegativeMarginSales(skipFetch);
 
   const products = negativeMarginSalesData?.products.map((p) => ({
     productId: p.productId,

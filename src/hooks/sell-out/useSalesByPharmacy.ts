@@ -20,12 +20,13 @@ export const useSalesByPharmacy = (skip = false) => {
 
   useEffect(() => {
     if (skip) {
-      setLoading(false);
+      setLoading(true);
       return;
     }
 
     (async () => {
       try {
+        console.log("on rentre du useSalesByPharmacy");
         setLoading(true);
         const fetchedData = await fetchSalesByPharmacy(filters);
         setSalesByPharmacyData(fetchedData);
@@ -33,6 +34,7 @@ export const useSalesByPharmacy = (skip = false) => {
         console.error("Erreur lors de la récupération des ventes par pharmacie :", err);
         setError("Impossible de récupérer les données de ventes par pharmacie.");
       } finally {
+        console.log("on sort du useSalesByPharmacy");
         setLoading(false);
       }
     })();

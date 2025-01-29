@@ -11,12 +11,13 @@ import { fetchSalesByMonth, SalesByMonthData } from "@/libs/fetch/sell-out/sales
 export const useSalesByMonth = (skip = false) => {
   const { filters } = useFilterContext();
   const [salesByMonthData, setSalesByMonthData] = useState<SalesByMonthData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Si skip = true, on ne fait rien
     if (skip) {
+      setLoading(true);
       return;
     }
 
