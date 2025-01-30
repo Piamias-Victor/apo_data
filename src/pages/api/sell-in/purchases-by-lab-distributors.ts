@@ -24,14 +24,14 @@ export default async function handler(
       product,
       startDate,
       endDate,
-      selectedCategory,
+      selectedCategory, // 🔹 Ajout du filtre selectedCategory
     } = req.query;
 
     const whereClauses: string[] = ["po.qte > 0"];
     const values: any[] = [];
     let paramIndex = 1;
 
-    // Application des filtres
+    // 🔹 Application des filtres dynamiques
     if (startDate) {
       whereClauses.push(`o.delivery_date >= $${paramIndex}::date`);
       values.push(startDate);
@@ -85,15 +85,16 @@ export default async function handler(
       paramIndex++;
     }
 
+    // 🔹 Gestion du filtre `selectedCategory`
     if (selectedCategory === "medicaments") {
-        whereClauses.push(`gp.code_13_ref LIKE '34009%'`);
-      } else if (selectedCategory === "parapharmacie") {
-        whereClauses.push(`gp.code_13_ref NOT LIKE '34009%'`);
-      }
+      whereClauses.push(`gp.code_13_ref LIKE '34009%'`);
+    } else if (selectedCategory === "parapharmacie") {
+      whereClauses.push(`gp.code_13_ref NOT LIKE '34009%'`);
+    }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // Requête SQL pour récupérer les achats par lab distributeur
+    // 🔹 Requête SQL pour récupérer les achats par laboratoire distributeur
     const query = `
       SELECT 
         gp.lab_distributor AS labDistributor,
@@ -130,7 +131,7 @@ export default async function handler(
     }>(query, values);
     client.release();
 
-    // Mise en forme des résultats
+    // 🔹 Mise en forme des résultats
     const labDistributors = result.rows.map((row) => ({
       labDistributor: row.labdistributor || "Inconnu",
       quantity: parseInt(row.quantity, 10),
@@ -139,7 +140,7 @@ export default async function handler(
 
     res.status(200).json({ labDistributors });
   } catch (error) {
-    console.error("Erreur lors de la récupération des achats par lab distributeur :", error);
+    console.error("Erreur lors de la récupération des achats par laboratoire distributeur :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 }

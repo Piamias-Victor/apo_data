@@ -25,7 +25,7 @@ export default async function handler(
       product,
       startDate,
       endDate,
-      selectedCategory,
+      selectedCategory, // 🔹 Ajout de selectedCategory
     } = req.query;
 
     const whereClauses: string[] = ["po.qte > 0"];
@@ -90,6 +90,13 @@ export default async function handler(
       whereClauses.push(`gp.code_13_ref = ANY($${paramIndex}::text[])`);
       values.push(productArray);
       paramIndex++;
+    }
+
+    // 🔹 Gestion du filtre par catégorie sélectionnée (Médicaments ou Parapharmacie)
+    if (selectedCategory === "medicaments") {
+      whereClauses.push(`gp.code_13_ref LIKE '34009%'`);
+    } else if (selectedCategory === "parapharmacie") {
+      whereClauses.push(`gp.code_13_ref NOT LIKE '34009%'`);
     }
 
     // 🔹 Clause WHERE finale

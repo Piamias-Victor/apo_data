@@ -21,14 +21,14 @@ export default async function handler(
       product,
       startDate,
       endDate,
-      selectedCategory,
+      selectedCategory, // 🔹 Ajout du filtre selectedCategory
     } = req.query;
 
     const whereClauses: string[] = ["po.qte > 0"];
     const values: any[] = [];
     let paramIndex = 1;
 
-    // 🔹 Filtres dynamiques
+    // 🔹 Application des filtres dynamiques
     if (startDate) {
       whereClauses.push(`o.delivery_date >= $${paramIndex}::date`);
       values.push(startDate);
@@ -88,15 +88,16 @@ export default async function handler(
       paramIndex++;
     }
 
+    // 🔹 Gestion du filtre `selectedCategory`
     if (selectedCategory === "medicaments") {
-        whereClauses.push(`ip.code_13_ref_id LIKE '34009%'`);
-      } else if (selectedCategory === "parapharmacie") {
-        whereClauses.push(`ip.code_13_ref_id NOT LIKE '34009%'`);
-      }
+      whereClauses.push(`gp.code_13_ref LIKE '34009%'`);
+    } else if (selectedCategory === "parapharmacie") {
+      whereClauses.push(`gp.code_13_ref NOT LIKE '34009%'`);
+    }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
-    // 🔹 Requête SQL
+    // 🔹 Requête SQL pour récupérer les achats par catégorie avec le coût total
     const query = `
       SELECT 
         gp.category,

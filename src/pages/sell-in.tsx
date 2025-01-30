@@ -80,109 +80,17 @@ const Dashboard: React.FC = () => {
     error: stockError,
   } = useStockContext();
 
-  const {
-    months,
-    quantities,
-    revenues,
-    margins,
-    loading: salesLoading,
-    error: salesError,
-  } = useSalesByMonthContext();
-
-  const {
-    universes,
-    loading: universeLoading,
-    error: universeError,
-  } = useSalesByUniverseContext();
-
-  const {
-    categories,
-    loading: categoryLoading,
-    error: categoryError,
-  } = useSalesByCategoryContext();
-
-  const {
-    labDistributors,
-    loading: labDistributorLoading,
-    error: labDistributorError,
-  } = useSalesByLabDistributorsContext();
-
-  const {
-    topProducts,
-    flopProducts,
-    loading: topProductsLoading,
-    error: topProductsError,
-  } = useTopProductsContext();
-
-  const {
-    growthProducts,
-    loading: growthLoading,
-  } = useGrowthProductsContext();
-
-  const {
-    regressionProducts,
-    loading: regressionLoading,
-  } = useRegressionProductsContext();
-
-  const {
-    labs: growthLabs,
-    loading: growthLabsLoading,
-  } = useBestLabsGrowthContext();
-
-  const {
-    labs: regressionLabs,
-    loading: regressionLabsLoading,
-  } = useWorstLabsRegressionContext();
-
-  const {
-    categories: growthCategories,
-    loading: growthCategoriesLoading,
-  } = useBestCategoriesGrowthContext();
-
-  const {
-    categories: regressionCategories,
-    loading: regressionCategoriesLoading,
-  } = useWorstCategoriesRegressionContext();
-
-  const {
-    universes: growthUniverses,
-    loading: growthUniversesLoading,
-  } = useBestUniversesGrowthContext();
-
-  const {
-    universes: regressionUniverses,
-    loading: regressionUniversesLoading,
-  } = useWorstUniversesRegressionContext();
-
-  const { pharmacies, 
-    loading: pharmacyLoading,
-    error: pharmacyError, } = useSalesByPharmacyContext();
-
-  const { peakSales, loading: peakLoading } = usePeakSalesContext();
-
   // -- Vérification d'erreurs globales
   if (
     financialError ||
-    stockError ||
-    salesError ||
-    universeError ||
-    categoryError ||
-    labDistributorError ||
-    topProductsError ||
-    pharmacyError // Ajout de l'erreur de pharmacie
+    stockError
   ) {
     return (
       <div className="container mx-auto p-6">
         <p className="text-red-500">
           Erreur :{" "}
           {financialError ||
-            stockError ||
-            salesError ||
-            universeError ||
-            categoryError ||
-            labDistributorError ||
-            topProductsError ||
-            pharmacyError}
+            stockError }
         </p>
       </div>
     );
@@ -291,194 +199,6 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
-  // -- Section "Tops & Flops"
-  const renderTopFlopSection = () => (
-    <div>
-      {/* Tops */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <TopCategoriesList categories={categories} loading={categoryLoading} />
-          </div>
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <TopLabDistributorsList distributors={labDistributors} loading={labDistributorLoading} />
-          </div>
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <TopProductsList products={topProducts} loading={topProductsLoading} />
-          </div>
-        </div>
-      </div>
-
-      {/* Flops */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <FlopCategoriesList categories={categories} loading={categoryLoading} />
-          </div>
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <FlopLabDistributorsList distributors={labDistributors} loading={labDistributorLoading} />
-          </div>
-          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
-            <FlopProductsList products={flopProducts} loading={topProductsLoading} />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // -- Section "Croissance & Régression"
-  const renderGrowthRegressionSection = () => (
-    <div>
-      {/* Univers */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <GrowingUniversesList
-              loading={growthUniversesLoading}
-              universes={growthUniverses.map((u) => ({
-                universe: u.universe,
-                previousQuantity: u.previousQuantity,
-                currentQuantity: u.currentQuantity,
-                growthRate: u.growthRate,
-                totalRevenue: u.totalRevenue,
-              }))}
-            />
-          </div>
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <DecreasingUniversesList
-              universes={regressionUniverses.map((u) => ({
-                universe: u.universe,
-                previousQuantity: u.previousQuantity,
-                currentQuantity: u.currentQuantity,
-                regressionRate: u.regressionRate,
-                totalRevenue: u.totalRevenue,
-              }))}
-              loading={regressionUniversesLoading}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Catégories */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <GrowingCategoriesList
-              categories={growthCategories.map((cat) => ({
-                category: cat.category,
-                previousQuantity: cat.previousQuantity,
-                currentQuantity: cat.currentQuantity,
-                growthRate: cat.growthRate,
-                totalRevenue: cat.totalRevenue,
-              }))}
-              loading={growthCategoriesLoading}
-            />
-          </div>
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <DecreasingCategoriesList
-              categories={regressionCategories.map((cat) => ({
-                category: cat.category,
-                previousQuantity: cat.previousQuantity,
-                currentQuantity: cat.currentQuantity,
-                regressionRate: cat.regressionRate,
-                totalRevenue: cat.totalRevenue,
-              }))}
-              loading={regressionCategoriesLoading}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Labs */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <GrowingLabsList
-              labs={growthLabs.map((lab) => ({
-                lab: lab.lab,
-                previousQuantity: lab.previousQuantity,
-                currentQuantity: lab.currentQuantity,
-                growthRate: lab.growthRate,
-                totalRevenue: lab.totalRevenue,
-              }))}
-              loading={growthLabsLoading}
-            />
-          </div>
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <DecreasingLabsList
-              labs={regressionLabs.map((lab) => ({
-                lab: lab.lab,
-                previousQuantity: lab.previousQuantity,
-                currentQuantity: lab.currentQuantity,
-                regressionRate: lab.regressionRate,
-                totalRevenue: lab.totalRevenue,
-              }))}
-              loading={regressionLabsLoading}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Produits */}
-      <div className="mt-12">
-        <div className="flex flex-row gap-4">
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <GrowingProductsList
-              products={growthProducts.map((p) => ({
-                name: p.product,
-                code: p.code,
-                previousQuantity: p.previousQuantity,
-                currentQuantity: p.currentQuantity,
-                growthRate: p.growthRate,
-              }))}
-              loading={growthLoading}
-            />
-          </div>
-          <div className="w-full lg:w-6/12 h-[450px]">
-            <DecreasingProductsList
-              products={regressionProducts.map((p) => ({
-                name: p.product,
-                code: p.code,
-                previousQuantity: p.previousQuantity,
-                currentQuantity: p.currentQuantity,
-                growthRate: p.regressionRate,
-              }))}
-              loading={regressionLoading}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // -- Section "Anomalies"
-  const renderAnomaliesSection = () => (
-    <>
-    <div className="mt-12 grid grid-cols-1 gap-8">
-      {/* Graphique des Produits avec Marges Négatives */}
-      <NegativeMarginSalesList />
-      {/* Vous pouvez ajouter d'autres graphiques d'anomalies ici */}
-      {/* Exemple : */}
-      {/* <SalesSuddenDropChart /> */}
-      {/* <ReturnRateAnomaliesChart /> */}
-      {/* <DiscountRateAnomaliesChart /> */}
-    </div>
-    </>
-    
-  );
-
-  // -- Section "Autres" (LowSales, PeakSales)
-  const renderOthersSection = () => (
-    <>
-      <div className="mt-12">
-        <PeakSalesBubbleChart data={peakSales} />
-      </div>
-      <div className="mt-12">
-        <LowSalesProductsChart />
-      </div>
-    </>
-  );
-
   // -- Tabs configuration
   const tabItems = [
     {
@@ -491,20 +211,20 @@ const Dashboard: React.FC = () => {
     },
     {
       label: "Tops & Flops",
-      content: renderTopFlopSection(),
+      content: renderSalesSection(),
     },
     {
-      label: "Croissance/Régression",
-      content: renderGrowthRegressionSection(),
+      label: "Prix",
+      content: renderSalesSection(),
     },
     {
-      label: "Anomalies",
-      content: renderAnomaliesSection(), // Mise à jour ici
+      label: "Livraison",
+      content: renderSalesSection(),
     },
     {
       label: "Details",
-      content: renderOthersSection(),
-    },
+      content: renderSalesSection(),
+    }
   ];
 
   return (

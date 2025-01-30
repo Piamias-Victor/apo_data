@@ -21,7 +21,7 @@ export default async function handler(
       product,
       startDate,
       endDate,
-      selectedCategory,
+      selectedCategory, // 🔹 Ajout du filtre selectedCategory
     } = req.query;
 
     const whereClauses: string[] = ["po.qte > 0"];
@@ -88,7 +88,7 @@ export default async function handler(
       paramIndex++;
     }
 
-    // 🔹 Gestion du filtre par catégorie sélectionnée
+    // 🔹 Gestion du filtre `selectedCategory`
     if (selectedCategory === "medicaments") {
       whereClauses.push(`gp.code_13_ref LIKE '34009%'`);
     } else if (selectedCategory === "parapharmacie") {
