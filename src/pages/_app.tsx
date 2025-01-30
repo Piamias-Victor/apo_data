@@ -34,6 +34,7 @@ import { GrowthPurchasesByUniverseProvider } from "@/contexts/sell-in/GrowthPurc
 import { GrowthPurchasesByCategoryProvider } from "@/contexts/sell-in/GrowthPurchasesByCategoryContext";
 import { GrowthPurchasesByLabDistributorProvider } from "@/contexts/sell-in/GrowthPurchasesByLabDistributorContext";
 import { GrowthPurchasesByProductProvider } from "@/contexts/sell-in/GrowthPurchasesByProductContext";
+import { TopPurchasesProductsProvider } from "@/contexts/sell-in/TopPurchasesProductsContext";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -70,9 +71,11 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                                                                                                                     <GrowthPurchasesByCategoryProvider>
                                                                                                                                         <GrowthPurchasesByLabDistributorProvider>
                                                                                                                                             <GrowthPurchasesByProductProvider>
-                                                                                                                                                <Layout>
-                                                                                                                                                    <Component {...pageProps} />
-                                                                                                                                                </Layout>
+                                                                                                                                                <TopPurchasesProductsProvider>
+                                                                                                                                                    <Layout>
+                                                                                                                                                        <Component {...pageProps} />
+                                                                                                                                                    </Layout>
+                                                                                                                                                </TopPurchasesProductsProvider>
                                                                                                                                             </GrowthPurchasesByProductProvider>
                                                                                                                                         </GrowthPurchasesByLabDistributorProvider>
                                                                                                                                     </GrowthPurchasesByCategoryProvider>
