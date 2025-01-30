@@ -3,6 +3,7 @@ import { FaSearch, FaChevronDown, FaCheck, FaTimes } from "react-icons/fa";
 import { useUniversesContext } from "@/contexts/segmentation/universesContext";
 import { useLabDistributorsContext } from "@/contexts/segmentation/brandsContext";
 import { useFilterContext } from "@/contexts/global/filtersContext";
+import { SalesFilters } from "@/types/Filter";
 
 // Couleurs des univers
 const UNIVERS_COLORS: { [key: string]: string } = {
@@ -41,18 +42,18 @@ const SegmentationFilter: React.FC = () => {
     universe: "",
     category: "",
     subCategory: "",
-    distributor: "",
-    lab: "",
-    range: "",
+    labDistributor: "",
+    brandLab: "",
+    rangeName: "",
   });
 
   const [tempSelectedFilters, setTempSelectedFilters] = useState({
     universe: filters.universe || [],
     category: filters.category || [],
     subCategory: filters.subCategory || [],
-    distributor: filters.labDistributor || [],
-    lab: filters.brandLab || [],
-    range: filters.rangeName || [],
+    labDistributor: filters.labDistributor || [],
+    brandLab: filters.brandLab || [],
+    rangeName: filters.rangeName || [],
   });
 
   useEffect(() => {
@@ -60,9 +61,9 @@ const SegmentationFilter: React.FC = () => {
       universe: filters.universe || [],
       category: filters.category || [],
       subCategory: filters.subCategory || [],
-      distributor: filters.labDistributor || [],
-      lab: filters.brandLab || [],
-      range: filters.rangeName || [],
+      labDistributor: filters.labDistributor || [],
+      brandLab: filters.brandLab || [],
+      rangeName: filters.rangeName || [],
     });
   }, [filters]);
 
@@ -87,9 +88,10 @@ const SegmentationFilter: React.FC = () => {
   };
 
   const handleApply = (key: keyof typeof tempSelectedFilters) => {
-    setFilters({ [key]: tempSelectedFilters[key] });
+    const updatedFilters: Partial<SalesFilters> = { ...filters, [key]: tempSelectedFilters[key] };
+    setFilters(updatedFilters);
     setActiveDropdown(null);
-  };
+};
 
   const renderDropdown = (
     label: string,
@@ -100,6 +102,8 @@ const SegmentationFilter: React.FC = () => {
     const filteredItems = items.filter((item) =>
       item.name.toLowerCase().includes(searchTerms[key].toLowerCase())
     );
+
+    console.log('key', key)
 
     return (
       <div className="relative mb-4">
@@ -221,7 +225,7 @@ const SegmentationFilter: React.FC = () => {
       )}
       {renderDropdown(
         "distributeurs",
-        "distributor",
+        "labDistributor",
         labDistributors.map((lab) => ({
           id: lab.lab_distributor,
           name: lab.lab_distributor,
@@ -229,7 +233,7 @@ const SegmentationFilter: React.FC = () => {
       )}
       {renderDropdown(
         "laboratoires",
-        "lab",
+        "brandLab",
         labDistributors.flatMap((lab) =>
           lab.brand_labs.map((brandLab) => ({
             id: brandLab.brand_lab,
@@ -240,7 +244,7 @@ const SegmentationFilter: React.FC = () => {
       )}
       {renderDropdown(
         "gammes",
-        "range",
+        "rangeName",
         labDistributors.flatMap((lab) =>
           lab.brand_labs.flatMap((brandLab) =>
             brandLab.range_names.map((range) => ({

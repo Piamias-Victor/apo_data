@@ -51,6 +51,7 @@ import { useSalesByPharmacyContext } from "@/contexts/sell-out/SalesByPharmacyCo
 // Import du nouveau composant et du provider
 import NegativeMarginSalesList from "@/components/sell-out/products/NegativeMarginSalesList";
 import { SellOutProviders } from "@/contexts/SellOutProviders";
+import SalesByDayChart from "@/components/sell-out/global/SalesByDayChart";
 
 const Dashboard: React.FC = () => {
   // -- Récupération des filtres & data context
@@ -265,13 +266,7 @@ const Dashboard: React.FC = () => {
     <div>
       <div className="mt-8 flex flex-row gap-4 h-[550px]">
         <div className="w-full lg:w-8/12 flex flex-col h-full">
-          <SalesByMonthChart
-            months={months}
-            quantities={quantities}
-            revenues={revenues}
-            margins={margins}
-            loading={salesLoading}
-          />
+          <SalesByDayChart />
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
           <SalesByUniverseChart universes={universes} loading={universeLoading} />
@@ -518,6 +513,7 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto p-6">
       {/* Envelopper les contextes nécessaires */}
             {/* Ajoutez d'autres providers si vous avez plus de graphiques d'anomalies */}
+              <h1 className="text-3xl font-bold text-gray-800 mb-6">Tableau de bord - Sell-Out</h1>
               <Tabs tabs={tabItems} defaultIndex={0} />            
     </div>
   );
