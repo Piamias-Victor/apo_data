@@ -2,18 +2,18 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
 /** Interface de la réponse */
-interface GrowthPurchasesUniversesResponse {
-  growthPurchasesUniverses: {
-    universe: string;
-    growthRate: number;        // Évolution du prix d'achat moyen
-    currentAvgPrice: number;   // Prix d'achat moyen actuel
-    previousAvgPrice: number;  // Prix d'achat moyen précédent
+interface GrowthPurchasesProductsResponse {
+  growthPurchasesProducts: {
+    productName: string;
+    growthRate: number;
+    currentAvgPrice: number;
+    previousAvgPrice: number;
   }[];
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GrowthPurchasesUniversesResponse | { error: string }>
+  res: NextApiResponse<GrowthPurchasesProductsResponse | { error: string }>
 ) {
   try {
     const { pharmacy, universe, category, subCategory, labDistributor, brandLab, rangeName, product } = req.query;
@@ -22,16 +22,17 @@ export default async function handler(
     const values: any[] = [];
     let paramIndex = 1;
 
-    if (pharmacy) {
-      const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
-      whereClauses.push(`o.pharmacy_id = ANY($${paramIndex}::uuid[])`);
-      values.push(pharmacyArray);
-      paramIndex++;
-    }
+    // 🔹 Ajout des filtres dynamiques
     if (universe) {
       const universeArray = Array.isArray(universe) ? universe : universe.split(",");
       whereClauses.push(`gp.universe = ANY($${paramIndex}::text[])`);
       values.push(universeArray);
+      paramIndex++;
+    }
+    if (pharmacy) {
+      const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
+      whereClauses.push(`o.pharmacy_id = ANY($${paramIndex}::uuid[])`);
+      values.push(pharmacyArray);
       paramIndex++;
     }
     if (category) {
@@ -73,6 +74,7 @@ export default async function handler(
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
+    // 🔹 Définition des périodes de comparaison
     const now = new Date();
     const startLast6Months = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
     const endLast6Months = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
@@ -84,7 +86,12 @@ export default async function handler(
     const query = `
       WITH purchases_growth AS (
         SELECT
-          gp.universe AS universe,
+          -- Prendre le nom du produit sauf si c'est "Default Name", dans ce cas on prend celui de internalproduct
+          CASE 
+            WHEN gp.name = 'Default Name' THEN ip.name
+            ELSE gp.name
+          END AS productName,
+
           AVG(
             CASE
               WHEN o.delivery_date BETWEEN $${paramIndex} AND $${paramIndex + 1}
@@ -92,6 +99,7 @@ export default async function handler(
               ELSE NULL
             END
           ) AS previous_avg_price,
+
           AVG(
             CASE
               WHEN o.delivery_date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3}
@@ -99,10 +107,13 @@ export default async function handler(
               ELSE NULL
             END
           ) AS current_avg_price
+
         FROM data_order o
         JOIN data_productorder po ON o.id = po.order_id
         JOIN data_internalproduct ip ON po.product_id = ip.id
-        JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
+        LEFT JOIN data_globalproduct gp ON TRIM(ip.code_13_ref_id) = TRIM(gp.code_13_ref)
+        
+        -- Liaison avec le dernier inventaire disponible
         LEFT JOIN data_inventorysnapshot inv 
           ON ip.id = inv.product_id 
           AND inv.date = (
@@ -110,6 +121,8 @@ export default async function handler(
             FROM data_inventorysnapshot 
             WHERE product_id = ip.id AND date <= o.delivery_date
           )
+
+        -- Si pas de prix en stock, prendre le dernier connu
         LEFT JOIN LATERAL (
           SELECT weighted_average_price AS price
           FROM data_inventorysnapshot
@@ -117,11 +130,12 @@ export default async function handler(
           ORDER BY date DESC
           LIMIT 1
         ) last_known_price ON TRUE
+
         ${whereClause}
-        GROUP BY gp.universe
+        GROUP BY gp.code_13_ref, gp.name, ip.name
       )
       SELECT
-        universe,
+        productName,
         previous_avg_price,
         current_avg_price,
         COALESCE(
@@ -129,31 +143,40 @@ export default async function handler(
             (current_avg_price - previous_avg_price) / NULLIF(previous_avg_price, 0) * 100
           ),
           0
-        ) AS growth_rate
+        ) AS growth_rate,
+        ABS(
+          COALESCE(
+            (
+              (current_avg_price - previous_avg_price) / NULLIF(previous_avg_price, 0) * 100
+            ),
+            0
+          )
+        ) AS absolute_growth_rate
       FROM purchases_growth
       WHERE current_avg_price IS NOT NULL
-      ORDER BY growth_rate DESC;
+      ORDER BY absolute_growth_rate DESC
+      LIMIT 10;
     `;
 
     const client = await pool.connect();
     const result = await client.query<{
-      universe: string;
+      productname: string;
       previous_avg_price: string;
       current_avg_price: string;
       growth_rate: string;
     }>(query, values);
     client.release();
 
-    const growthPurchasesUniverses = result.rows.map((row) => ({
-      universe: row.universe ?? "Inconnu",
+    const growthPurchasesProducts = result.rows.map((row) => ({
+      productName: row.productname ?? "Inconnu",
       growthRate: parseFloat(row.growth_rate),
       previousAvgPrice: parseFloat(row.previous_avg_price),
       currentAvgPrice: parseFloat(row.current_avg_price),
     }));
 
-    res.status(200).json({ growthPurchasesUniverses });
+    res.status(200).json({ growthPurchasesProducts });
   } catch (error) {
-    console.error("Erreur lors du calcul du prix d'achat moyen par univers :", error);
+    console.error("Erreur lors du calcul du prix d'achat moyen par produit :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
-};
+}

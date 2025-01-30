@@ -28,9 +28,12 @@ import { SalesByDayProvider } from "@/contexts/sell-out/SalesByDayContext";
 import { PurchasesByMonthProvider } from "@/contexts/sell-in/PurchasesByMonthContext";
 import { PurchasesByUniverseProvider } from "@/contexts/sell-in/PurchasesByUniverseContext";
 import { PurchasesByCategoryProvider } from "@/contexts/sell-in/PurchasesByCategoryContext";
-import PurchasesByLabDistributorsChart from "@/components/sell-in/labs/PurchasesByLabDistributorsChart";
 import { PurchasesByLabDistributorsProvider } from "@/contexts/sell-in/PurchasesByLabDistributorsContext";
 import { PurchasesByPharmacyProvider } from "@/contexts/sell-in/PurchasesByPharmacyContext";
+import { GrowthPurchasesByUniverseProvider } from "@/contexts/sell-in/GrowthPurchasesByUniverseContext";
+import { GrowthPurchasesByCategoryProvider } from "@/contexts/sell-in/GrowthPurchasesByCategoryContext";
+import { GrowthPurchasesByLabDistributorProvider } from "@/contexts/sell-in/GrowthPurchasesByLabDistributorContext";
+import { GrowthPurchasesByProductProvider } from "@/contexts/sell-in/GrowthPurchasesByProductContext";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -63,9 +66,17 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                                                                                                                     <PurchasesByCategoryProvider>
                                                                                                                         <PurchasesByLabDistributorsProvider>
                                                                                                                             <PurchasesByPharmacyProvider>
-                                                                                                                                <Layout>
-                                                                                                                                    <Component {...pageProps} />
-                                                                                                                                </Layout>
+                                                                                                                                <GrowthPurchasesByUniverseProvider>
+                                                                                                                                    <GrowthPurchasesByCategoryProvider>
+                                                                                                                                        <GrowthPurchasesByLabDistributorProvider>
+                                                                                                                                            <GrowthPurchasesByProductProvider>
+                                                                                                                                                <Layout>
+                                                                                                                                                    <Component {...pageProps} />
+                                                                                                                                                </Layout>
+                                                                                                                                            </GrowthPurchasesByProductProvider>
+                                                                                                                                        </GrowthPurchasesByLabDistributorProvider>
+                                                                                                                                    </GrowthPurchasesByCategoryProvider>
+                                                                                                                                </GrowthPurchasesByUniverseProvider>
                                                                                                                             </PurchasesByPharmacyProvider>
                                                                                                                         </PurchasesByLabDistributorsProvider>
                                                                                                                     </PurchasesByCategoryProvider>

@@ -1,13 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
-/** Interface de la réponse */
+/** Interface pour la réponse */
 interface GrowthPurchasesUniversesResponse {
   growthPurchasesUniverses: {
     universe: string;
-    growthRate: number;        // Évolution du prix d'achat moyen
-    currentAvgPrice: number;   // Prix d'achat moyen actuel
-    previousAvgPrice: number;  // Prix d'achat moyen précédent
+    growthRate: number;
+    currentPurchaseAmount: number;
+    previousPurchaseAmount: number;
+    currentQuantity: number;
+    previousQuantity: number;
   }[];
 }
 
@@ -16,7 +18,16 @@ export default async function handler(
   res: NextApiResponse<GrowthPurchasesUniversesResponse | { error: string }>
 ) {
   try {
-    const { pharmacy, universe, category, subCategory, labDistributor, brandLab, rangeName, product } = req.query;
+    const {
+      pharmacy,
+      universe,
+      category,
+      subCategory,
+      labDistributor,
+      brandLab,
+      rangeName,
+      product,
+    } = req.query;
 
     const whereClauses: string[] = ["po.qte > 0"];
     const values: any[] = [];
@@ -73,43 +84,59 @@ export default async function handler(
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
+    // Définition des périodes de comparaison
     const now = new Date();
-    const startLast6Months = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
+    const startLast6Months = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split("T")[0];
     const endLast6Months = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
-    const startPrevious6Months = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split("T")[0];
-    const endPrevious6Months = new Date(now.getFullYear(), now.getMonth() - 3, 0).toISOString().split("T")[0];
+    const startPrevious6Months = new Date(now.getFullYear(), now.getMonth() - 12, 1).toISOString().split("T")[0];
+    const endPrevious6Months = new Date(now.getFullYear(), now.getMonth() - 6, 0).toISOString().split("T")[0];
 
     values.push(startPrevious6Months, endPrevious6Months, startLast6Months, endLast6Months);
 
+    // Requête SQL corrigée
     const query = `
       WITH purchases_growth AS (
         SELECT
           gp.universe AS universe,
-          AVG(
-            CASE
-              WHEN o.delivery_date BETWEEN $${paramIndex} AND $${paramIndex + 1}
-              THEN COALESCE(inv.weighted_average_price, last_known_price.price)
-              ELSE NULL
+          
+          -- Quantité achetée dans la période précédente
+          SUM(CASE WHEN o.delivery_date BETWEEN $${paramIndex} AND $${paramIndex + 1} THEN po.qte ELSE 0 END) AS previous_quantity,
+
+          -- Quantité achetée dans la période actuelle
+          SUM(CASE WHEN o.delivery_date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3} THEN po.qte ELSE 0 END) AS current_quantity,
+
+          -- Montant total des achats dans la période précédente
+          SUM(
+            CASE 
+              WHEN o.delivery_date BETWEEN $${paramIndex} AND $${paramIndex + 1} 
+              THEN po.qte * COALESCE(inv.weighted_average_price, last_known_price.price, 0) 
+              ELSE 0 
             END
-          ) AS previous_avg_price,
-          AVG(
-            CASE
-              WHEN o.delivery_date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3}
-              THEN COALESCE(inv.weighted_average_price, last_known_price.price)
-              ELSE NULL
+          ) AS previous_purchase_amount,
+
+          -- Montant total des achats dans la période actuelle
+          SUM(
+            CASE 
+              WHEN o.delivery_date BETWEEN $${paramIndex + 2} AND $${paramIndex + 3} 
+              THEN po.qte * COALESCE(inv.weighted_average_price, last_known_price.price, 0) 
+              ELSE 0 
             END
-          ) AS current_avg_price
+          ) AS current_purchase_amount
+
         FROM data_order o
         JOIN data_productorder po ON o.id = po.order_id
         JOIN data_internalproduct ip ON po.product_id = ip.id
         JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
-        LEFT JOIN data_inventorysnapshot inv 
-          ON ip.id = inv.product_id 
+
+        -- Jointure correcte avec inv
+        LEFT JOIN data_inventorysnapshot inv ON inv.product_id = ip.id 
           AND inv.date = (
             SELECT MAX(date) 
             FROM data_inventorysnapshot 
             WHERE product_id = ip.id AND date <= o.delivery_date
           )
+
+        -- Si pas de prix en stock, prendre le dernier connu
         LEFT JOIN LATERAL (
           SELECT weighted_average_price AS price
           FROM data_inventorysnapshot
@@ -117,43 +144,33 @@ export default async function handler(
           ORDER BY date DESC
           LIMIT 1
         ) last_known_price ON TRUE
+
         ${whereClause}
         GROUP BY gp.universe
       )
       SELECT
         universe,
-        previous_avg_price,
-        current_avg_price,
+        previous_quantity,
+        current_quantity,
+        previous_purchase_amount,
+        current_purchase_amount,
         COALESCE(
-          (
-            (current_avg_price - previous_avg_price) / NULLIF(previous_avg_price, 0) * 100
-          ),
+          ((current_purchase_amount - previous_purchase_amount) / NULLIF(previous_purchase_amount, 0)) * 100, 
           0
         ) AS growth_rate
       FROM purchases_growth
-      WHERE current_avg_price IS NOT NULL
-      ORDER BY growth_rate DESC;
+      WHERE current_purchase_amount IS NOT NULL
+      ORDER BY ABS(growth_rate) DESC
+      LIMIT 10;
     `;
 
     const client = await pool.connect();
-    const result = await client.query<{
-      universe: string;
-      previous_avg_price: string;
-      current_avg_price: string;
-      growth_rate: string;
-    }>(query, values);
+    const result = await client.query(query, values);
     client.release();
 
-    const growthPurchasesUniverses = result.rows.map((row) => ({
-      universe: row.universe ?? "Inconnu",
-      growthRate: parseFloat(row.growth_rate),
-      previousAvgPrice: parseFloat(row.previous_avg_price),
-      currentAvgPrice: parseFloat(row.current_avg_price),
-    }));
-
-    res.status(200).json({ growthPurchasesUniverses });
+    res.status(200).json({ growthPurchasesUniverses: result.rows });
   } catch (error) {
-    console.error("Erreur lors du calcul du prix d'achat moyen par univers :", error);
+    console.error("Erreur lors de l'analyse des achats par univers :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
 };

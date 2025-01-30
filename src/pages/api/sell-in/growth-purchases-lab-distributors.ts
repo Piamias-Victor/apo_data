@@ -2,18 +2,18 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
 /** Interface de la réponse */
-interface GrowthPurchasesUniversesResponse {
-  growthPurchasesUniverses: {
-    universe: string;
-    growthRate: number;        // Évolution du prix d'achat moyen
-    currentAvgPrice: number;   // Prix d'achat moyen actuel
-    previousAvgPrice: number;  // Prix d'achat moyen précédent
+interface GrowthPurchasesLabDistributorsResponse {
+  growthPurchasesLabDistributors: {
+    labDistributor: string;
+    growthRate: number;
+    currentAvgPrice: number;
+    previousAvgPrice: number;
   }[];
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<GrowthPurchasesUniversesResponse | { error: string }>
+  res: NextApiResponse<GrowthPurchasesLabDistributorsResponse | { error: string }>
 ) {
   try {
     const { pharmacy, universe, category, subCategory, labDistributor, brandLab, rangeName, product } = req.query;
@@ -22,16 +22,19 @@ export default async function handler(
     const values: any[] = [];
     let paramIndex = 1;
 
-    if (pharmacy) {
-      const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
-      whereClauses.push(`o.pharmacy_id = ANY($${paramIndex}::uuid[])`);
-      values.push(pharmacyArray);
-      paramIndex++;
-    }
+    // 🔹 Ajout du filtre sur l'univers
     if (universe) {
       const universeArray = Array.isArray(universe) ? universe : universe.split(",");
       whereClauses.push(`gp.universe = ANY($${paramIndex}::text[])`);
       values.push(universeArray);
+      paramIndex++;
+    }
+
+    // 🔹 Ajout des autres filtres
+    if (pharmacy) {
+      const pharmacyArray = Array.isArray(pharmacy) ? pharmacy : pharmacy.split(",");
+      whereClauses.push(`o.pharmacy_id = ANY($${paramIndex}::uuid[])`);
+      values.push(pharmacyArray);
       paramIndex++;
     }
     if (category) {
@@ -73,6 +76,7 @@ export default async function handler(
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
 
+    // 🔹 Définition des périodes de comparaison
     const now = new Date();
     const startLast6Months = new Date(now.getFullYear(), now.getMonth() - 3, 1).toISOString().split("T")[0];
     const endLast6Months = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split("T")[0];
@@ -84,7 +88,7 @@ export default async function handler(
     const query = `
       WITH purchases_growth AS (
         SELECT
-          gp.universe AS universe,
+          COALESCE(NULLIF(gp.lab_distributor, ''), 'Autre') AS labDistributor,
           AVG(
             CASE
               WHEN o.delivery_date BETWEEN $${paramIndex} AND $${paramIndex + 1}
@@ -102,7 +106,7 @@ export default async function handler(
         FROM data_order o
         JOIN data_productorder po ON o.id = po.order_id
         JOIN data_internalproduct ip ON po.product_id = ip.id
-        JOIN data_globalproduct gp ON ip.code_13_ref_id = gp.code_13_ref
+        JOIN data_globalproduct gp ON TRIM(ip.code_13_ref_id) = TRIM(gp.code_13_ref)
         LEFT JOIN data_inventorysnapshot inv 
           ON ip.id = inv.product_id 
           AND inv.date = (
@@ -118,10 +122,11 @@ export default async function handler(
           LIMIT 1
         ) last_known_price ON TRUE
         ${whereClause}
-        GROUP BY gp.universe
+        GROUP BY gp.lab_distributor
+        HAVING gp.lab_distributor IS NOT NULL AND gp.lab_distributor <> ''
       )
       SELECT
-        universe,
+        labDistributor,
         previous_avg_price,
         current_avg_price,
         COALESCE(
@@ -129,31 +134,42 @@ export default async function handler(
             (current_avg_price - previous_avg_price) / NULLIF(previous_avg_price, 0) * 100
           ),
           0
-        ) AS growth_rate
+        ) AS growth_rate,
+        ABS(
+          COALESCE(
+            (
+              (current_avg_price - previous_avg_price) / NULLIF(previous_avg_price, 0) * 100
+            ),
+            0
+          )
+        ) AS absolute_growth_rate
       FROM purchases_growth
       WHERE current_avg_price IS NOT NULL
-      ORDER BY growth_rate DESC;
+      ORDER BY absolute_growth_rate DESC
+      LIMIT 10;
     `;
 
     const client = await pool.connect();
     const result = await client.query<{
-      universe: string;
+      labDistributor: string;
       previous_avg_price: string;
       current_avg_price: string;
       growth_rate: string;
     }>(query, values);
     client.release();
 
-    const growthPurchasesUniverses = result.rows.map((row) => ({
-      universe: row.universe ?? "Inconnu",
+    console.log('row.labDistributor', result.rows[0].labDistributor)
+
+    const growthPurchasesLabDistributors = result.rows.map((row) => ({
+      labDistributor: row.labDistributor ?? "Inconnu",
       growthRate: parseFloat(row.growth_rate),
       previousAvgPrice: parseFloat(row.previous_avg_price),
       currentAvgPrice: parseFloat(row.current_avg_price),
     }));
 
-    res.status(200).json({ growthPurchasesUniverses });
+    res.status(200).json({ growthPurchasesLabDistributors });
   } catch (error) {
-    console.error("Erreur lors du calcul du prix d'achat moyen par univers :", error);
+    console.error("Erreur lors du calcul du prix d'achat moyen par labDistributor :", error);
     res.status(500).json({ error: "Erreur interne du serveur" });
   }
-};
+}

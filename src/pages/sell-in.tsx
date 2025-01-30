@@ -56,6 +56,18 @@ import PurchasesByUniverseChart from "@/components/sell-in/universes/PurchasesBy
 import PurchasesByCategoryChart from "@/components/sell-in/categories/PurchasesByCategoryChart";
 import PurchasesByLabDistributorsChart from "@/components/sell-in/labs/PurchasesByLabDistributorsChart";
 import PurchasesByPharmacyChart from "@/components/sell-in/pharmacies/PurchasesByPharmacyChart";
+import GrowthPurchasesByUniverseChart from "@/components/sell-in/universes/GrowthPurchasesByUniverseChart";
+import GrowthPurchasesByUniverseList from "@/components/sell-in/universes/GrowthPurchasesByUniverseChart";
+import GrowthPurchasesByCategoryChart from "@/components/sell-in/categories/GrowthPurchasesByCategoryChart";
+import GrowthPurchasesByLabDistributorChart from "@/components/sell-in/labs/GrowthPurchasesByLabDistributorChart";
+import GrowthPurchasesByProductChart from "@/components/sell-in/products/GrowthPurchasesByProductChart";
+import TopPurchasesCatList from "@/components/sell-in/categories/TopPurchasesCategoriesList";
+import TopPurchasesByLabDistributorsList from "@/components/sell-in/labs/TopPurchasesByLabDistributorsList";
+import TopPurchasesByCategoryList from "@/components/sell-in/categories/TopPurchasesCategoriesList";
+import FlopPurchasesByCategoryList from "@/components/sell-in/categories/FlopPurchasesByCategoryList";
+import FlopPurchasesByLabDistributorsList from "@/components/sell-in/labs/FlopPurchasesByLabDistributorsList";
+import FlopPurchasesByProductsList from "@/components/sell-in/products/FlopPurchasesByProductsList";
+import TopPurchasesByProductsList from "@/components/sell-in/products/TopPurchasesByProductsList";
 
 const Dashboard: React.FC = () => {
   // -- Récupération des filtres & data context
@@ -199,6 +211,62 @@ const Dashboard: React.FC = () => {
     </div>
   );
 
+  const renderTopFlopSection = () => (
+    <div>
+      {/* Tops */}
+      <div className="mt-12">
+        <div className="flex flex-row gap-4">
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopPurchasesByCategoryList/>
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopPurchasesByLabDistributorsList />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <TopPurchasesByProductsList />
+          </div>
+        </div>
+      </div>
+
+      {/* Flops */}
+      <div className="mt-12">
+        <div className="flex flex-row gap-4">
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopPurchasesByCategoryList />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopPurchasesByLabDistributorsList />
+          </div>
+          <div className="w-full lg:w-4/12 flex flex-col h-[450px]">
+            <FlopPurchasesByProductsList />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    
+  );
+
+  const renderPriceSection = () => (
+    <div>
+      <div className="mt-8 flex flex-row gap-4 h-[600px]">
+          <GrowthPurchasesByUniverseChart/>
+      </div>
+
+      <div className="mt-8 flex flex-row gap-4 h-[600px]">
+          <GrowthPurchasesByCategoryChart/>
+      </div>
+
+      <div className="mt-8 flex flex-row gap-4 h-[600px]">
+          <GrowthPurchasesByLabDistributorChart/>
+      </div>
+
+      <div className="mt-8 flex flex-row gap-4 h-[600px]">
+          <GrowthPurchasesByProductChart/>
+      </div>
+    </div>
+  );
+
   // -- Tabs configuration
   const tabItems = [
     {
@@ -211,19 +279,19 @@ const Dashboard: React.FC = () => {
     },
     {
       label: "Tops & Flops",
-      content: renderSalesSection(),
+      content: renderTopFlopSection(),
     },
     {
       label: "Prix",
-      content: renderSalesSection(),
+      content: renderPriceSection(),
     },
     {
       label: "Livraison",
-      content: renderSalesSection(),
+      content: <>En construction</>,
     },
     {
       label: "Details",
-      content: renderSalesSection(),
+      content: <>En construction</>,
     }
   ];
 
