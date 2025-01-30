@@ -24,6 +24,13 @@ import { WorstLabsRegressionProvider } from "@/contexts/sell-out/WorstLabsRegres
 import { WorstUniversesRegressionProvider } from "@/contexts/sell-out/WorstUniversesRegressionContext";
 import { AppProps } from "next/app";
 import "../styles/globals.css";
+import { SalesByDayProvider } from "@/contexts/sell-out/SalesByDayContext";
+import { PurchasesByMonthProvider } from "@/contexts/sell-in/PurchasesByMonthContext";
+import { PurchasesByUniverseProvider } from "@/contexts/sell-in/PurchasesByUniverseContext";
+import { PurchasesByCategoryProvider } from "@/contexts/sell-in/PurchasesByCategoryContext";
+import PurchasesByLabDistributorsChart from "@/components/sell-in/labs/PurchasesByLabDistributorsChart";
+import { PurchasesByLabDistributorsProvider } from "@/contexts/sell-in/PurchasesByLabDistributorsContext";
+import { PurchasesByPharmacyProvider } from "@/contexts/sell-in/PurchasesByPharmacyContext";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
     return (
@@ -33,39 +40,49 @@ export default function MyApp({ Component, pageProps }: AppProps) {
                     <PharmaciesProvider>
                         <FinancialProvider>
                             <StockProvider>
-                                {/* Niveau 1 : Données globales */}
                                 <SalesByMonthProvider>
                                     <SalesByUniverseProvider>
                                         <SalesByCategoryProvider>
                                             <SalesByLabDistributorsProvider>
-                                                {/* Niveau 2 : Données sur les produits */}
                                                 <TopProductsProvider>
                                                     <SalesByPharmacyProvider>
-                                                        <BestUniversesGrowthProvider>
-                                                            <BestCategoriesGrowthProvider>
-                                                                <BestLabsGrowthProvider>
-                                                                    <GrowthProductsProvider>
-                                                                            <WorstUniversesRegressionProvider>
-                                                                                <WorstCategoriesRegressionProvider>
-                                                                                    <WorstLabsRegressionProvider>
-                                                                                        <RegressionProductsProvider>
-                                                                                            <NegativeMarginSalesProvider>
-                                                                                                <LowSalesProductsProvider>
-                                                                                                    <PeakSalesProvider>
-                                                                                                        <Layout>
-                                                                                                            <Component {...pageProps} />
-                                                                                                        </Layout>
-                                                                                                    </PeakSalesProvider>
-                                                                                                </LowSalesProductsProvider>
-                                                                                            </NegativeMarginSalesProvider>
-                                                                                        </RegressionProductsProvider>
-                                                                                    </WorstLabsRegressionProvider>
-                                                                                </WorstCategoriesRegressionProvider>
-                                                                            </WorstUniversesRegressionProvider>
-                                                                    </GrowthProductsProvider>
-                                                                </BestLabsGrowthProvider>
-                                                            </BestCategoriesGrowthProvider>
-                                                        </BestUniversesGrowthProvider>
+                                                        <SalesByDayProvider>
+                                                            <BestUniversesGrowthProvider>
+                                                                <BestCategoriesGrowthProvider>
+                                                                    <BestLabsGrowthProvider>
+                                                                        <GrowthProductsProvider>
+                                                                                <WorstUniversesRegressionProvider>
+                                                                                    <WorstCategoriesRegressionProvider>
+                                                                                        <WorstLabsRegressionProvider>
+                                                                                            <RegressionProductsProvider>
+                                                                                                <NegativeMarginSalesProvider>
+                                                                                                    <LowSalesProductsProvider>
+                                                                                                        <PeakSalesProvider>
+                                                                                                            <PurchasesByMonthProvider>
+                                                                                                                <PurchasesByUniverseProvider>
+                                                                                                                    <PurchasesByCategoryProvider>
+                                                                                                                        <PurchasesByLabDistributorsProvider>
+                                                                                                                            <PurchasesByPharmacyProvider>
+                                                                                                                                <Layout>
+                                                                                                                                    <Component {...pageProps} />
+                                                                                                                                </Layout>
+                                                                                                                            </PurchasesByPharmacyProvider>
+                                                                                                                        </PurchasesByLabDistributorsProvider>
+                                                                                                                    </PurchasesByCategoryProvider>
+                                                                                                                </PurchasesByUniverseProvider>
+                                                                                                            </PurchasesByMonthProvider>
+                                                                                                        </PeakSalesProvider>
+                                                                                                    </LowSalesProductsProvider>
+                                                                                                </NegativeMarginSalesProvider>
+                                                                                            </RegressionProductsProvider>
+                                                                                        </WorstLabsRegressionProvider>
+                                                                                    </WorstCategoriesRegressionProvider>
+                                                                                </WorstUniversesRegressionProvider>
+                                                                        </GrowthProductsProvider>
+                                                                    </BestLabsGrowthProvider>
+                                                                </BestCategoriesGrowthProvider>
+                                                            </BestUniversesGrowthProvider>
+                                                        </SalesByDayProvider>
                                                     </SalesByPharmacyProvider>
                                                 </TopProductsProvider>
                                             </SalesByLabDistributorsProvider>

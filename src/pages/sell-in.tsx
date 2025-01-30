@@ -51,7 +51,11 @@ import { useSalesByPharmacyContext } from "@/contexts/sell-out/SalesByPharmacyCo
 // Import du nouveau composant et du provider
 import NegativeMarginSalesList from "@/components/sell-out/products/NegativeMarginSalesList";
 import { SellOutProviders } from "@/contexts/SellOutProviders";
-import SalesByDayChart from "@/components/sell-out/global/SalesByDayChart";
+import PurchasesByMonthChart from "@/components/sell-in/global/PurchasesByMonthChart";
+import PurchasesByUniverseChart from "@/components/sell-in/universes/PurchasesByUniverseChart";
+import PurchasesByCategoryChart from "@/components/sell-in/categories/PurchasesByCategoryChart";
+import PurchasesByLabDistributorsChart from "@/components/sell-in/labs/PurchasesByLabDistributorsChart";
+import PurchasesByPharmacyChart from "@/components/sell-in/pharmacies/PurchasesByPharmacyChart";
 
 const Dashboard: React.FC = () => {
   // -- Récupération des filtres & data context
@@ -266,28 +270,22 @@ const Dashboard: React.FC = () => {
     <div>
       <div className="mt-8 flex flex-row gap-4 h-[550px]">
         <div className="w-full lg:w-8/12 flex flex-col h-full">
-          <SalesByDayChart />
+          <PurchasesByMonthChart/>
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByUniverseChart universes={universes} loading={universeLoading} />
+          <PurchasesByUniverseChart />
         </div>
       </div>
 
       <div className="mt-8 flex flex-row gap-4 h-[550px]">
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByCategoryChart categories={categories} loading={categoryLoading} />
+          <PurchasesByCategoryChart />
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByLabDistributorsChart
-            labDistributors={labDistributors}
-            loading={labDistributorLoading}
-          />
+          <PurchasesByLabDistributorsChart/>
         </div>
         <div className="w-full lg:w-4/12 flex flex-col h-full">
-          <SalesByPharmacyChart
-            pharmacies={pharmacies}
-            loading={pharmacyLoading}
-          />
+          <PurchasesByPharmacyChart/>
         </div>
       </div>
     </div>
@@ -488,7 +486,7 @@ const Dashboard: React.FC = () => {
       content: renderGlobalSection(),
     },
     {
-      label: "Ventes",
+      label: "Achats",
       content: renderSalesSection(),
     },
     {
@@ -513,7 +511,7 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto p-6">
       {/* Envelopper les contextes nécessaires */}
             {/* Ajoutez d'autres providers si vous avez plus de graphiques d'anomalies */}
-              <h1 className="text-3xl font-bold text-gray-800 mb-6">Tableau de bord - Sell-Out</h1>
+              <h1 className="text-3xl font-bold text-gray-800 mb-6">Tableau de bord - Sell-In</h1>
               <Tabs tabs={tabItems} defaultIndex={0} />            
     </div>
   );
