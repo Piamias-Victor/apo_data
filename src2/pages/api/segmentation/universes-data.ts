@@ -27,7 +27,6 @@ export default async function handler(
         data_globalproduct dg
       ON
         lu.universe = dg.universe
-      WHERE dg.category IS NOT NULL
       GROUP BY lu.universe, dg.category
       ORDER BY lu.universe ASC, dg.category ASC;
     `;

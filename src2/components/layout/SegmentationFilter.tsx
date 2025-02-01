@@ -4,6 +4,7 @@ import { useUniversesContext } from "@/contexts/segmentation/universesContext";
 import { useLabDistributorsContext } from "@/contexts/segmentation/brandsContext";
 import { useFilterContext } from "@/contexts/global/filtersContext";
 import { SalesFilters } from "@/types/Filter";
+import { useFamiliesContext } from "@/contexts/segmentation/familiesContext";
 
 // Couleurs des univers
 const UNIVERS_COLORS: { [key: string]: string } = {
@@ -35,6 +36,7 @@ const getColorForUniverse = (universe: string) => {
 const SegmentationFilter: React.FC = () => {
   const { universes, loading: loadingUniverses, error: errorUniverses } = useUniversesContext();
   const { labDistributors, loading: loadingLabs, error: errorLabs } = useLabDistributorsContext();
+  const {families, loading: loadingFamilies, error: errorFamilies} = useFamiliesContext()
   const { filters, setFilters } = useFilterContext();
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -45,6 +47,7 @@ const SegmentationFilter: React.FC = () => {
     labDistributor: "",
     brandLab: "",
     rangeName: "",
+    families: "",
   });
 
   const [tempSelectedFilters, setTempSelectedFilters] = useState({
@@ -54,6 +57,7 @@ const SegmentationFilter: React.FC = () => {
     labDistributor: filters.labDistributor || [],
     brandLab: filters.brandLab || [],
     rangeName: filters.rangeName || [],
+    families: filters.families || [],
   });
 
   useEffect(() => {
@@ -64,6 +68,7 @@ const SegmentationFilter: React.FC = () => {
       labDistributor: filters.labDistributor || [],
       brandLab: filters.brandLab || [],
       rangeName: filters.rangeName || [],
+      families: filters.families || [],
     });
   }, [filters]);
 
@@ -100,10 +105,9 @@ const SegmentationFilter: React.FC = () => {
     useColors: boolean = false
   ) => {
     const filteredItems = items.filter((item) =>
-      item.name.toLowerCase().includes(searchTerms[key].toLowerCase())
+      (item.name || "").toLowerCase().includes((searchTerms[key] || "").toLowerCase())
     );
 
-    console.log('key', key)
 
     return (
       <div className="relative mb-4">
@@ -255,6 +259,14 @@ const SegmentationFilter: React.FC = () => {
             }))
           )
         )
+      )}
+      {renderDropdown(
+        "famille",
+        "families",
+        families.map((family) => ({
+          id: family.family,
+          name: family.family,
+        }))
       )}
     </div>
   );

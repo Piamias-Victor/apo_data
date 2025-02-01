@@ -8,6 +8,7 @@ export type SalesFilters = {
   labDistributor?: string[];
   brandLab?: string[];
   rangeName?: string[];
+  families?: string[];
   product?: string[];
   startDate?: string; // Format 'YYYY-MM-DD'
   endDate?: string;   // Format 'YYYY-MM-DD'

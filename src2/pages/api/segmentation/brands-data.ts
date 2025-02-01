@@ -26,8 +26,6 @@ export default async function handler(
         data_globalproduct dg
       ON
         ld.lab_distributor = dg.lab_distributor
-      WHERE
-        dg.brand_lab IS NOT NULL AND dg.range_name IS NOT NULL
       GROUP BY
         ld.lab_distributor,
         dg.brand_lab

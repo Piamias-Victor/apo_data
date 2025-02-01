@@ -1,66 +1,52 @@
 import React, { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { FaCalendarAlt, FaTags, FaStore, FaListAlt, FaTimes } from "react-icons/fa";
-import { useFilterContext } from "@/contexts/global/filtersContext";
 import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
-import HeaderFilters from "./HeaderFilters"; // Pour les drawers
+import { useFilterContext } from "@/contexts/FilterContext";
 
 const Header: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Drawer à gauche
-  const [isProductFilterOpen, setIsProductFilterOpen] = useState(false);
-  const [isPharmacyFilterOpen, setIsPharmacyFilterOpen] = useState(false);
-  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [menuState, setMenuState] = useState({
+    isMenuOpen: false,
+    isProductFilterOpen: false,
+    isPharmacyFilterOpen: false,
+    isCategoryFilterOpen: false,
+    isDatePickerOpen: false,
+  });
 
   const { filters, setFilters } = useFilterContext();
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([
-    filters.startDate ? new Date(filters.startDate) : null,
-    filters.endDate ? new Date(filters.endDate) : null,
-  ]);
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(filters.dateRange);
   const [startDate, endDate] = dateRange;
+
+  const toggleMenu = (menu: keyof typeof menuState) => {
+    setMenuState((prev) => ({ ...prev, [menu]: !prev[menu] }));
+  };
 
   const applyDateFilter = () => {
     setFilters({
       ...filters,
-      startDate: startDate ? startDate.toISOString().split("T")[0] : undefined,
-      endDate: endDate ? endDate.toISOString().split("T")[0] : undefined,
+      dateRange: [startDate, endDate],
     });
-    setIsDatePickerOpen(false);
+    toggleMenu("isDatePickerOpen");
   };
 
   const clearDateFilter = () => {
     setDateRange([null, null]);
-    setFilters({
-      ...filters,
-      startDate: undefined,
-      endDate: undefined,
-    });
+    setFilters({ ...filters, dateRange: [null, null] });
   };
 
-  const selectedPharmacyCount = filters.pharmacy?.length || 0;
-  const selectedCategoryCount =
-    (filters.universe?.length || 0) +
-    (filters.category?.length || 0) +
-    (filters.subCategory?.length || 0);
+  const selectedPharmacyCount = filters.pharmacies.length;
+  const selectedCategoryCount = filters.universes.length + filters.categories.length + filters.subCategories.length;
 
   return (
     <>
       {/* NAVBAR */}
       <div className="navbar bg-white shadow-md sticky top-0 z-50 px-6 flex justify-between items-center">
         <button
-          onClick={() => setIsMenuOpen(true)}
+          onClick={() => toggleMenu("isMenuOpen")}
           className="flex items-center space-x-2 focus:outline-none hover:bg-gray-100 rounded-md px-4 py-2 transition"
         >
-          <Image
-            src="/logo.svg"
-            alt="Logo"
-            width={35}
-            height={35}
-            className="w-9 h-9"
-            priority
-          />
+          <Image src="/logo.svg" alt="Logo" width={35} height={35} className="w-9 h-9" priority />
           <span className="text-lg font-semibold text-gray-800">Apo Data</span>
         </button>
 
@@ -69,14 +55,12 @@ const Header: React.FC = () => {
           {/* Date Picker */}
           <div className="relative">
             <button
-              onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+              onClick={() => toggleMenu("isDatePickerOpen")}
               className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:bg-gray-100 transition"
             >
               <FaCalendarAlt className="text-blue-600" />
               <span className="text-gray-700 text-sm">
-                {startDate && endDate
-                  ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
-                  : "Plage de dates"}
+                {startDate && endDate ? `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}` : "Plage de dates"}
               </span>
               {startDate && endDate && (
                 <FaTimes
@@ -88,7 +72,7 @@ const Header: React.FC = () => {
                 />
               )}
             </button>
-            {isDatePickerOpen && (
+            {menuState.isDatePickerOpen && (
               <div className="absolute right-0 mt-2 bg-white border border-gray-300 shadow-lg rounded-lg z-10 p-4">
                 <DatePicker
                   selected={startDate}
@@ -112,33 +96,29 @@ const Header: React.FC = () => {
 
           {/* Pharmacy Filter */}
           <button
-            onClick={() => setIsPharmacyFilterOpen(true)}
+            onClick={() => toggleMenu("isPharmacyFilterOpen")}
             className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:bg-gray-100 transition"
           >
             <FaStore className="text-purple-600" />
             <span className="text-gray-700 text-sm">
-              {selectedPharmacyCount > 0
-                ? `${selectedPharmacyCount} sélectionnée(s)`
-                : "Filtres Pharmacies"}
+              {selectedPharmacyCount > 0 ? `${selectedPharmacyCount} sélectionnée(s)` : "Filtres Pharmacies"}
             </span>
           </button>
 
           {/* Category Filter */}
           <button
-            onClick={() => setIsCategoryFilterOpen(true)}
+            onClick={() => toggleMenu("isCategoryFilterOpen")}
             className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:bg-gray-100 transition"
           >
             <FaListAlt className="text-orange-600" />
             <span className="text-gray-700 text-sm">
-              {selectedCategoryCount > 0
-                ? `${selectedCategoryCount} filtre(s)`
-                : "Filtres Catégories"}
+              {selectedCategoryCount > 0 ? `${selectedCategoryCount} filtre(s)` : "Filtres Catégories"}
             </span>
           </button>
 
           {/* Product Filter */}
           <button
-            onClick={() => setIsProductFilterOpen(true)}
+            onClick={() => toggleMenu("isProductFilterOpen")}
             className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-sm hover:bg-gray-100 transition"
           >
             <FaTags className="text-green-600" />
@@ -148,16 +128,7 @@ const Header: React.FC = () => {
       </div>
 
       {/* Import Drawer */}
-      <HeaderFilters
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
-        isProductFilterOpen={isProductFilterOpen}
-        setIsProductFilterOpen={setIsProductFilterOpen}
-        isPharmacyFilterOpen={isPharmacyFilterOpen}
-        setIsPharmacyFilterOpen={setIsPharmacyFilterOpen}
-        isCategoryFilterOpen={isCategoryFilterOpen}
-        setIsCategoryFilterOpen={setIsCategoryFilterOpen}
-      />
+      {/* <HeaderFilters {...menuState} setMenuState={setMenuState} /> */}
     </>
   );
 };
