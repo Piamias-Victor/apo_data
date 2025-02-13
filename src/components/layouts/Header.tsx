@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import PharmacyDrawer from "./PharmacyDrawer";
 
 const Header: React.FC = () => {
   const [menuState, setMenuState] = useState({
@@ -125,6 +126,11 @@ const Header: React.FC = () => {
           </span>
         </button>
 
+        {/* Drawer Pharmacies */}
+        <PharmacyDrawer
+          isOpen={menuState.isPharmacyFilterOpen}
+          onClose={() => setMenuState((prev) => ({ ...prev, isPharmacyFilterOpen: false }))}
+        />
         {/* Category Filter */}
         <button
           onClick={() => setMenuState({ ...menuState, isCategoryFilterOpen: !menuState.isCategoryFilterOpen })}

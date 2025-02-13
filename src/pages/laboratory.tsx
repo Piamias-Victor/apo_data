@@ -5,6 +5,18 @@ import { FaSearch, FaChevronDown, FaCheck, FaTimes, FaChevronUp } from "react-ic
 import { motion, AnimatePresence } from "framer-motion";
 import { useFilterContext } from "@/contexts/FilterContext";
 import SalesDataComponent from "@/components/laboratory/test";
+import TopProductsComponent from "@/components/laboratory/test2";
+import PharmacySalesList from "@/components/laboratory/test3";
+import Tabs from "@/components/misc/Tabs";
+import StockBreakRate from "@/components/laboratory/StockBreakRate";
+import SegmentationDisplay from "@/components/laboratory/SegmentationDisplay";
+import CatalogProducts from "@/components/laboratory/Catalogue";
+import SegmentationRevenueComponent from "@/components/laboratory/SegmentationRevenue";
+import SegmentationDebugComponent from "@/components/laboratory/check";
+import New from "@/components/laboratory/New";
+import SalesByRange from "@/components/laboratory/New";
+import SalesDataDisplay from "@/components/JSON";
+import SalesTable from "@/components/laboratory/Last";
 
 const LaboratoryPage: React.FC = () => {
   const { distributors, loading, error } = useSegmentationContext();
@@ -30,27 +42,20 @@ const LaboratoryPage: React.FC = () => {
   const toggleDropdown = () => setIsDropdownOpen((prev) => !prev);
   const toggleCollapse = () => setIsCollapsed((prev) => !prev);
 
-
   const handleSelectLab = (item: string) => {
     const isLab = distributors.some((lab) => lab.lab_distributor === item);
     
     if (isLab) {
-      // Gérer la sélection des laboratoires
-      setSelectedLabs((prev) =>
-        prev.includes(item) ? prev.filter((selected) => selected !== item) : [...prev, item]
-      );
+      setSelectedLabs([item]);
+      setSelectedBrands([]);
+      setFilters({ distributors: [item], brands: [], ranges: selectedRanges }); // ✅ Mise à jour immédiate
     } else {
-      // Gérer la sélection des marques
-      setSelectedBrands((prev) =>
-        prev.includes(item) ? prev.filter((selected) => selected !== item) : [...prev, item]
-      );
+      setSelectedBrands([item]);
+      setSelectedLabs([]);
+      setFilters({ distributors: [], brands: [item], ranges: selectedRanges }); // ✅ Mise à jour immédiate
     }
-  };
-
-  const handleSelectRange = (_lab: string, range: string) => {
-    setSelectedRanges((prev) =>
-      prev.includes(range) ? prev.filter((r) => r !== range) : [...prev, range]
-    );
+  
+    setIsDropdownOpen(false); // ✅ Ferme le dropdown après sélection
   };
 
   // Appliquer les filtres au contexte global
@@ -63,19 +68,6 @@ const LaboratoryPage: React.FC = () => {
     setIsDropdownOpen(false);
   };
 
-  const handleRangesApplyFilters = () => {
-    setFilters({
-      distributors: selectedLabs,
-      ranges: selectedRanges, // Plus besoin de transformation
-    });
-  
-    setIsDropdownOpen(false);
-    setIsApplied(true);
-    setTimeout(() => {
-      setIsApplied(false);
-    }, 1000);
-  };
-
   const handleClearSelection = () => {
     setSelectedLabs([]);
     setSelectedBrands([]);
@@ -83,10 +75,32 @@ const LaboratoryPage: React.FC = () => {
     setFilters({ distributors: [], ranges: [] });
   };
 
-  const handleClearRanges = () => {
-    setSelectedRanges([]);
-    setFilters({ ranges: [] });
-  };
+  const tabItems = [
+    {
+      label: "📊 Global",
+      content: <SalesDataComponent />,
+    },
+    {
+      label: "⭐ Produits",
+      content: <TopProductsComponent />,
+    },
+    {
+      label: "🏥 Pharmacies",
+      content: <PharmacySalesList />,
+    },
+    {
+      label: "🚨 Rupture",
+      content: <StockBreakRate />,
+    },
+    {
+      label: "🔍 Segmentation",
+      content: <SegmentationRevenueComponent />,
+    },
+    {
+      label: "📖 Catalogue",
+      content: <SalesTable />,
+    }
+  ];
 
   return (
     <div className="container mx-auto p-6">
@@ -142,20 +156,13 @@ const LaboratoryPage: React.FC = () => {
               ))}
               </div>
 
-              <div className="flex justify-between items-center gap-3 p-3 border-t border-gray-200">
+              <div className="flex justify-start items-center gap-3 p-3 border-t border-gray-200">
                 <button
                   onClick={handleClearSelection}
                   className="flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-md text-sm shadow-sm hover:bg-red-100 transition"
                 >
                   <FaTimes />
                   Effacer
-                </button>
-                <button
-                  onClick={handleApplyFilters}
-                  className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-md text-sm shadow-sm hover:bg-blue-100 transition"
-                >
-                  <FaCheck />
-                  Appliquer
                 </button>
               </div>
             </div>
@@ -169,7 +176,7 @@ const LaboratoryPage: React.FC = () => {
               onClick={toggleCollapse}
               className="text-teal-600 hover:text-teal-800 transition flex items-center gap-2"
             >
-              {isCollapsed ? "Afficher les gammes" : "Masquer les gammes"}
+              {isCollapsed ? "Afficher les détails" : "Masquer les détails"}
               {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
             </button>
           </div>
@@ -182,78 +189,56 @@ const LaboratoryPage: React.FC = () => {
           const brandData = distributors.flatMap((d) => d.brands).find((b) => b.brand_lab === item);
 
           // Récupérer les gammes (ranges)
-          const ranges = [];
+          // Assurer que chaque gamme est unique avec un Set
+          const rangesSet = new Set<string>();
 
-          if (labData) {
+          if (labData?.brands) {
             labData.brands.forEach((brand) => {
-              if (brand.ranges) {
-                ranges.push(...brand.ranges.filter((range) => range.range_name !== null));
+              if (Array.isArray(brand.ranges)) {
+                brand.ranges.forEach((range: { range_name: string }) => {
+                  if (range.range_name) {
+                    rangesSet.add(range.range_name);
+                  }
+                });
               }
             });
           }
 
-          if (brandData) {
-            if (brandData.ranges) {
-              ranges.push(...brandData.ranges.filter((range) => range.range_name !== null));
+          if (brandData?.ranges) {
+            if (Array.isArray(brandData.ranges)) {
+              brandData.ranges.forEach((range: { range_name: string }) => {
+                if (range.range_name) {
+                  rangesSet.add(range.range_name);
+                }
+              });
             }
           }
 
+          // Convertir Set en tableau pour l'affichage
           return (
             <div key={item} className="mt-2">
               <p className="font-medium text-teal-700">{item}</p>
 
               <AnimatePresence>
-                {!isCollapsed && ranges.length > 0 && (
+                {!isCollapsed && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
-                    className="overflow-hidden flex flex-wrap gap-2 mt-2"
+                    className="overflow-hidden flex flex-wrap gap-2"
                   >
-                    {ranges.map((range) => (
-                      <button
-                        key={range.range_name}
-                        className={`px-3 py-1 rounded-md text-sm border ${
-                          selectedRanges.includes(range.range_name)
-                            ? "bg-teal-600 text-white"
-                            : "bg-white text-teal-600 border-teal-600 hover:bg-teal-100"
-                        }`}
-                        onClick={() => handleSelectRange(item, range.range_name)}
-                      >
-                        {range.range_name}
-                      </button>
-                    ))}
+                    <SegmentationDisplay />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           );
         })}
-          {!isCollapsed && (
-            <div className="flex justify-between items-center gap-3 p-3 m-2 border-t border-gray-200 w-full">
-            <button
-              onClick={handleClearRanges}
-              className="flex items-center justify-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-md text-sm shadow-sm hover:bg-red-100 border border-red-500 transition"
-            >
-              <FaTimes />
-              Effacer
-            </button>
-            <motion.button
-            onClick={handleRangesApplyFilters}
-            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm shadow-sm transition border ${
-                isApplied
-                ? "bg-green-50 text-green-600 border-green-500 animate-pulse"
-                : "bg-blue-50 text-blue-600 border-blue-500 hover:bg-blue-100"
-            }`}
-            >
-            <FaCheck />
-            {isApplied ? "Filtres appliqués !" : "Appliquer"}
-            </motion.button>
-          </div>
-          )}
         </div>
-      <SalesDataComponent/>
+        <div className="mt-8">
+          <Tabs tabs={tabItems} defaultIndex={0} />
+        </div>
     </div>
   );
 };

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { FaShoppingCart, FaChartLine, FaMoneyBillWave, FaBoxOpen, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { useFilterContext } from "@/contexts/FilterContext";
 import { AnimatePresence, motion } from "framer-motion";
+import StockBreakRate from "./StockBreakRate";
+import LabStockComponent from "./LabStockComponent";
+import LabMetricsComponent from "./LabMetricsComponent";
 
 interface SalesData {
   month: string;
@@ -16,6 +19,9 @@ interface SalesData {
 // Fonction pour formater les nombres en Euro
 const formatLargeNumber = (value: any, isCurrency: boolean = true): string => {
     const num = parseFloat(value) || 0; // Convertir en nombre et éviter NaN
+
+    // Fonction pour calculer l'évolution en pourcentage
+
     let formattedValue = "";
   
     if (num >= 1_000_000) {
@@ -27,6 +33,12 @@ const formatLargeNumber = (value: any, isCurrency: boolean = true): string => {
     }
   
     return isCurrency ? `${formattedValue} €` : formattedValue;
+  };
+
+const calculatePercentageChange = (current: number, previous: number): string => {
+    if (previous === 0) return "N/A"; // Éviter division par zéro
+    const change = ((current - previous) / previous) * 100;
+    return `${change > 0 ? "+" : ""}${change.toFixed(1)}%`;
   };
 
 const SalesDataComponent: React.FC = () => {
@@ -45,12 +57,19 @@ const SalesDataComponent: React.FC = () => {
   const [totalForecastSellIn, setTotalForecastSellIn] = useState(0);
   const [totalForecastPurchaseAmount, setTotalForecastPurchaseAmount] = useState(0);
 
+  const [forecastPercentage, setForecastPercentage] = useState(0);
 
   const [totalSellOut, setTotalSellOut] = useState(0);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalMargin, setTotalMargin] = useState(0);
   const [totalSellIn, setTotalSellIn] = useState(0);
   const [totalPurchaseAmount, setTotalPurchaseAmount] = useState(0);
+
+  const [adjustedSellOut2024, setAdjustedSellOut2024] = useState(0);
+  const [adjustedRevenue2024, setAdjustedRevenue2024] = useState(0);
+  const [adjustedMargin2024, setAdjustedMargin2024] = useState(0);
+  const [adjustedSellIn2024, setAdjustedSellIn2024] = useState(0);
+  const [adjustedPurchaseAmount2024, setAdjustedPurchaseAmount2024] = useState(0);
 
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -96,7 +115,11 @@ const SalesDataComponent: React.FC = () => {
                 if (year === `${currentYear}`) salesByMonth2025[month] = d;
                 if (year === `${previousYear}`) salesByMonth2024[month] = d;
             });
-      
+
+            const filteredGlobalSales = data.salesData.filter((d: SalesData) =>
+              d.month.startsWith(`${previousYear}-`)
+            );
+            
             // 🟢 ✅ Convertir en nombres avant l'addition
             setTotalSellOut(
               filteredSales.reduce((acc, cur) => acc + (parseFloat(cur.total_quantity) || 0), 0)
@@ -116,35 +139,40 @@ const SalesDataComponent: React.FC = () => {
       
             // 🔵 ✅ Totaux toutes dates confondues
             setGlobalSellOut(
-              data.salesData.reduce((acc, cur) => acc + (parseFloat(cur.total_quantity) || 0), 0)
+              filteredGlobalSales.reduce((acc, cur) => acc + (parseFloat(cur.total_quantity) || 0), 0)
             );
             setGlobalRevenue(
-              data.salesData.reduce((acc, cur) => acc + (parseFloat(cur.revenue) || 0), 0)
+              filteredGlobalSales.reduce((acc, cur) => acc + (parseFloat(cur.revenue) || 0), 0)
             );
             setGlobalMargin(
-              data.salesData.reduce((acc, cur) => acc + (parseFloat(cur.margin) || 0), 0)
+              filteredGlobalSales.reduce((acc, cur) => acc + (parseFloat(cur.margin) || 0), 0)
             );
             setGlobalSellIn(
-              data.salesData.reduce((acc, cur) => acc + (parseFloat(cur.purchase_quantity) || 0), 0)
+              filteredGlobalSales.reduce((acc, cur) => acc + (parseFloat(cur.purchase_quantity) || 0), 0)
             );
             setGlobalPurchaseAmount(
-              data.salesData.reduce((acc, cur) => acc + (parseFloat(cur.purchase_amount) || 0), 0)
+              filteredGlobalSales.reduce((acc, cur) => acc + (parseFloat(cur.purchase_amount) || 0), 0)
             );
+    
 
             // 📅 Liste des mois (de "01" à "12")
             const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, "0"));
 
             // 🔹 Générer les valeurs prévisionnelles (priorité à 2025, sinon 2024)
-            const forecastData = months.map((month) => {
-                const data2025 = salesByMonth2025[month];
-                const data2024 = salesByMonth2024[month];
+            const forecastData = months.map((month, index) => {
+              const data2025 = salesByMonth2025[month];
+              const data2024 = salesByMonth2024[month];
 
-                return data2025 || // ✅ Prendre la donnée réelle de 2025 si disponible
-                    (data2024 ? { ...data2024, month: `${currentYear}-${month}` } : // 🔄 Sinon, utiliser celle de 2024 en l'adaptant à 2025
-                    { month: `${currentYear}-${month}`, total_quantity: 0, revenue: 0, margin: 0, purchase_quantity: 0, purchase_amount: 0 }); // 🚨 Si aucune donnée dispo
+              // 🔍 Vérifier si le mois suivant est rempli (donc le mois actuel est "complet")
+              const nextMonth = months[index + 1]; // Mois suivant
+              const nextMonthData = salesByMonth2025[nextMonth]; // Données du mois suivant
+
+              const isNextMonthFilled = nextMonthData && (nextMonthData.total_quantity || 0) > 0 && (nextMonthData.revenue || 0) > 0;
+
+              return isNextMonthFilled ? data2025 // ✅ Si le mois suivant est rempli, prendre 2025
+                  : (data2024 ? { ...data2024, month: `${currentYear}-${month}` } // 🔄 Sinon, prendre 2024
+                  : { month: `${currentYear}-${month}`, total_quantity: 0, revenue: 0, margin: 0, purchase_quantity: 0, purchase_amount: 0 });
             });
-
-            console.log('forecastData', forecastData)
 
             // 🔵 Correction du calcul en s'assurant que toutes les valeurs sont bien des nombres
             setTotalForecastSellOut(
@@ -162,6 +190,30 @@ const SalesDataComponent: React.FC = () => {
             setTotalForecastPurchaseAmount(
                 forecastData.reduce((acc, cur) => acc + (parseFloat(cur.purchase_amount) || 0), 0)
             );
+
+            const currentMonth = new Date().getMonth() + 1; // Récupère le mois actuel (1 = janvier, 12 = décembre)
+
+            // Filtrer les données de 2024 pour n'inclure que les mois disponibles en 2025
+            const monthsUpToCurrent = Array.from({ length: currentMonth }, (_, i) => (i + 1).toString().padStart(2, "0"));
+
+            const filteredSales2024 = monthsUpToCurrent.map(month => salesByMonth2024[month] || { total_quantity: 0, revenue: 0, margin: 0, purchase_quantity: 0, purchase_amount: 0 });
+
+            setAdjustedSellOut2024(
+              filteredSales2024.reduce((acc, cur) => acc + (parseFloat(cur.total_quantity) || 0), 0)
+            );
+            setAdjustedRevenue2024(
+              filteredSales2024.reduce((acc, cur) => acc + (parseFloat(cur.revenue) || 0), 0)
+            );
+            setAdjustedMargin2024(
+              filteredSales2024.reduce((acc, cur) => acc + (parseFloat(cur.margin) || 0), 0)
+            );
+            setAdjustedSellIn2024(
+              filteredSales2024.reduce((acc, cur) => acc + (parseFloat(cur.purchase_quantity) || 0), 0)
+            );
+            setAdjustedPurchaseAmount2024(
+              filteredSales2024.reduce((acc, cur) => acc + (parseFloat(cur.purchase_amount) || 0), 0)
+            );
+
       
           } catch (err) {
             setError("Impossible de récupérer les données");
@@ -186,110 +238,263 @@ const SalesDataComponent: React.FC = () => {
             <span className="text-teal-700">Chargement en cours...</span>
         </div>
         )}
+        <h2 className="text-xl font-bold text-gray-700 text-center pt-6">📊 Sell-in / Sell-out</h2>
+        <p className="text-gray-500 text-center mb-6">Données sur les ventes et achats</p>
         <div className="max-w-8xl mx-auto p-6 space-y-10">
+          
       {/* 📌 Card Totale Global */}
-      <div className="p-6 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-xl shadow-lg flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold">📊 Résumé Annuel (2025)</h2>
-          <p className="text-sm opacity-80">Du 1er Janvier à aujourd'hui</p>
-        </div>
-        <div className="flex space-x-6">
-          <div className="text-center">
-            <FaShoppingCart className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalSellOut, false)}</p>
-            <p className="text-sm">Ventes (Sell-Out)</p>
-          </div>
-          <div className="text-center">
-            <FaChartLine className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalRevenue)}</p>
-            <p className="text-sm">CA</p>
-          </div>
-          <div className="text-center">
-            <FaMoneyBillWave className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalMargin)}</p>
-            <p className="text-sm">Marge</p>
-          </div>
-          <div className="w-px h-18 bg-white opacity-30"></div>
-          <div className="text-center">
-            <FaBoxOpen className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalSellIn, false)}</p>
-            <p className="text-sm">Achats (Sell-in)</p>
-          </div>
-          <div className="text-center">
-            <FaMoneyBillWave className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalPurchaseAmount)}</p>
-            <p className="text-sm">Montant d'Achat</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 bg-gradient-to-r from-cyan-500 to-cyan-700 text-white rounded-xl shadow-lg flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-semibold">🔮 Prévisions Année 2025</h2>
-          <p className="text-sm opacity-80">Projection basée sur les tendances actuelles</p>
-        </div>
-        <div className="flex space-x-6">
-          <div className="text-center">
-            <FaShoppingCart className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalForecastSellOut, false)}</p>
-            <p className="text-sm">Ventes (Sell-Out)</p>
-          </div>
-          <div className="text-center">
-            <FaChartLine className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalForecastRevenue)}</p>
-            <p className="text-sm">CA</p>
-          </div>
-          <div className="text-center">
-            <FaMoneyBillWave className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalForecastMargin)}</p>
-            <p className="text-sm">Marge</p>
-          </div>
-          <div className="w-px h-18 bg-white opacity-30"></div>
-          <div className="text-center">
-            <FaBoxOpen className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalForecastSellIn, false)}</p>
-            <p className="text-sm">Achats (Sell-in)</p>
-          </div>
-          <div className="text-center">
-            <FaMoneyBillWave className="text-2xl mx-auto" />
-            <p className="text-xl font-bold">{formatLargeNumber(totalForecastPurchaseAmount)}</p>
-            <p className="text-sm">Montant Achat</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 📌 Card Totale Global Toutes Dates */}
-<div className="p-6 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white rounded-xl shadow-lg flex justify-between items-center">
-  <div>
-    <h2 className="text-lg font-semibold">🌍 Totaux Toutes Périodes</h2>
-    <p className="text-sm opacity-80">Données cumulées depuis le début</p>
+      <div className="p-6 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-xl shadow-lg border border-white">
+  {/* 📊 Titre */}
+  <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
+    <h2 className="text-lg font-semibold">📊 Résumé Annuel (2025)</h2>
+    <p className="text-sm opacity-80">Du 1er Janvier à aujourd'hui</p>
   </div>
-  <div className="flex space-x-6">
-    <div className="text-center">
-      <FaShoppingCart className="text-2xl mx-auto" />
-      <p className="text-xl font-bold">{formatLargeNumber(globalSellOut, false)}</p>
-      <p className="text-sm">Ventes (Sell-Out)</p>
+
+  {/* 🟢 Contenu avec deux colonnes */}
+  <div className="grid grid-cols-2 gap-8">
+    {/* 🔵 SELL-OUT */}
+    <div className="border-r border-white pr-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaShoppingCart className="mr-2" /> Sell-Out
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalSellOut, false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalSellOut - adjustedSellOut2024) / adjustedSellOut2024) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalSellOut - adjustedSellOut2024) / adjustedSellOut2024) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+            
+              
+              {adjustedSellOut2024 !== 0 ? `${(((totalSellOut - adjustedSellOut2024) / adjustedSellOut2024) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalRevenue)}</p>
+          <p className="text-sm opacity-80">CA</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalRevenue - adjustedRevenue2024) / adjustedRevenue2024) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalRevenue - adjustedRevenue2024) / adjustedRevenue2024) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+              
+              
+              {adjustedRevenue2024 !== 0 ? `${(((totalRevenue - adjustedRevenue2024) / adjustedRevenue2024) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalMargin)}</p>
+          <p className="text-sm opacity-80">Marge</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalMargin - adjustedMargin2024) / adjustedMargin2024) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalMargin - adjustedMargin2024) / adjustedMargin2024) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+             
+              
+              {adjustedMargin2024 !== 0 ? `${(((totalMargin - adjustedMargin2024) / adjustedMargin2024) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div className="text-center">
-      <FaChartLine className="text-2xl mx-auto" />
-      <p className="text-xl font-bold">{formatLargeNumber(globalRevenue)}</p>
-      <p className="text-sm">CA</p>
+
+    {/* 🟠 SELL-IN */}
+    <div className="pl-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaBoxOpen className="mr-2" /> Sell-In
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalSellIn, false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalSellIn - adjustedSellIn2024) / adjustedSellIn2024) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalSellIn - adjustedSellIn2024) / adjustedSellIn2024) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+             
+              
+              {adjustedSellIn2024 !== 0 ? `${(((totalSellIn - adjustedSellIn2024) / adjustedSellIn2024) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalPurchaseAmount)}</p>
+          <p className="text-sm opacity-80">Montant</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalPurchaseAmount - adjustedPurchaseAmount2024) / adjustedPurchaseAmount2024) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalPurchaseAmount - adjustedPurchaseAmount2024) / adjustedPurchaseAmount2024) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+              {adjustedPurchaseAmount2024 !== 0 ? `${(((totalPurchaseAmount - adjustedPurchaseAmount2024) / adjustedPurchaseAmount2024) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div className="text-center">
-      <FaMoneyBillWave className="text-2xl mx-auto" />
-      <p className="text-xl font-bold">{formatLargeNumber(globalMargin)}</p>
-      <p className="text-sm">Marge</p>
+  </div>
+</div>
+
+<div className="p-6 bg-gradient-to-r from-cyan-500 to-cyan-700 text-white rounded-xl shadow-lg border border-white">
+  {/* 🔮 Titre + Input aligné à droite */}
+  <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
+    <div>
+      <h2 className="text-lg font-semibold">🔮 Prévisions Année 2025</h2>
     </div>
-    <div className="w-px h-18 bg-white opacity-30"></div>
-    <div className="text-center">
-      <FaBoxOpen className="text-2xl mx-auto" />
-      <p className="text-xl font-bold">{formatLargeNumber(globalSellIn, false)}</p>
-      <p className="text-sm">Achats (Sell-in)</p>
+    
+    {/* 📉 Input pour le pourcentage d'évolution */}
+    <div className="flex items-center space-x-2">
+      <label htmlFor="forecast" className="text-sm opacity-90 whitespace-nowrap">📈 Évolution (%)</label>
+      <input
+        id="forecast"
+        type="number"
+        className="p-2 border border-white rounded-md text-gray-700 text-center w-20 focus:outline-none"
+        placeholder="0"
+        value={forecastPercentage}
+        onChange={(e) => setForecastPercentage(parseFloat(e.target.value) || 0)}
+      />
     </div>
-    <div className="text-center">
-      <FaMoneyBillWave className="text-2xl mx-auto" />
-      <p className="text-xl font-bold">{formatLargeNumber(globalPurchaseAmount)}</p>
-      <p className="text-sm">Montant d'Achat</p>
+  </div>
+
+  {/* 🟢 Contenu avec deux colonnes */}
+  <div className="grid grid-cols-2 gap-8">
+    {/* 🔵 SELL-OUT */}
+    <div className="border-r border-white pr-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaShoppingCart className="mr-2" /> Sell-Out
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalForecastSellOut * (1 + forecastPercentage / 100), false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalForecastSellOut * (1 + forecastPercentage / 100) - globalSellOut) / globalSellOut) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalForecastSellOut * (1 + forecastPercentage / 100) - globalSellOut) / globalSellOut) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+             
+              {globalSellOut !== 0 ? `${(((totalForecastSellOut * (1 + forecastPercentage / 100) - globalSellOut) / globalSellOut) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalForecastRevenue * (1 + forecastPercentage / 100))}</p>
+          <p className="text-sm opacity-80">CA</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalForecastRevenue * (1 + forecastPercentage / 100) - globalRevenue) / globalRevenue) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalForecastRevenue * (1 + forecastPercentage / 100) - globalRevenue) / globalRevenue) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+             
+              {globalSellOut !== 0 ? `${(((totalForecastRevenue * (1 + forecastPercentage / 100) - globalRevenue) / globalRevenue) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalForecastMargin * (1 + forecastPercentage / 100))}</p>
+          <p className="text-sm opacity-80">Marge</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalForecastMargin * (1 + forecastPercentage / 100) - globalMargin) / globalMargin) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalForecastMargin * (1 + forecastPercentage / 100) - globalMargin) / globalMargin) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+              
+              {globalMargin !== 0 ? `${(((totalForecastMargin * (1 + forecastPercentage / 100) - globalMargin) / globalMargin) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* 🟠 SELL-IN */}
+    <div className="pl-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaBoxOpen className="mr-2" /> Sell-In
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalForecastSellIn * (1 + forecastPercentage / 100), false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalForecastSellIn * (1 + forecastPercentage / 100) - globalSellIn) / globalSellIn) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalForecastSellIn * (1 + forecastPercentage / 100) - globalSellIn) / globalSellIn) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+              
+              
+              {globalSellIn !== 0 ? `${(((totalForecastSellIn * (1 + forecastPercentage / 100) - globalSellIn) / globalSellIn) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(totalForecastPurchaseAmount * (1 + forecastPercentage / 100))}</p>
+          <p className="text-sm opacity-80">Montant</p>
+          <div className="flex items-center justify-center mt-2">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center 
+              ${((totalForecastPurchaseAmount * (1 + forecastPercentage / 100) - globalPurchaseAmount) / globalPurchaseAmount) * 100 > 0 ? "bg-green-400 text-white" : 
+                ((totalForecastPurchaseAmount * (1 + forecastPercentage / 100) - globalPurchaseAmount) / globalPurchaseAmount) * 100 < 0 ? "bg-red-400 text-white" : "bg-gray-300 text-gray-700"}`}>
+              
+             
+              
+              {globalPurchaseAmount !== 0 ? `${(((totalForecastPurchaseAmount * (1 + forecastPercentage / 100) - globalPurchaseAmount) / globalPurchaseAmount) * 100).toFixed(1)}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      {/* 📌 Card Totale Global Toutes Dates */}
+      <div className="p-6 bg-gradient-to-r from-emerald-500 to-emerald-700 text-white rounded-xl shadow-lg border border-white">
+  {/* 🌍 Titre */}
+  <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
+    <h2 className="text-lg font-semibold">📊 Résumé Annuel (2024)</h2>
+    <p className="text-sm opacity-80">Du 1er Janvier 2024 au 31 Décembre 2024</p>
+  </div>
+
+  {/* 🟢 Contenu avec deux colonnes */}
+  <div className="grid grid-cols-2 gap-8">
+    {/* 🔵 SELL-OUT */}
+    <div className="border-r border-white pr-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaShoppingCart className="mr-2" /> Sell-Out
+      </h3>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(globalSellOut, false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(globalRevenue)}</p>
+          <p className="text-sm opacity-80">CA</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(globalMargin)}</p>
+          <p className="text-sm opacity-80">Marge</p>
+        </div>
+      </div>
+    </div>
+
+    {/* 🟠 SELL-IN */}
+    <div className="pl-6">
+      <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+        <FaBoxOpen className="mr-2" /> Sell-In
+      </h3>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(globalSellIn, false)}</p>
+          <p className="text-sm opacity-80">Volume</p>
+        </div>
+        <div className="text-center">
+          <p className="text-xl font-bold">{formatLargeNumber(globalPurchaseAmount)}</p>
+          <p className="text-sm opacity-80">Montant</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -326,7 +531,7 @@ const SalesDataComponent: React.FC = () => {
                 <div key={index} className="bg-gray-50 p-5 rounded-lg shadow-sm border border-gray-300">
                     <h3 className="text-lg font-semibold text-gray-700 flex justify-between items-center">
                     {data.month} 
-                    <span className="text-sm text-gray-500">Détails</span>
+                    <span className="text-sm text-gray-500">📅 Détails</span>
                     </h3>
                     <div className="flex justify-between mt-4">
                     {/* 📌 Colonne Sell-Out */}
@@ -370,6 +575,21 @@ const SalesDataComponent: React.FC = () => {
         </AnimatePresence>
         </div>
     </div>
+    {/* 🔹 Séparateur et Titre pour la section Stock Break Rate */}
+    <div className="mt-10 mb-6 border-t-4 border-gray-300"></div>
+    <h2 className="text-xl font-bold text-gray-700 text-center pt-6">📉 Analyse des Ruptures de Stock</h2>
+    <p className="text-gray-500 text-center mb-6">Données sur les ruptures de stock et leur impact</p>
+    <StockBreakRate/>
+
+    <div className="mt-10 mb-6 border-t-4 border-gray-300"></div>
+    <h2 className="text-xl font-bold text-gray-700 text-center pt-6">📦 Analyse du Stock</h2>
+    <p className="text-gray-500 text-center mb-10">Données sur le stock et leur impact</p>
+    <LabStockComponent/>
+
+    <div className="mt-10 mb-6 border-t-4 border-gray-300"></div>
+    <h2 className="text-xl font-bold text-gray-700 text-center pt-6">📊 Analyse des Indicateurs Financiers</h2>
+    <p className="text-gray-500 text-center mb-10">Données sur les ventes, marges et performances</p>
+    <LabMetricsComponent />
 
     </>
   );

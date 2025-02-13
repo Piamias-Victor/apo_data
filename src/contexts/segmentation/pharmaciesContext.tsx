@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Définition du type pour une pharmacie
 interface Pharmacy {
   id: string;
   id_nat: string | null;
@@ -20,7 +19,6 @@ interface PharmacyContextType {
 
 const PharmacyContext = createContext<PharmacyContextType | undefined>(undefined);
 
-// Hook personnalisé pour accéder au contexte
 export const usePharmacyContext = () => {
   const context = useContext(PharmacyContext);
   if (!context) {
@@ -29,7 +27,6 @@ export const usePharmacyContext = () => {
   return context;
 };
 
-// Provider pour charger les données des pharmacies
 export const PharmacyProvider = ({ children }: { children: React.ReactNode }) => {
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,11 +35,12 @@ export const PharmacyProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     const fetchPharmacies = async () => {
       try {
-        const { data } = await axios.get('/api/segmentation/getPharmacies'); // Ton API
+        console.log("🔍 Récupération de toutes les pharmacies...");
+        const { data } = await axios.get('/api/segmentation/getPharmacies');
         setPharmacies(data.pharmacies);
-      } catch (err) {
-        console.error(err);
-        setError('Erreur lors du chargement des pharmacies');
+      } catch (err: any) {
+        console.error("❌ Erreur API Pharmacies :", err.response?.data || err.message);
+        setError(err.response?.data?.error || 'Erreur lors du chargement des pharmacies');
       } finally {
         setLoading(false);
       }

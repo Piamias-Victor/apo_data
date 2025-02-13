@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 
 // Définition des types pour les filtres
-interface FilterState {
+export interface FilterState {
   pharmacies: string[];
   universes: string[];
   categories: string[];
@@ -49,7 +49,14 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   const setFilters = (updatedFilters: Partial<FilterState>) => {
-    setFiltersState((prevFilters) => ({ ...prevFilters, ...updatedFilters }));
+    setFiltersState((prevFilters) => {
+      const newFilters = { ...prevFilters, ...updatedFilters };
+  
+      console.log('🔹 Ancien état des filtres :', prevFilters);
+      console.log('🟢 Nouvel état appliqué des filtres :', newFilters);
+  
+      return newFilters;
+    });
   };
 
   const resetFilters = () => {
