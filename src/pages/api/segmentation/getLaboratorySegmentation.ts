@@ -8,7 +8,7 @@ interface Segmentation {
   family: string;
   sub_family: string;
   specificity: string;
-  ranges: string[]; // 🔹 Ajout d'un tableau de gammes dans l'objet segmentation
+  ranges: string[];
 }
 
 export default async function handler(
@@ -38,29 +38,13 @@ export default async function handler(
           range_name
       FROM data_globalproduct
       WHERE 
-        (
-          ($1::text[] IS NOT NULL AND lab_distributor = ANY($1))  -- 🔹 Filtre par laboratoire
-          OR 
-          ($2::text[] IS NOT NULL AND brand_lab = ANY($2))  -- 🔹 Filtre par marque
-        )
-        AND ($3::text[] IS NULL OR universe = ANY($3))  -- 🔹 Filtre par univers
-        AND ($4::text[] IS NULL OR category = ANY($4))  -- 🔹 Filtre par catégorie
-        AND ($5::text[] IS NULL OR sub_category = ANY($5))  -- 🔹 Filtre par sous-catégorie
-        AND ($6::text[] IS NULL OR family = ANY($6))  -- 🔹 Filtre par famille
-        AND ($7::text[] IS NULL OR sub_family = ANY($7))  -- 🔹 Filtre par sous-famille
-        AND ($8::text[] IS NULL OR specificity = ANY($8))  -- 🔹 Filtre par spécificité
+        (lab_distributor = ANY($1) OR brand_lab = ANY($2))  -- 🔹 Filtre UNIQUEMENT par laboratoire ou marque
       ORDER BY universe, category, sub_category, family, sub_family, specificity, range_name;
     `;
 
     const { rows } = await pool.query<Segmentation & { range_name: string }>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
       filters.brands.length > 0 ? filters.brands : null,
-      filters.universes.length > 0 ? filters.universes : null,
-      filters.categories.length > 0 ? filters.categories : null,
-      filters.subCategories.length > 0 ? filters.subCategories : null,
-      filters.families.length > 0 ? filters.families : null,
-      filters.subFamilies.length > 0 ? filters.subFamilies : null,
-      filters.specificities.length > 0 ? filters.specificities : null,
     ]);
 
     if (rows.length === 0) {
@@ -81,7 +65,7 @@ export default async function handler(
           family,
           sub_family,
           specificity,
-          ranges: [], // Initialisation du tableau de gammes
+          ranges: [],
         });
       }
 

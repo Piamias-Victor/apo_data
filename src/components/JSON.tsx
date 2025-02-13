@@ -1,28 +1,23 @@
-import { useFilterContext } from "@/contexts/FilterContext";
 import { useEffect, useState } from "react";
+import { useFilterContext } from "@/contexts/FilterContext";
+import Loader from "./ui/Loader";
 
-interface SalesData {
-  code_13_ref: string;
-  name: string;
-  tva_percentage: number;
-  total_revenue: number;
-  total_purchase_amount: number;
-  total_margin: number;
-  total_quantity_sold: number;
-  range_name: string;
+interface StockData {
+  totalStockQuantity: number;
+  totalStockValue: number;
+  totalSalesQuantity: number;
+  totalSalesRevenue: number;
+  stockMonthsQuantity: number | null;
+  stockMonthsValue: number | null;
+  stockValuePercentage: number | null;
+  stockQuantityEvolution: number | null;
+  stockValueEvolution: number | null;
+  stockMonthsQuantityEvolution: number | null;
+  stockMonthsValueEvolution: number | null;
 }
 
-interface RangeSummary {
-  range_name: string;
-  total_revenue: number;
-  total_purchase_amount: number;
-  total_margin: number;
-  total_quantity_sold: number;
-  products: SalesData[] | null;
-}
-
-const SalesDataDisplay = () => {
-  const [data, setData] = useState<RangeSummary[] | null>(null);
+const SalesDataRaw: React.FC = () => {
+  const [data, setData] = useState<StockData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { filters } = useFilterContext();
@@ -30,7 +25,10 @@ const SalesDataDisplay = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/sell-out/getSalesData", {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/stock/getLabStock", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
@@ -41,14 +39,7 @@ const SalesDataDisplay = () => {
         }
 
         const result = await response.json();
-        
-        // Définir le nom du laboratoire si range_name est null
-        const updatedData = result.ranges.map((range: RangeSummary) => ({
-          ...range,
-          range_name: range.range_name || filters.distributors[0] || filters.brands[0] || "Inconnu"
-        }));
-
-        setData(updatedData);
+        setData(result.stockData); // ✅ Correction ici
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
       } finally {
@@ -59,10 +50,22 @@ const SalesDataDisplay = () => {
     fetchData();
   }, [filters]);
 
-  if (loading) return <p>Chargement...</p>;
-  if (error) return <p>Erreur : {error}</p>;
+  console.log("Données reçues :", data);
 
-  return <pre>{JSON.stringify(data, null, 2)}</pre>;
+  if (loading) return <Loader message="Chargement des données JSON..." />;
+  if (error) return <p className="text-red-600 text-center">Erreur : {error}</p>;
+  if (!data) return <p className="text-gray-600 text-center">Aucune donnée disponible.</p>;
+
+  return (
+    <div className="p-4 bg-gray-100 rounded-md shadow-md">
+      <h2 className="text-lg font-semibold text-teal-600 mb-2">Réponse JSON :</h2>
+      <div className="bg-white p-3 rounded-md shadow text-sm overflow-x-auto max-h-80 border border-gray-200">
+        <pre className="whitespace-pre-wrap break-words">
+          {JSON.stringify(data, null, 2)}
+        </pre>
+      </div>
+    </div>
+  );
 };
 
-export default SalesDataDisplay;
+export default SalesDataRaw;
