@@ -1,8 +1,8 @@
 import React from "react";
-import StockBreakRate from "@/components/old/laboratory/StockBreakRate";
 import { motion } from "framer-motion";
 import SalesDataComponent from "./sales/SalesDataComponent";
 import StockBreakDataComponent from "./break/StockBreakDataComponent";
+import StockDataComponent from "./stock/StockDataComponent";
 
 const LaboratoryDashboardGlobal: React.FC = () => {
   return (
@@ -28,6 +28,32 @@ const LaboratoryDashboardGlobal: React.FC = () => {
       {/* 🎨 Séparateur stylisé */}
       <motion.div
         className="mt-12 border-t-4 border-gradient-to-r from-teal-400 via-yellow-400 to-red-400 mx-auto w-3/4"
+        initial={{ width: 0 }}
+        animate={{ width: "75%" }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      ></motion.div>
+
+      {/* 📦 Titre stylisé pour la section Stock */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-center"
+      >
+        <h2 className="text-4xl font-extrabold text-indigo-600 tracking-wide flex items-center justify-center gap-3">
+          <span className="text-green-500">📦</span> Analyse des Stocks
+        </h2>
+        <p className="text-gray-600 mt-2 text-lg">
+          Évaluation des niveaux de stock et de leur impact sur la trésorerie 📊
+        </p>
+      </motion.div>
+
+      {/* 📦 Section Stock */}
+      <StockDataComponent />
+
+      {/* 🎨 Séparateur stylisé */}
+      <motion.div
+        className="mt-12 border-t-4 border-gradient-to-r from-indigo-400 via-blue-400 to-teal-400 mx-auto w-3/4"
         initial={{ width: 0 }}
         animate={{ width: "75%" }}
         transition={{ duration: 0.8, ease: "easeOut" }}

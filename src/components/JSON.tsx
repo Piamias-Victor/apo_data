@@ -27,19 +27,21 @@ const SalesDataRaw: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-
-        const response = await fetch("/api/stock/getLabStock", {
+    
+        const response = await fetch("/api/stock/getStockByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
         });
-
+    
         if (!response.ok) {
           throw new Error("Erreur lors de la récupération des données");
         }
-
+    
         const result = await response.json();
-        setData(result.stockData); // ✅ Correction ici
+    
+        console.log("🟢 Réponse API :", result); // ✅ Ajout du log
+        setData(result.stockSalesData); // ✅ Correction ici (changer stockData → stockSalesData)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
       } finally {
