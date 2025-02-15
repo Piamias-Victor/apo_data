@@ -28,7 +28,7 @@ const SalesDataRaw: React.FC = () => {
         setLoading(true);
         setError(null);
     
-        const response = await fetch("/api/stock/getStockByMonth", {
+        const response = await fetch("/api/getMetricsByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
@@ -40,7 +40,6 @@ const SalesDataRaw: React.FC = () => {
     
         const result = await response.json();
     
-        console.log("🟢 Réponse API :", result); // ✅ Ajout du log
         setData(result.stockSalesData); // ✅ Correction ici (changer stockData → stockSalesData)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur inconnue");
@@ -52,7 +51,6 @@ const SalesDataRaw: React.FC = () => {
     fetchData();
   }, [filters]);
 
-  console.log("Données reçues :", data);
 
   if (loading) return <Loader message="Chargement des données JSON..." />;
   if (error) return <p className="text-red-600 text-center">Erreur : {error}</p>;
