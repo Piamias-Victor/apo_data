@@ -52,9 +52,6 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
     setFiltersState((prevFilters) => {
       const newFilters = { ...prevFilters, ...updatedFilters };
   
-      console.log('🔹 Ancien état des filtres :', prevFilters);
-      console.log('🟢 Nouvel état appliqué des filtres :', newFilters);
-  
       return newFilters;
     });
   };

@@ -124,8 +124,6 @@ ORDER BY am.month ASC;
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // ✅ Correction: Assure un tableau d'UUID
     ]);
 
-    console.log("🟢 Résultats API:", rows);
-
     if (rows.length === 0) {
       return res.status(404).json({ error: "Aucune donnée trouvée" });
     }

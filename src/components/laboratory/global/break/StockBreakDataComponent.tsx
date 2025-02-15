@@ -128,9 +128,6 @@ const StockBreakDataComponent: React.FC = () => {
         setAdjustedBreakProduct2024(adjustedBreakProduct);
         setAdjustedBreakAmount2024(adjustedBreakAmount);
         setAdjustedBreakRate2024(adjustedBreakRate);
-
-        console.log("📊 Nouveau taux de rupture 2024 :", globalBreakRate2024);
-        console.log("📊 Nouveau taux de rupture 2025 :", totalBreakRate);
         
       } catch (err) {
         setError("Impossible de récupérer les données");
@@ -161,38 +158,25 @@ const StockBreakDataComponent: React.FC = () => {
   ? (fullForecastBreakProduct / fullForecastProductOrder) * 100 
   : 0;
 
-console.log("🔄 Nouveau taux de rupture prévisionnel :", newForecastBreakRate);
 setFullForecastBreakRate(newForecastBreakRate);
   }, [forecastPercentage, completeForecast, hasSelectedLabs]);
 
   useEffect(() => {
     if (!hasSelectedLabs) return;
   
-    console.log("🔄 Recalcul des taux de rupture après mise à jour des données :", {
-      totalProductOrder,
-      totalBreakProduct,
-      globalProductOrder2024,
-      globalBreakProduct2024,
-      fullForecastProductOrder,
-      fullForecastBreakProduct
-    });
-  
     // 🟢 Vérification avant le calcul
     if (totalProductOrder > 0) {
       const newBreakRate2025 = (totalBreakProduct / totalProductOrder) * 100;
-      console.log("📊 Nouveau taux de rupture 2025 recalculé :", newBreakRate2025);
       setTotalBreakRate(newBreakRate2025);
     }
   
     if (globalProductOrder2024 > 0) {
       const newBreakRate2024 = (globalBreakProduct2024 / globalProductOrder2024) * 100;
-      console.log("📊 Nouveau taux de rupture 2024 recalculé :", newBreakRate2024);
       setGlobalBreakRate2024(newBreakRate2024);
     }
   
     if (fullForecastProductOrder > 0) {
       const newForecastBreakRate = (fullForecastBreakProduct / fullForecastProductOrder) * 100;
-      console.log("🔄 Nouveau taux de rupture prévisionnel recalculé :", newForecastBreakRate);
       setFullForecastBreakRate(newForecastBreakRate);
     }
   

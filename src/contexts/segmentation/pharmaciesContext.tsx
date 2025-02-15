@@ -35,7 +35,6 @@ export const PharmacyProvider = ({ children }: { children: React.ReactNode }) =>
   useEffect(() => {
     const fetchPharmacies = async () => {
       try {
-        console.log("🔍 Récupération de toutes les pharmacies...");
         const { data } = await axios.get('/api/segmentation/getPharmacies');
         setPharmacies(data.pharmacies);
       } catch (err: any) {

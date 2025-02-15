@@ -88,8 +88,6 @@ const LabMetricsComponent: React.FC = () => {
     fetchLabMetrics();
   }, [filters]);
 
-  console.log("📊 Lab Metrics Data :", metrics);
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 

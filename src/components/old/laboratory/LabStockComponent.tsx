@@ -61,8 +61,6 @@ const LabStockComponent: React.FC = () => {
     fetchStockData();
   }, [filters]);
 
-  console.log("📊 stockData :", stockData);
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 

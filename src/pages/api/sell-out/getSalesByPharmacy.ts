@@ -32,8 +32,6 @@ export default async function handler(
       return res.status(400).json({ error: "Filtres invalides" });
     }
 
-    console.log("🔍 Filtres API :", filters);
-
     const query = `
 WITH filtered_products AS (
     SELECT dgp.code_13_ref, dgp.tva_percentage

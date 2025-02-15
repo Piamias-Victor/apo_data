@@ -2,6 +2,9 @@
 
 import SalesDataRaw from "@/components/JSON";
 import LaboratoryDashboardGlobal from "@/components/laboratory/global/Dashboard";
+import ProductTable from "@/components/laboratory/product/ProductTable";
+import LabRevenueDashboard from "@/components/laboratory/segment/LabRevenueDashboard";
+import TopLabs from "@/components/TopLabs";
 
 export const tabItems = [
   {
@@ -10,7 +13,7 @@ export const tabItems = [
   },
   {
     label: "⭐ Produits",
-    content: 'test',
+    content: <ProductTable/>,
   },
   {
     label: "🏥 Pharmacies",
@@ -22,11 +25,11 @@ export const tabItems = [
   },
   {
     label: "🔍 Segmentation",
-    content: 'test',
+    content: <LabRevenueDashboard/>,
   },
   {
     label: "📖 Catalogue",
-    content: 'test',
+    content: <TopLabs/>,
   },
   {
     label: "📖 Test",

@@ -20,7 +20,6 @@ export default async function handler(
   }
 
   try {
-    console.log("🟢 Récupération de toutes les pharmacies...");
 
     const query = `
       SELECT id, id_nat, name, ca, area, employees_count, address
@@ -30,7 +29,6 @@ export default async function handler(
 
     const { rows } = await pool.query<Pharmacy>(query);
 
-    console.log("✅ Nombre de pharmacies récupérées :", rows.length);
 
     return res.status(200).json({ pharmacies: rows });
   } catch (error) {

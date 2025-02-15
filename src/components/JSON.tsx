@@ -28,7 +28,7 @@ const SalesDataRaw: React.FC = () => {
         setLoading(true);
         setError(null);
     
-        const response = await fetch("/api/getMetricsByMonth", {
+        const response = await fetch("/api/segmentation/getLabRevenuePosition", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

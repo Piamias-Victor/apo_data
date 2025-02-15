@@ -28,8 +28,6 @@ export default async function handler(
       return res.status(400).json({ error: "Aucun laboratoire ou marque sélectionné" });
     }
 
-    console.log("🔍 Filtres API :", filters);
-
     const query = `
 WITH filtered_products AS (
     -- 🟢 Sélection des produits en fonction des filtres

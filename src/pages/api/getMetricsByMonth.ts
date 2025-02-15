@@ -111,8 +111,6 @@ ORDER BY am.month ASC;
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
     ]);
 
-    console.log("🟢 Résultats API:", rows);
-
     return res.status(200).json({ priceMarginData: rows });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des prix et marges :", error);

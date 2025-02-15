@@ -52,8 +52,6 @@ const SalesByRange: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      console.log("📡 Envoi des filtres à l'API :", filters);
-
       try {
         const response = await fetch("/api/sell-out/getSalesData", {
           method: "POST",
@@ -64,7 +62,6 @@ const SalesByRange: React.FC = () => {
         if (!response.ok) throw new Error("Impossible de récupérer les données");
 
         const data = await response.json();
-        console.log("📦 Données reçues de l'API :", data);
         setRanges(data.ranges || []);
       } catch (err) {
         setError("Erreur lors de la récupération des données");
