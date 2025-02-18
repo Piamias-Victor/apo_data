@@ -10,6 +10,8 @@ const LabRevenueDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { filters } = useFilterContext(); // ✅ Récupère les filtres
+  const hasSelectedLabs = filters.distributors.length > 0 || filters.brands.length > 0;
+
 
   useEffect(() => {
     const fetchLabRevenue = async () => {
@@ -81,6 +83,8 @@ const LabRevenueDashboard: React.FC = () => {
     category: "📂 Analyse par Catégorie",
     family: "🏷️ Analyse par Famille",
   };
+
+  if (!hasSelectedLabs) return <p className="text-center">Sélectionnez un laboratoire.</p>;
 
   return (
     <div className="max-w-5xl mx-auto p-8">

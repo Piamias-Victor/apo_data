@@ -1,10 +1,9 @@
 // src/config/tabItems.ts
 
-import SalesDataRaw from "@/components/JSON";
+import ProductStockBreakTable from "@/components/laboratory/break/ProductStockBreakTable";
 import LaboratoryDashboardGlobal from "@/components/laboratory/global/Dashboard";
 import ProductTable from "@/components/laboratory/product/ProductTable";
 import LabRevenueDashboard from "@/components/laboratory/segment/LabRevenueDashboard";
-import TopLabs from "@/components/TopLabs";
 
 export const tabItems = [
   {
@@ -16,23 +15,11 @@ export const tabItems = [
     content: <ProductTable/>,
   },
   {
-    label: "🏥 Pharmacies",
-    content: 'test',
-  },
-  {
     label: "🚨 Rupture",
-    content: 'test',
+    content: <ProductStockBreakTable/>,
   },
   {
     label: "🔍 Segmentation",
     content: <LabRevenueDashboard/>,
-  },
-  {
-    label: "📖 Catalogue",
-    content: <TopLabs/>,
-  },
-  {
-    label: "📖 Test",
-    content: <SalesDataRaw/>,
   },
 ];

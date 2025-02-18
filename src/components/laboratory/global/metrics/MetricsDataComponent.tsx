@@ -23,7 +23,13 @@ interface PriceMarginData {
 
 const MetricsDataComponent: React.FC = () => {
   const { filters } = useFilterContext();
-  const hasSelectedLabs = filters.distributors.length > 0 || filters.brands.length > 0;
+  const hasSelectedData =
+  filters.distributors.length > 0 ||
+  filters.brands.length > 0 ||
+  filters.universes.length > 0 ||
+  filters.categories.length > 0 ||
+  filters.families.length > 0 ||
+  filters.specificities.length > 0;
 
   const [metricsData, setMetricsData] = useState<PriceMarginData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +56,7 @@ const MetricsDataComponent: React.FC = () => {
     const [globalUniqueSellingPharmacies2024, setGlobalUniqueSellingPharmacies2024] = useState(0);
 
   useEffect(() => {
-    if (!hasSelectedLabs) return;
+    if (!hasSelectedData) return;
 
     const fetchMetrics = async () => {
       setLoading(true);
@@ -128,9 +134,9 @@ const MetricsDataComponent: React.FC = () => {
     };
 
     fetchMetrics();
-  }, [filters, hasSelectedLabs]);
+  }, [filters, hasSelectedData]);
 
-  if (!hasSelectedLabs) return <p className="text-center">Sélectionnez un laboratoire.</p>;
+  if (!hasSelectedData) return <p className="text-center">Sélectionnez un laboratoire.</p>;
   if (loading) return <Loader message="Chargement des métriques..." />;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
   if (!metricsData || metricsData.length === 0) return <p className="text-center">Aucune donnée disponible.</p>;

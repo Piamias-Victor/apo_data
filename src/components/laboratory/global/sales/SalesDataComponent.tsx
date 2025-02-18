@@ -17,8 +17,13 @@ interface SalesData {
 
 const SalesDataComponent: React.FC = () => {
   const { filters } = useFilterContext();
-  const hasSelectedLabs = filters.distributors.length > 0 || filters.brands.length > 0;
-
+  const hasSelectedData =
+  filters.distributors.length > 0 ||
+  filters.brands.length > 0 ||
+  filters.universes.length > 0 ||
+  filters.categories.length > 0 ||
+  filters.families.length > 0 ||
+  filters.specificities.length > 0;
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +55,7 @@ const SalesDataComponent: React.FC = () => {
   const [fullForecastPurchaseAmount, setFullForecastPurchaseAmount] = useState(0);
 
   useEffect(() => {
-    if (!hasSelectedLabs) return;
+    if (!hasSelectedData) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -148,10 +153,10 @@ const SalesDataComponent: React.FC = () => {
     };
 
     fetchData();
-  }, [filters, hasSelectedLabs]);
+  }, [filters, hasSelectedData]);
 
   useEffect(() => {
-    if (!hasSelectedLabs || salesData.length === 0) return;
+    if (!hasSelectedData || salesData.length === 0) return;
   
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
@@ -199,9 +204,9 @@ const SalesDataComponent: React.FC = () => {
       completeForecast.reduce((acc, cur) => acc + parseFloat(String(cur.purchase_amount ?? "0")), 0) * projectedGrowthFactor
     );
   
-  }, [salesData, forecastPercentage, hasSelectedLabs]);
+  }, [salesData, forecastPercentage, hasSelectedData]);
 
-  if (!hasSelectedLabs) return <p className="text-center">Sélectionnez un laboratoire.</p>;
+  if (!hasSelectedData) return <p className="text-center">Sélectionnez un laboratoire.</p>;
   if (loading) return <Loader />;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
   if (!salesData || salesData.length === 0) return <p className="text-center">Aucune donnée disponible.</p>;

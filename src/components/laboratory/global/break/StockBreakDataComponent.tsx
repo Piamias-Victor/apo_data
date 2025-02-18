@@ -16,8 +16,13 @@ interface StockBreakData {
 
 const StockBreakDataComponent: React.FC = () => {
   const { filters } = useFilterContext();
-  const hasSelectedLabs = filters.distributors.length > 0 || filters.brands.length > 0;
-
+  const hasSelectedData =
+  filters.distributors.length > 0 ||
+  filters.brands.length > 0 ||
+  filters.universes.length > 0 ||
+  filters.categories.length > 0 ||
+  filters.families.length > 0 ||
+  filters.specificities.length > 0;
   const [stockBreakData, setStockBreakData] = useState<StockBreakData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +54,7 @@ const StockBreakDataComponent: React.FC = () => {
   const sum = (arr: any[]) => arr.reduce((acc, val) => acc + parseNumber(val), 0);
 
   useEffect(() => {
-    if (!hasSelectedLabs) return;
+    if (!hasSelectedData) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -137,10 +142,10 @@ const StockBreakDataComponent: React.FC = () => {
     };
 
     fetchData();
-  }, [filters, hasSelectedLabs]);
+  }, [filters, hasSelectedData]);
 
   useEffect(() => {
-    if (!hasSelectedLabs || completeForecast.length === 0) return;
+    if (!hasSelectedData || completeForecast.length === 0) return;
 
     const projectedGrowthFactor = 1 + forecastPercentage / 100;
 
@@ -159,10 +164,10 @@ const StockBreakDataComponent: React.FC = () => {
   : 0;
 
 setFullForecastBreakRate(newForecastBreakRate);
-  }, [forecastPercentage, completeForecast, hasSelectedLabs]);
+  }, [forecastPercentage, completeForecast, hasSelectedData]);
 
   useEffect(() => {
-    if (!hasSelectedLabs) return;
+    if (!hasSelectedData) return;
   
     // 🟢 Vérification avant le calcul
     if (totalProductOrder > 0) {
@@ -182,7 +187,7 @@ setFullForecastBreakRate(newForecastBreakRate);
   
   }, [totalProductOrder, totalBreakProduct, globalProductOrder2024, globalBreakProduct2024, fullForecastProductOrder, fullForecastBreakProduct]);
 
-  if (!hasSelectedLabs) return <p className="text-center">Sélectionnez un laboratoire.</p>;
+  if (!hasSelectedData) return <p className="text-center">Sélectionnez un laboratoire.</p>;
   if (loading) return <Loader />;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
   if (!stockBreakData || stockBreakData.length === 0) return <p className="text-center">Aucune donnée disponible.</p>;

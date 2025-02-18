@@ -3,6 +3,7 @@ import { FaChartPie, FaMoneyBillWave, FaChevronDown, FaChevronUp } from "react-i
 import { motion } from "framer-motion";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import Loader from "@/components/ui/Loader";
+import { useFilterContext } from "@/contexts/FilterContext";
 
 interface LabRevenueCardProps {
   segment: string;
@@ -24,13 +25,18 @@ const LabRevenueCard: React.FC<LabRevenueCardProps> = ({ segment, revenue, globa
   // 🟢 **État pour l'affichage des détails**
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [labs, setLabs] = useState<{ laboratoire: string; total_sales: number; part_de_marche: number }[]>([]);
+  const [labs, setLabs] = useState<{ laboratoire: string; chiffre_affaires: number; total_sales: number; part_de_marche: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { filters } = useFilterContext();
+  
 
   // ✅ Calcul de la part de marché
   const marketShare = globalrevenue > 0 ? (revenue / globalrevenue) * 100 : 0;
   const marginShare = globalmargin > 0 ? (margin / globalmargin) * 100 : 0; // ✅ Ajout du % de marge
   const cardColor = typeColors[type] || "bg-gradient-to-r from-gray-500 to-gray-700"; 
+  // ✅ Calcul de l'indice de rentabilité
+const rentabilityIndex = marginShare - marketShare;
+const rentabilityColor = rentabilityIndex >= 0 ? "text-green-300" : "text-red-300"; // 🟢 Si marge > CA, 🔴 sinon
 
   // 🔄 **Récupération des détails des laboratoires**
   const fetchLabDetails = async () => {
@@ -44,13 +50,20 @@ const LabRevenueCard: React.FC<LabRevenueCardProps> = ({ segment, revenue, globa
         const response = await fetch("/api/segmentation/getTopLabsBySegment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ segment, type }),
+          body: JSON.stringify({ segment, type, pharmacies: filters.pharmacies.length > 0 ? filters.pharmacies : null }),
         });
 
         if (!response.ok) throw new Error("Erreur lors de la récupération des laboratoires");
 
         const data = await response.json();
-        setLabs(data.labs);
+        if (data.labs && Array.isArray(data.labs)) {
+          setLabs(data.labs.map(lab => ({
+            laboratoire: lab.laboratoire,
+            chiffre_affaires: lab.chiffre_affaires, // ✅ Ajout du CA
+            total_sales: lab.total_sales,
+            part_de_marche: lab.part_de_marche
+          })));
+        }        setLabs(data.labs);
       } catch (err) {
         setError("Impossible de charger les données");
       } finally {
@@ -71,6 +84,16 @@ const LabRevenueCard: React.FC<LabRevenueCardProps> = ({ segment, revenue, globa
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <FaChartPie className="text-yellow-400" /> {segment}
         </h2>
+          <span
+            className={`px-3 py-1 rounded-full text-sm font-medium ${
+              rentabilityIndex > 0 ? "bg-green-400 text-white" 
+              : rentabilityIndex < 0 ? "bg-red-400 text-white" 
+              : "bg-gray-300 text-gray-700"
+            }`}
+          >
+            {rentabilityIndex > 0 ? "+" : ""}
+            {rentabilityIndex.toFixed(1)}%
+          </span>
         <button
           onClick={fetchLabDetails}
           className="text-white focus:outline-none transform transition-transform"
@@ -171,13 +194,27 @@ const LabRevenueCard: React.FC<LabRevenueCardProps> = ({ segment, revenue, globa
           {error && <p className="text-red-500">{error}</p>}
           {!loading && !error && labs.length > 0 && (
             <ul className="space-y-2">
-              {labs.map((lab, index) => (
-                <li key={index} className="flex justify-between items-center">
-                  <span>{lab.laboratoire}</span>
-                  <span className="font-bold">{lab.part_de_marche}%</span>
-                </li>
-              ))}
-            </ul>
+            {labs.map((lab, index) => (
+              <li 
+                key={index} 
+                className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg"
+              >
+                <span title={lab.laboratoire} className="w-1/3 truncate">{lab.laboratoire}</span> 
+                <span className="w-1/4 text-center font-bold">{formatLargeNumber(lab.chiffre_affaires, true)}</span>  
+                <span className="w-1/5 text-center font-bold">{lab.part_de_marche}%</span>
+                <span className={`w-1/5 text-center px-3 py-1 rounded-full text-sm font-medium 
+                  ${
+                    lab.part_de_marge > lab.part_de_marche ? "bg-green-400 text-white" 
+                    : lab.part_de_marge < lab.part_de_marche ? "bg-red-400 text-white" 
+                    : "bg-gray-300 text-gray-700"
+                  }`}
+                >
+                  {lab.part_de_marge - lab.part_de_marche > 0 ? "+" : ""}
+                  {(lab.part_de_marge - lab.part_de_marche).toFixed(1)}%
+                </span>
+              </li>
+            ))}
+          </ul>
           )}
         </div>
       )}

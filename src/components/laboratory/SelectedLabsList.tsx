@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import SegmentationDisplay from "@/components/segmentation/SegmentationDisplay";
 import { useFilterContext } from "@/contexts/FilterContext";
+import SegmentationDisplay from "./segmentation/SegmentationDisplay";
 
 const SelectedLabsList: React.FC = () => {
   const { filters } = useFilterContext();

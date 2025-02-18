@@ -112,7 +112,8 @@ export default async function handler(
         END AS name
       FROM data_globalproduct g
       WHERE g.code_13_ref IS NOT NULL AND g.code_13_ref <> ''
-      ORDER BY g.code_13_ref ASC;
+      ORDER BY g.code_13_ref ASC
+      LIMIT 10;
     `;
 
     // Exécution des requêtes en parallèle

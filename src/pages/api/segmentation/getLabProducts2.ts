@@ -19,11 +19,11 @@ interface LabProduct {
   min_sale_price: number;
   max_sale_price: number;
   avg_purchase_price: number;
-  avg_margin: number;
+  avg_margin: number; // ✅ Marge moyenne en euros
   pharmacies_in_stock: number;
   total_quantity_sold: number;
-  revenue_share: number;
-  margin_share: number;
+  revenue_share: number; // ✅ Part du CA sur le CA total du labo
+  margin_share: number; // ✅ Part de la marge sur la marge totale du labo
 }
 
 export default async function handler(
@@ -45,10 +45,7 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.subCategories.length &&
-        !filters.subFamilies.length &&
-        !filters.specificities.length &&
-        !filters.ranges.length)
+        !filters.specificities.length)
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
@@ -82,7 +79,7 @@ export default async function handler(
     )
 
     , latest_inventory_snapshot AS (
-        -- Récupère le dernier stock connu par pharmacie
+        -- Récupère l'inventaire des 12 derniers mois pour chaque produit/pharmacie
         SELECT DISTINCT ON (dis.product_id, dip.pharmacy_id) 
             dis.product_id,
             dip.pharmacy_id,
@@ -90,23 +87,24 @@ export default async function handler(
         FROM data_inventorysnapshot dis
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         WHERE dis.date >= CURRENT_DATE - interval '12 months'
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) 
+        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) -- ✅ Filtre par pharmacies
         ORDER BY dis.product_id, dip.pharmacy_id, dis.date DESC
     )
 
     , sales_data AS (
-        -- Calcul des ventes et marges sur 12 mois
+        -- Calcul des ventes et marges sur les 12 derniers mois
         SELECT 
             dip.code_13_ref_id AS code_13_ref,
-            SUM(ds.quantity) AS total_quantity_sold, 
-            SUM(ds.quantity * dis.price_with_tax) AS revenue,
-            AVG(dis.price_with_tax) AS avg_sale_price,
-            MIN(dis.price_with_tax) AS min_sale_price,
-            MAX(dis.price_with_tax) AS max_sale_price,
-            AVG(lis.weighted_average_price) AS avg_purchase_price,
+            SUM(ds.quantity) AS total_quantity_sold, -- ✅ Quantité totale vendue sur 12 mois
+            SUM(ds.quantity * dis.price_with_tax) AS revenue, -- ✅ CA du produit
+            AVG(dis.price_with_tax) AS avg_sale_price, -- ✅ Prix de vente moyen
+            MIN(dis.price_with_tax) AS min_sale_price, -- ✅ Prix de vente minimum
+            MAX(dis.price_with_tax) AS max_sale_price, -- ✅ Prix de vente maximum
+            AVG(lis.weighted_average_price) AS avg_purchase_price, -- ✅ Prix d'achat moyen
+            -- ✅ Correction : Calcul de la marge moyenne en euros
             ROUND(
-                (AVG(dis.price_with_tax) / (1 + COALESCE(fp.tva_percentage, 0) / 100)) 
-                - AVG(lis.weighted_average_price), 2 
+                (AVG(dis.price_with_tax) / (1 + COALESCE(fp.tva_percentage, 0) / 100)) -- Prix de vente HT moyen
+                - AVG(lis.weighted_average_price), 2 -- Prix d'achat moyen
             ) AS avg_margin
         FROM data_sales ds
         JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
@@ -115,12 +113,12 @@ export default async function handler(
         LEFT JOIN latest_inventory_snapshot lis ON lis.product_id = dis.product_id 
             AND lis.pharmacy_id = dip.pharmacy_id
         WHERE ds.date >= CURRENT_DATE - interval '12 months'
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) 
+        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) -- ✅ Filtre par pharmacies
         GROUP BY dip.code_13_ref_id, fp.tva_percentage
     )
 
     , stock_data AS (
-        -- Nombre de pharmacies ayant stocké le produit sur 12 mois
+        -- Nombre de pharmacies ayant eu le produit en stock sur les 12 derniers mois
         SELECT 
             dip.code_13_ref_id AS code_13_ref,
             COUNT(DISTINCT dip.pharmacy_id) AS pharmacies_in_stock
@@ -128,12 +126,12 @@ export default async function handler(
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
         WHERE dis.date >= CURRENT_DATE - interval '12 months'
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) 
+        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10)) -- ✅ Filtre par pharmacies
         GROUP BY dip.code_13_ref_id
     )
 
     , lab_totals AS (
-        -- Total CA et Marge du laboratoire pour normalisation
+        -- ✅ Calcul du CA total et de la marge totale du laboratoire
         SELECT 
             SUM(sd.revenue) AS total_lab_revenue,
             SUM(sd.avg_margin * sd.total_quantity_sold) AS total_lab_margin
@@ -146,15 +144,15 @@ export default async function handler(
         ROUND(COALESCE(sd.min_sale_price, 0), 2) AS min_sale_price,
         ROUND(COALESCE(sd.max_sale_price, 0), 2) AS max_sale_price,
         ROUND(COALESCE(sd.avg_purchase_price, 0), 2) AS avg_purchase_price,
-        ROUND(COALESCE(sd.avg_margin, 0), 2) AS avg_margin, 
+        ROUND(COALESCE(sd.avg_margin, 0), 2) AS avg_margin, -- ✅ Marge moyenne en € (non en %)
         COALESCE(st.pharmacies_in_stock, 0) AS pharmacies_in_stock,
         COALESCE(sd.total_quantity_sold, 0) AS total_quantity_sold,
-        ROUND((sd.revenue / NULLIF(lt.total_lab_revenue, 0)) * 100, 2) AS revenue_share, 
-        ROUND((sd.avg_margin * sd.total_quantity_sold / NULLIF(lt.total_lab_margin, 0)) * 100, 2) AS margin_share 
+        ROUND((sd.revenue / NULLIF(lt.total_lab_revenue, 0)) * 100, 2) AS revenue_share, -- ✅ Part du CA en %
+        ROUND((sd.avg_margin * sd.total_quantity_sold / NULLIF(lt.total_lab_margin, 0)) * 100, 2) AS margin_share -- ✅ Part de la marge en %
     FROM filtered_products fp
     LEFT JOIN sales_data sd ON fp.code_13_ref = sd.code_13_ref
     LEFT JOIN stock_data st ON fp.code_13_ref = st.code_13_ref
-    CROSS JOIN lab_totals lt 
+    CROSS JOIN lab_totals lt -- ✅ Utilisation des totaux pour calculer les parts
     ORDER BY revenue_share DESC;
     `;
 

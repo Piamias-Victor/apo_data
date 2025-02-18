@@ -1,9 +1,10 @@
+import ActionButtons from "@/components/ui/buttons/ActionButtons";
+import SearchInput from "@/components/ui/inputs/SearchInput";
+import Loader from "@/components/ui/Loader";
+import { useFilterContext, FilterState } from "@/contexts/FilterContext";
 import { useState, useEffect } from "react";
-import { FilterState, useFilterContext } from "@/contexts/FilterContext";
-import ActionButtons from "../ui/buttons/ActionButtons";
-import Loader from "../ui/Loader";
 import SegmentationFilter from "./SegmentationFilter";
-import SearchInput from "../ui/inputs/SearchInput";
+
 
 interface Segmentation {
   universe: string;

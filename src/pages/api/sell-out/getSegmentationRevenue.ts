@@ -24,8 +24,17 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
-    if (!filters || (filters.distributors.length === 0 && filters.brands.length === 0)) {
-      return res.status(400).json({ error: "Aucun laboratoire ou marque sélectionné" });
+    if (
+      !filters ||
+      (!filters.pharmacies.length &&
+        !filters.distributors.length &&
+        !filters.brands.length &&
+        !filters.universes.length &&
+        !filters.categories.length &&
+        !filters.families.length &&
+        !filters.specificities.length)
+    ) {
+      return res.status(400).json({ error: "Filtres invalides" });
     }
 
     const query = `

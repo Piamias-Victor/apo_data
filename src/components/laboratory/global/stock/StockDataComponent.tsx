@@ -16,7 +16,13 @@ interface StockSalesData {
 
 const StockDataComponent: React.FC = () => {
   const { filters } = useFilterContext();
-  const hasSelectedLabs = filters.distributors.length > 0 || filters.brands.length > 0;
+  const hasSelectedData =
+  filters.distributors.length > 0 ||
+  filters.brands.length > 0 ||
+  filters.universes.length > 0 ||
+  filters.categories.length > 0 ||
+  filters.families.length > 0 ||
+  filters.specificities.length > 0;
 
   const [stockSalesData, setStockSalesData] = useState<StockSalesData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +51,7 @@ const StockDataComponent: React.FC = () => {
   const [globalStockValuePercentage2024, setGlobalStockValuePercentage2024] = useState(0);
 
   useEffect(() => {
-    if (!hasSelectedLabs) return;
+    if (!hasSelectedData) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -161,10 +167,10 @@ setGlobalStockValuePercentage2024(totalGlobalStockValuePercentage2024);
     };
 
     fetchData();
-  }, [filters, hasSelectedLabs]);
+  }, [filters, hasSelectedData]);
 
   useEffect(() => {
-    if (!hasSelectedLabs || stockSalesData.length === 0) return;
+    if (!hasSelectedData || stockSalesData.length === 0) return;
   
     const currentYear = new Date().getFullYear();
     const previousYear = currentYear - 1;
@@ -217,10 +223,10 @@ setGlobalStockValuePercentage2024(totalGlobalStockValuePercentage2024);
       totalForecastRevenue > 0 ? ((fullForecastStockValue / totalForecastRevenue) * 100) * projectedGrowthFactor : 0
     );
   
-  }, [stockSalesData, forecastPercentage, hasSelectedLabs]);
+  }, [stockSalesData, forecastPercentage, hasSelectedData]);
 
 
-  if (!hasSelectedLabs) return <p className="text-center">Sélectionnez un laboratoire.</p>;
+  if (!hasSelectedData) return <p className="text-center">Sélectionnez un laboratoire.</p>;
   if (loading) return <Loader />;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
   if (!stockSalesData || stockSalesData.length === 0) return <p className="text-center">Aucune donnée disponible.</p>;

@@ -10,7 +10,7 @@ interface ProductSalesStockData {
 }
 
 /**
- * API pour récupérer les ventes, le stock moyen et les ruptures mensuelles d'un produit spécifique (par code EAN13)
+ * API pour récupérer les ventes, le stock moyen et les ruptures mensuelles d'un produit spécifique (par code EAN13) avec filtre pharmacie
  */
 export default async function handler(
   req: NextApiRequest,
@@ -21,7 +21,7 @@ export default async function handler(
   }
 
   try {
-    const { code_13_ref } = req.body;
+    const { code_13_ref, pharmacies } = req.body;
 
     if (!code_13_ref) {
       return res.status(400).json({ error: "Code EAN13 requis" });
@@ -38,6 +38,7 @@ export default async function handler(
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         JOIN data_globalproduct dgp ON dip.code_13_ref_id = dgp.code_13_ref
         WHERE dgp.code_13_ref = $1
+          AND ($2::uuid[] IS NULL OR dip.pharmacy_id = ANY($2)) -- ✅ Filtre pharmacie
         GROUP BY month
     )
 
@@ -50,6 +51,7 @@ export default async function handler(
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         JOIN data_globalproduct dgp ON dip.code_13_ref_id = dgp.code_13_ref
         WHERE dgp.code_13_ref = $1
+          AND ($2::uuid[] IS NULL OR dip.pharmacy_id = ANY($2)) -- ✅ Filtre pharmacie
         GROUP BY month
     )
 
@@ -67,6 +69,7 @@ export default async function handler(
         JOIN data_internalproduct dip ON dpo.product_id = dip.id
         JOIN data_globalproduct dgp ON dip.code_13_ref_id = dgp.code_13_ref
         WHERE dgp.code_13_ref = $1
+          AND ($2::uuid[] IS NULL OR dor.pharmacy_id = ANY($2)) -- ✅ Filtre pharmacie
         GROUP BY month
     )
 
@@ -93,7 +96,10 @@ export default async function handler(
     ORDER BY am.month ASC;
     `;
 
-    const { rows } = await pool.query<ProductSalesStockData>(query, [code_13_ref]);
+    const { rows } = await pool.query<ProductSalesStockData>(query, [
+      code_13_ref,
+      pharmacies?.length > 0 ? pharmacies : null, // ✅ Correction: Assure un tableau d'UUID[]
+    ]);
 
     if (rows.length === 0) {
       return res.status(404).json({ error: "Aucune donnée trouvée pour ce produit" });
