@@ -1,10 +1,10 @@
 import { AppProps } from "next/app";
 import "../styles/globals.css";
 import { SegmentationProvider } from "@/contexts/segmentation/SegmentationContext";
-import { PharmacyProvider } from "@/contexts/segmentation/PharmaciesContext";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useEffect } from "react";
 import Layout from "@/components/layout/layout";
+import { PharmacyProvider } from "@/contexts/segmentation/PharmaciesContext";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
 
