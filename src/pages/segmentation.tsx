@@ -2,7 +2,7 @@ import React from "react";
 import Tabs from "@/components/old/misc/Tabs";
 import SelectedSegmentationList from "@/components/segmentation/SelectedSegmentationList";
 import SegmentationDropdown from "@/components/segmentation/SegmentationDropdown";
-import { tabItemsSegmentation } from "./tabItemsSegmentation";
+import { tabItemsSegmentation } from "../components/tabItemsSegmentation";
 
 
 const SegmentationPage: React.FC = () => {

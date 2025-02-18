@@ -2,7 +2,7 @@ import React from "react";
 import Tabs from "@/components/old/misc/Tabs";
 import SelectedLabsList from "../components/laboratory/SelectedLabsList";
 import LabDropdown from "../components/laboratory/LabDropdown";
-import { tabItems } from "./tabItems";
+import { tabItems } from "../components/tabItems";
 
 const LaboratoryPage: React.FC = () => {
   return (
