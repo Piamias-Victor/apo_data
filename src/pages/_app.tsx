@@ -3,8 +3,8 @@ import "../styles/globals.css";
 import { SegmentationProvider } from "@/contexts/segmentation/SegmentationContext";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useEffect } from "react";
-import { PharmacyProvider } from "../contexts/segmentation/PharmaciesContext";
-import Layout from "@/components/layout/layout";
+import { PharmacyProvider } from "@/contexts/segmentation/PharmaciesContext";
+import Layout from "@/components/layout/Layout";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
 
