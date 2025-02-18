@@ -45,14 +45,12 @@ const Header: React.FC = () => {
   const selectedCategoryCount = filters.universes.length + filters.categories.length + filters.subCategories.length;
 
   return (
-    <div className="navbar bg-white shadow-md sticky top-0 z-50 px-6 flex justify-between items-center">
+    <div className="navbar sticky top-0 z-40 px-6 flex justify-between items-center">
       {/* Logo */}
       <button
         onClick={() => setMenuState({ ...menuState, isMenuOpen: !menuState.isMenuOpen })}
         className="flex items-center space-x-2 focus:outline-none hover:bg-gray-100 rounded-md px-4 py-2 transition"
       >
-        <Image src="/logo.svg" alt="Logo" width={35} height={35} className="w-9 h-9" priority />
-        <span className="text-lg font-semibold text-gray-800">Apo Data</span>
       </button>
 
       {/* Right Section: Filters */}
@@ -131,7 +129,7 @@ const Header: React.FC = () => {
           onClose={() => setMenuState((prev) => ({ ...prev, isPharmacyFilterOpen: false }))}
         />
         {/* Category Filter */}
-        <button
+        {/* <button
           onClick={() => setMenuState({ ...menuState, isCategoryFilterOpen: !menuState.isCategoryFilterOpen })}
           className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
         >
@@ -139,16 +137,16 @@ const Header: React.FC = () => {
           <span className="text-gray-700 text-sm">
             {selectedCategoryCount > 0 ? `${selectedCategoryCount} filtre(s)` : "Filtres Catégories"}
           </span>
-        </button>
+        </button> */}
 
         {/* Product Filter */}
-        <button
+        {/* <button
           onClick={() => setMenuState({ ...menuState, isProductFilterOpen: !menuState.isProductFilterOpen })}
           className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
         >
           <FaTags className="text-green-600" />
           <span className="text-gray-700 text-sm">Filtres Produits</span>
-        </button>
+        </button> */}
       </div>
     </div>
   );
