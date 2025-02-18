@@ -37,7 +37,8 @@ export default async function handler(
         !filters.universes?.length &&
         !filters.categories?.length &&
         !filters.families?.length &&
-        !filters.specificities?.length)
+        !filters.specificities?.length && 
+        !filters.brands?.length)
     ) {
       console.error("❌ Erreur : Filtres invalides", filters);
       return res.status(400).json({ error: "Filtres invalides" });

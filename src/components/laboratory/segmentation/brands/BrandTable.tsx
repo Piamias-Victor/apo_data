@@ -6,8 +6,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { FaSort, FaChevronRight, FaTag, FaWarehouse } from "react-icons/fa";
 import SalesDataComponent from "../../global/sales/SalesDataComponent";
 import BrandSalesStockChart from "./BrandSalesStockChart";
-
-
+import Link from "next/link";
 interface Brand {
   brand_lab: string;
   total_quantity_sold: number;
@@ -219,7 +218,16 @@ const getDisplayValue = (brand: Brand, field: keyof Brand) => {
               {filteredBrands.map((brand) => (
                 <React.Fragment key={brand.brand_lab}>
                   <tr className="border-b hover:bg-teal-50">
-                    <td className="p-3">{brand.brand_lab}</td>
+                  <td className="p-3">
+                  <Link
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href={`/laboratory?brand=${encodeURIComponent(brand.brand_lab)}`}
+                    className="text-teal-600 font-semibold hover:underline"
+                  >
+                    {brand.brand_lab}
+                  </Link>
+                </td>
                     <td className="p-3 text-center">{formatLargeNumber(brand.total_quantity_sold, false)}</td>
                     
                     {/* ✅ Utilisation de getDisplayValue pour alterner entre CA total et prix unitaire */}
