@@ -1,5 +1,5 @@
-import { usePharmacyContext } from "@/contexts/segmentation/PharmaciesContext";
 import { useFilterContext } from "@/contexts/FilterContext";
+import { usePharmacyContext } from "@/contexts/segmentation/PharmaciesContext";
 import React, { useState } from "react";
 import { FaTimes, FaChevronDown, FaCheck, FaSearch } from "react-icons/fa";
 
