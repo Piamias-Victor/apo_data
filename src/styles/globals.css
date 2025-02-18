@@ -9,3 +9,14 @@
  @tailwind components;
  @tailwind utilities;
  
+/* Masquer les flèches par défaut sur Chrome, Safari, Edge, et Opera */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Masquer les flèches par défaut sur Firefox */
+.no-spinner {
+  -moz-appearance: textfield;
+}

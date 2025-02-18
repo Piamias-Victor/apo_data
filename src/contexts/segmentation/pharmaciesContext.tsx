@@ -1,49 +1,56 @@
-// src/contexts/pharmaciesContext.tsx
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { Pharmacy } from '@/types/Pharmacy';
-import { usePharmacies } from '@/hooks/segmentation/usePharmacies';
+interface Pharmacy {
+  id: string;
+  id_nat: string | null;
+  name: string;
+  ca: number | null;
+  area: string | null;
+  employees_count: number | null;
+  address: string | null;
+}
 
-/**
- * Type définissant la structure du contexte des pharmacies.
- */
-type PharmaciesContextType = {
+interface PharmacyContextType {
   pharmacies: Pharmacy[];
   loading: boolean;
   error: string | null;
-};
+}
 
-/**
- * Création du contexte pour les pharmacies.
- */
-const PharmaciesContext = createContext<PharmaciesContextType | undefined>(undefined);
+const PharmacyContext = createContext<PharmacyContextType | undefined>(undefined);
 
-/**
- * Provider pour le contexte des pharmacies.
- * 
- * @param children - Composants enfants
- * @returns Composant React
- */
-export const PharmaciesProvider = ({ children }: { children: ReactNode }) => {
-  const { pharmacies, loading, error } = usePharmacies();
-
-  return (
-    <PharmaciesContext.Provider value={{ pharmacies, loading, error }}>
-      {children}
-    </PharmaciesContext.Provider>
-  );
-};
-
-/**
- * Hook personnalisé pour consommer le contexte des pharmacies.
- * 
- * @returns Le contexte des pharmacies (`PharmaciesContextType`).
- * @throws Erreur si utilisé en dehors du `PharmaciesProvider`.
- */
-export const usePharmaciesContext = () => {
-  const context = useContext(PharmaciesContext);
+export const usePharmacyContext = () => {
+  const context = useContext(PharmacyContext);
   if (!context) {
-    throw new Error('usePharmaciesContext doit être utilisé dans un PharmaciesProvider');
+    throw new Error('usePharmacyContext doit être utilisé à l’intérieur de PharmacyProvider');
   }
   return context;
+};
+
+export const PharmacyProvider = ({ children }: { children: React.ReactNode }) => {
+  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPharmacies = async () => {
+      try {
+        const { data } = await axios.get('/api/segmentation/getPharmacies');
+        setPharmacies(data.pharmacies);
+      } catch (err: any) {
+        console.error("❌ Erreur API Pharmacies :", err.response?.data || err.message);
+        setError(err.response?.data?.error || 'Erreur lors du chargement des pharmacies');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPharmacies();
+  }, []);
+
+  return (
+    <PharmacyContext.Provider value={{ pharmacies, loading, error }}>
+      {children}
+    </PharmacyContext.Provider>
+  );
 };
