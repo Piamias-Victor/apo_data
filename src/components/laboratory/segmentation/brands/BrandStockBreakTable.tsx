@@ -7,6 +7,7 @@ import StockBreakDataComponent from "../../global/break/StockBreakDataComponent"
 import { motion } from "framer-motion";
 import React from "react";
 import ProductBreakChart from "../../break/ProductBreakChart";
+import Link from "next/link";
 
 
 interface BrandStockBreak {
@@ -217,7 +218,14 @@ const BrandStockBreakTable: React.FC = () => {
               {filteredRuptures.map((rupture) => (
                 <React.Fragment key={rupture.brand_lab}>
                     <tr key={rupture.brand_lab} className="border-b hover:bg-teal-50">
-                    <td className="p-3 text-center">{rupture.brand_lab}</td>
+                    <Link
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href={`/laboratory?brand=${encodeURIComponent(rupture.brand_lab)}`}
+                    className="text-teal-600 font-semibold hover:underline"
+                  >
+                    {rupture.brand_lab}
+                  </Link>
                     <td className="p-3 text-center">{formatLargeNumber(rupture.total_quantity_sold, false)}</td>
                         <td className="p-3 text-center">{formatLargeNumber(rupture.total_orders, false)}</td>
                         <td className="p-3 text-center">{formatLargeNumber(rupture.total_quantity_ordered, false)}</td>

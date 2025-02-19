@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import Loader from "@/components/ui/Loader";
 import { useFilterContext } from "@/contexts/FilterContext";
+import Link from "next/link";
 
 interface LabRevenueCardProps {
   segment: string;
@@ -37,6 +38,9 @@ const LabRevenueCard: React.FC<LabRevenueCardProps> = ({ segment, revenue, globa
   // ✅ Calcul de l'indice de rentabilité
 const rentabilityIndex = marginShare - marketShare;
 const rentabilityColor = rentabilityIndex >= 0 ? "text-green-300" : "text-red-300"; // 🟢 Si marge > CA, 🔴 sinon
+
+const segmentUrl = `/segmentation?${type}=${encodeURIComponent(segment)}`;
+
 
   // 🔄 **Récupération des détails des laboratoires**
   const fetchLabDetails = async () => {
@@ -81,9 +85,14 @@ const rentabilityColor = rentabilityIndex >= 0 ? "text-green-300" : "text-red-30
     >
       {/* 📌 **En-tête de la carte** */}
       <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <FaChartPie className="text-yellow-400" /> {segment}
-        </h2>
+      <Link href={segmentUrl} passHref
+      target="_blank"
+      rel="noopener noreferrer">
+        <div className="text-lg font-semibold flex items-center gap-2 hover:underline">
+          <FaChartPie className="text-yellow-400" /> 
+          {segment}
+        </div>
+      </Link>
           <span
             className={`px-3 py-1 rounded-full text-sm font-medium ${
               rentabilityIndex > 0 ? "bg-green-400 text-white" 
@@ -199,7 +208,15 @@ const rentabilityColor = rentabilityIndex >= 0 ? "text-green-300" : "text-red-30
                 key={index} 
                 className="flex items-center justify-between gap-4 px-4 py-2 rounded-lg"
               >
-                <span title={lab.laboratoire} className="w-1/3 truncate">{lab.laboratoire}</span> 
+                <Link
+                    title={lab.laboratoire}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    href={`/laboratory?brand=${encodeURIComponent(lab.laboratoire)}`}
+                    className="text-teal-600 font-semibold hover:underline w-1/3 truncate"
+                  >
+                    {lab.laboratoire}
+                  </Link>
                 <span className="w-1/4 text-center font-bold">{formatLargeNumber(lab.chiffre_affaires, true)}</span>  
                 <span className="w-1/5 text-center font-bold">{lab.part_de_marche}%</span>
                 <span className={`w-1/5 text-center px-3 py-1 rounded-full text-sm font-medium 
