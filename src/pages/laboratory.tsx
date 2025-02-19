@@ -11,12 +11,14 @@ const LaboratoryPage: React.FC = () => {
   const { brand } = router.query; // 🔹 Récupération du paramètre `brand` dans l'URL
   const { filters, setFilters } = useFilterContext();
 
-  // ✅ Mettre à jour le contexte des filtres quand l'URL change
+  // 🏷 Applique automatiquement le filtre si un `brand` est présent dans l'URL
   useEffect(() => {
-    if (brand && typeof brand === "string") {
-      setFilters({ brands: [brand] }); // 🔹 Ajoute la marque aux filtres
+    if (typeof brand === "string" && !filters.brands.includes(brand)) {
+      // setFilters({ brands: [brand] });
+      console.log('brand :', brand)
+      setFilters({ brands: [brand] });
     }
-  }, [brand]);
+  }, [brand, setFilters, filters.brands]);
 
   return (
     <div className="container mx-auto p-6">
