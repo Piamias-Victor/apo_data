@@ -1,23 +1,50 @@
 import { useState } from "react";
-import { FaChevronDown, FaChevronUp, FaChartPie, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaChartPie, FaMoneyBillWave, FaChartLine } from "react-icons/fa";
 import { AnimatePresence, motion } from "framer-motion";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 
-interface StockData {
+interface StockSalesData {
   month: string;
   total_avg_stock: number;
   total_stock_value: number;
+  total_quantity: number;
   total_revenue: number;
 }
 
 interface StockDataMonthlyProps {
-  stockData: StockData[];
+  stockData: StockSalesData[];
   loading: boolean;
   error: string | null;
 }
 
 const StockDataMonthly: React.FC<StockDataMonthlyProps> = ({ stockData, loading, error }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [sortColumn, setSortColumn] = useState<keyof StockSalesData | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  // 📌 Fonction de tri des colonnes
+  const toggleSort = (column: keyof StockSalesData) => {
+    if (sortColumn === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortOrder("asc");
+    }
+  };
+
+  // 📌 Tri des données en fonction de la colonne sélectionnée
+  const sortedData = [...stockData].sort((a, b) => {
+    if (!sortColumn) return 0;
+
+    let valA = a[sortColumn] ?? 0;
+    let valB = b[sortColumn] ?? 0;
+
+    // 🔹 Conversion en nombre pour éviter un tri alphabétique
+    valA = typeof valA === "string" ? parseFloat(valA.replace(/[^0-9.-]+/g, "")) : valA;
+    valB = typeof valB === "string" ? parseFloat(valB.replace(/[^0-9.-]+/g, "")) : valB;
+
+    return sortOrder === "asc" ? valA - valB : valB - valA;
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 relative">
@@ -41,89 +68,69 @@ const StockDataMonthly: React.FC<StockDataMonthlyProps> = ({ stockData, loading,
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
+            {/* 🔹 Loader & Erreur */}
             {loading && <p className="text-gray-500 text-center">Chargement des données...</p>}
             {error && <p className="text-red-500 text-center">{error}</p>}
 
-            {!loading &&
-              !error &&
-              stockData.length > 0 &&
-              stockData.map((data, index) => {
-                // ✅ Calcul sécurisé des valeurs
-                const monthsOfStock =
-                  data.total_revenue > 0 ? data.total_stock_value / (data.total_revenue / 12) : 0;
-                const stockValuePercentage =
-                  data.total_revenue > 0 ? (data.total_stock_value / data.total_revenue) * 100 : 0;
+            {/* 📌 Tableau des données */}
+            {!loading && !error && stockData.length > 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  {/* 🔹 En-tête du tableau */}
+                  <thead>
+                    <tr className="bg-indigo-100 text-indigo-900">
+                      <th className={`p-3 cursor-pointer ${sortColumn === "month" ? "bg-indigo-300 text-white" : ""}`} onClick={() => toggleSort("month")}>
+                        <div className="flex items-center gap-2">
+                          Mois {sortColumn === "month" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                        </div>
+                      </th>
+                      <th className={`p-3 cursor-pointer ${sortColumn === "total_avg_stock" ? "bg-indigo-300 text-white" : ""}`} onClick={() => toggleSort("total_avg_stock")}>
+                        <div className="flex items-center gap-2">
+                          Stock Moyen {sortColumn === "total_avg_stock" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                        </div>
+                      </th>
+                      <th className={`p-3 cursor-pointer ${sortColumn === "total_stock_value" ? "bg-indigo-300 text-white" : ""}`} onClick={() => toggleSort("total_stock_value")}>
+                        <div className="flex items-center gap-2">
+                          Valeur du Stock (€) {sortColumn === "total_stock_value" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                        </div>
+                      </th>
+                      <th className={`p-3 cursor-pointer ${sortColumn === "total_quantity" ? "bg-indigo-300 text-white" : ""}`} onClick={() => toggleSort("total_quantity")}>
+                        <div className="flex items-center gap-2">
+                          Quantité Vendue {sortColumn === "total_quantity" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                        </div>
+                      </th>
+                      <th className={`p-3 cursor-pointer ${sortColumn === "total_revenue" ? "bg-indigo-300 text-white" : ""}`} onClick={() => toggleSort("total_revenue")}>
+                        <div className="flex items-center gap-2">
+                          Chiffre d'Affaires (€) {sortColumn === "total_revenue" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
 
-                return (
-                  <div key={index} className="bg-gray-50 p-5 rounded-lg shadow-sm border border-gray-300">
-                    <h3 className="text-lg font-semibold text-gray-700 flex justify-between items-center">
-                      {data.month}
-                      <span className="text-sm text-gray-500">📅 Détails</span>
-                    </h3>
+                  {/* 🔹 Contenu du tableau */}
+                  <tbody>
+                    {sortedData.map((data, index) => (
+                      <tr key={index} className="border-b hover:bg-indigo-50 text-center">
+                        <td className="p-3">{data.month}</td>
+                        <td className="p-3">{formatLargeNumber(data.total_avg_stock, false)}</td>
+                        <td className="p-3">{formatLargeNumber(data.total_stock_value, true)}</td>
+                        <td className="p-3">{formatLargeNumber(data.total_quantity, false)}</td>
+                        <td className="p-3">{formatLargeNumber(data.total_revenue, true)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-                    {/* 📌 Ligne 1 : Stock Moyen & Valeur du Stock */}
-                    <div className="flex justify-between items-center mt-4">
-                      <StockDetailBlock
-                        title="Stock Moyen"
-                        value={data.total_avg_stock}
-                        icon={<FaChartPie className="text-blue-500 text-xl" />}
-                      />
-                      <StockDetailBlock
-                        title="Valeur du Stock"
-                        value={data.total_stock_value}
-                        icon={<FaMoneyBillWave className="text-green-500 text-xl" />}
-                        isCurrency
-                      />
-                    </div>
-
-                    {/* 📌 Ligne 2 : Mois de Stock & % Valeur Stock / CA */}
-                    <div className="flex justify-between items-center mt-4">
-                      <StockDetailBlock
-                        title="Mois de Stock"
-                        value={monthsOfStock}
-                        icon={<FaChartLine className="text-orange-500 text-xl" />}
-                      />
-                      <StockDetailBlock
-                        title="% Stock / CA"
-                        value={stockValuePercentage}
-                        icon={<FaChartLine className="text-yellow-500 text-xl" />}
-                        isPercentage
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-
+            {/* 🔹 Message si pas de données */}
             {!loading && !error && stockData.length === 0 && (
               <p className="text-gray-500 text-center col-span-2">Aucune donnée disponible.</p>
             )}
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-};
-
-interface StockDetailBlockProps {
-  title: string;
-  value: number;
-  icon?: JSX.Element;
-  isCurrency?: boolean;
-  isPercentage?: boolean;
-}
-
-const StockDetailBlock: React.FC<StockDetailBlockProps> = ({ title, value, icon, isCurrency = false, isPercentage = false }) => {
-  return (
-    <div className="text-right">
-      <p className="text-sm text-gray-500">{title}</p>
-      <div className="flex items-center justify-end space-x-2 w-full">
-        {icon}
-        <p className="text-lg font-semibold">
-          {isPercentage ? `${value.toFixed(2)}%` : formatLargeNumber(value, isCurrency)}
-        </p>
-      </div>
     </div>
   );
 };

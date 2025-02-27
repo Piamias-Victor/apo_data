@@ -60,7 +60,7 @@ const StockBreakDataComponent: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("/api/sell-out/getStockBreakRate", {
+        const response = await fetch("/api/sell-out/getStockBreakRateByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
@@ -194,16 +194,7 @@ setFullForecastBreakRate(newForecastBreakRate);
 
   return (
     <div className="max-w-8xl mx-auto p-6 space-y-10">
-      <AnnualStockBreak2025
-        totalBreakProduct={totalBreakProduct}
-        totalBreakRate={totalBreakRate}
-        totalBreakAmount={totalBreakAmount}
-        totalProductOrder={totalProductOrder}
-        adjustedBreakProduct2024={adjustedBreakProduct2024} 
-        adjustedBreakRate2024={adjustedBreakRate2024}       
-        adjustedBreakAmount2024={adjustedBreakAmount2024}   
-        adjustedProductOrder2024={adjustedProductOrder2024} 
-      />
+      <AnnualStockBreak2025/>
 
       <ForecastStockBreak2025
         forecastBreakProduct={fullForecastBreakProduct}
@@ -216,13 +207,6 @@ setFullForecastBreakRate(newForecastBreakRate);
         globalBreakRate2024={globalBreakRate2024}
         globalBreakAmount2024={globalBreakAmount2024}
         globalProductOrder2024={globalProductOrder2024}
-      />
-
-      <AnnualStockBreak2024
-        globalBreakProduct={globalBreakProduct2024}
-        globalBreakRate={globalBreakRate2024}
-        globalBreakAmount={globalBreakAmount2024}
-        globalProductOrder={globalProductOrder2024}
       />
 
       <StockBreakDataMonthly stockBreakData={stockBreakData} loading={loading} error={error} />

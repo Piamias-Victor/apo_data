@@ -214,18 +214,7 @@ const SalesDataComponent: React.FC = () => {
   return (
     <div className="max-w-8xl mx-auto p-6 space-y-10">
 
-      <AnnualSummary2025
-        totalSellOut={totalSellOut}
-        totalRevenue={totalRevenue}
-        totalMargin={totalMargin}
-        totalSellIn={totalSellIn}
-        totalPurchaseAmount={totalPurchaseAmount}
-        adjustedSellOut2024={adjustedSellOut2024}
-        adjustedRevenue2024={adjustedRevenue2024}
-        adjustedMargin2024={adjustedMargin2024}
-        adjustedSellIn2024={adjustedSellIn2024}
-        adjustedPurchaseAmount2024={adjustedPurchaseAmount2024}
-      />
+      <AnnualSummary2025/>
 
       <ForecastSummary2025
         forecastSellOut={fullForecastSellOut}
@@ -240,14 +229,6 @@ const SalesDataComponent: React.FC = () => {
         globalMargin2024={globalMargin2024}
         globalSellIn2024={globalSellIn2024}
         globalPurchaseAmount2024={globalPurchaseAmount2024}
-      />
-
-      <AnnualSummary2024
-        globalSellOut={globalSellOut2024}
-        globalRevenue={globalRevenue2024}
-        globalMargin={globalMargin2024}
-        globalSellIn={globalSellIn2024}
-        globalPurchaseAmount={globalPurchaseAmount2024}
       />
 
       <SalesDataMonthly salesData={salesData} loading={loading} error={error} />

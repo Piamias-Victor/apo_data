@@ -143,30 +143,7 @@ const MetricsDataComponent: React.FC = () => {
 
   return (
     <div className="max-w-8xl mx-auto p-6 space-y-10">
-      <AnnualMetrics2025
-        avgSalePrice={avgSalePrice}
-        prevAvgSalePrice={globalAvgSalePrice2024}
-        avgPurchasePrice={avgPurchasePrice}
-        prevAvgPurchasePrice={globalAvgPurchasePrice2024}
-        avgMargin={avgMargin}
-        prevAvgMargin={globalAvgMargin2024}
-        avgMarginPercentage={avgMarginPercentage}
-        prevAvgMarginPercentage={globalAvgMarginPercentage2024}
-        uniqueProductsSold={uniqueProductsSold}
-        prevUniqueProductsSold={globalUniqueProductsSold2024}
-        uniqueSellingPharmacies={uniqueSellingPharmacies}
-        prevUniqueSellingPharmacies={globalUniqueSellingPharmacies2024}
-      />
-
-
-    <AnnualMetrics2024
-    avgSalePrice={globalAvgSalePrice2024}
-    avgPurchasePrice={globalAvgPurchasePrice2024}
-    avgMargin={globalAvgMargin2024}
-    avgMarginPercentage={globalAvgMarginPercentage2024}
-    uniqueProductsSold={globalUniqueProductsSold2024}
-    uniqueSellingPharmacies={globalUniqueSellingPharmacies2024}
-    />
+      <AnnualMetrics2025/>
 
         <MetricsDataMonthly metricsData={metricsData} loading={loading} error={error} />
     </div>
