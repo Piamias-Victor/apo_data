@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useFilterContext } from "@/contexts/FilterContext";
 import TopStockBreakProducts from "./TopStockBreakProducts";
-import ProductStockBreakTable from "./ProductStockBreakTable";
+import ProductBreakTable from "./ProductBreakTable";
 
 interface ProductStockBreakData {
   code_13_ref: string;
@@ -88,8 +88,30 @@ const StockBreakDashboard: React.FC = () => {
           {/* 🚨 Top Produits en Rupture */}
           <TopStockBreakProducts products={products} />
 
-          {/* 📊 Tableau des Produits en Rupture */}
-          {/* <ProductStockBreakTable products={products} /> */}
+          {/* 🎨 Séparateur stylisé */}
+          <motion.div
+            className="mt-12 border-t-4 border-gradient-to-r from-red-400 via-orange-400 to-yellow-400 mx-auto w-3/4"
+            initial={{ width: 0 }}
+            animate={{ width: "75%" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          ></motion.div>
+
+          {/* 📊 Tableau détaillé des Produits en Rupture */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-center"
+          >
+            <h2 className="text-3xl font-extrabold text-red-600 tracking-wide flex items-center justify-center gap-3">
+              <span className="text-blue-500">📋</span> Détail des Produits en Rupture
+            </h2>
+            <p className="text-gray-600 mt-2 text-lg">
+              Vue détaillée des stocks en rupture 📊
+            </p>
+          </motion.div>
+
+          <ProductBreakTable products={products} />
         </>
       )}
     </div>

@@ -80,6 +80,7 @@ stock_break_data AS (
     WHERE 
         ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
         AND dor.sent_date BETWEEN $11 AND $12
+        AND dpo.qte_r > 0  -- ✅ NE GARDER QUE LES COMMANDES RÉCEPTIONNÉES
     GROUP BY dip.code_13_ref_id
 
     UNION ALL
@@ -117,6 +118,7 @@ stock_break_data AS (
     WHERE 
         ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
         AND dor.sent_date BETWEEN $13 AND $14
+        AND dpo.qte_r > 0  -- ✅ NE GARDER QUE LES COMMANDES RÉCEPTIONNÉES
     GROUP BY dip.code_13_ref_id
 )
 

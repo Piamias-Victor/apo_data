@@ -70,6 +70,7 @@ export default async function handler(
         JOIN data_globalproduct dgp ON dip.code_13_ref_id = dgp.code_13_ref
         WHERE dgp.code_13_ref = $1
           AND ($2::uuid[] IS NULL OR dor.pharmacy_id = ANY($2)) -- ✅ Filtre pharmacie
+          AND dpo.qte_r > 0
         GROUP BY month
     )
 
