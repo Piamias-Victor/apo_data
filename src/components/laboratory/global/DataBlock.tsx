@@ -1,7 +1,7 @@
 import React from "react";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 
-interface DataBlockProps {
+export interface DataBlockProps {
   title: string;
   value: number;
   previousValue?: number;

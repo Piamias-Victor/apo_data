@@ -77,50 +77,43 @@ const StockSummary2025: React.FC = () => {
       : 0;
 
   // 🔹 Formatage des dates
-  const formattedStartDate = dateRange[0] ? format(dateRange[0], "dd/MM/yy", { locale: fr }) : "--/--/--";
-  const formattedEndDate = dateRange[1] ? format(dateRange[1], "dd/MM/yy", { locale: fr }) : "--/--/--";
-
-  const formattedComparisonStartDate = comparisonDateRange[0]
-    ? format(comparisonDateRange[0], "dd/MM/yy", { locale: fr })
-    : "--/--/--";
-  const formattedComparisonEndDate = comparisonDateRange[1]
-    ? format(comparisonDateRange[1], "dd/MM/yy", { locale: fr })
-    : "--/--/--";
+  const formatDate = (date: Date | null) =>
+    date ? format(date, "dd/MM/yy", { locale: fr }) : "--/--/--";
 
   return (
-    <div className="p-6 bg-gradient-to-r from-indigo-500 to-indigo-700 text-white rounded-xl shadow-lg border border-white">
-      {/* 📊 Titre */}
-      <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
-        <h2 className="text-lg font-semibold">📊 Stock Périodique</h2>
+    <div className="p-8 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-300 relative">
+      {/* 📊 Titre & Dates */}
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-300 pb-5 mb-6 relative z-10">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          📊 Stock Périodique (2025)
+        </h2>
 
         {/* 🔹 Bloc des périodes */}
-        <div className="flex text-right px-3 py-2 rounded-lg bg-white bg-opacity-20 gap-8">
-          {/* 🔵 Période principale */}
-          <div className="flex flex-col gap-1 text-left">
-            <p className="text-xs uppercase text-gray-200 font-semibold tracking-wide">Période</p>
-            <p className="text-sm font-medium">{formattedStartDate} → {formattedEndDate}</p>
+        <div className="flex justify-center md:justify-start gap-8 bg-indigo-500 hover:bg-indigo-600 px-4 py-2 rounded-lg text-white shadow-sm relative z-10">
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase">Période</span>
+            <span className="text-sm font-medium">{formatDate(dateRange[0])} → {formatDate(dateRange[1])}</span>
           </div>
-          {/* 🔸 Période de comparaison */}
-          <div className="flex flex-col gap-1">
-            <p className="text-xs uppercase text-gray-200 font-semibold tracking-wide">Comparaison</p>
-            <p className="text-sm font-medium">{formattedComparisonStartDate} → {formattedComparisonEndDate}</p>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase">Comparaison</span>
+            <span className="text-sm font-medium">{formatDate(comparisonDateRange[0])} → {formatDate(comparisonDateRange[1])}</span>
           </div>
         </div>
       </div>
 
       {/* 🟢 Affichage du statut de chargement / erreur */}
       {loading ? (
-        <p className="text-center text-white">⏳ Chargement des données...</p>
+        <p className="text-center text-gray-800 mt-6">⏳ Chargement des données...</p>
       ) : error ? (
-        <p className="text-center text-red-300">{error}</p>
+        <p className="text-center text-red-500 mt-6">{error}</p>
       ) : (
-        <div className="grid grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-10 mt-6 relative z-10">
           {/* 🔵 STOCK TOTAL */}
-          <div className="border-r border-white pr-6">
-            <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
+            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-indigo-600">
               <FaBoxOpen className="mr-2" /> Stock Total
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <DataBlock
                 title="Stock Moyen"
                 value={currentPeriod?.total_avg_stock || 0}
@@ -136,13 +129,13 @@ const StockSummary2025: React.FC = () => {
           </div>
 
           {/* 🟠 DÉTAILS STOCK */}
-          <div className="pl-6">
-            <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
+          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
+            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-indigo-600">
               <FaChartPie className="mr-2" /> Détails Stock
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <DataBlock
-                title="Nombre de Mois de Stock"
+                title="Mois de Stock"
                 value={monthsOfStock}
                 previousValue={adjustedMonthsOfStock2024}
                 isDecimal

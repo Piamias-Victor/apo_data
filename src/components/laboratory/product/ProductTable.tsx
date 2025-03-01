@@ -1,341 +1,381 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { FaChevronRight, FaSort, FaTag, FaWarehouse } from "react-icons/fa";
-import { motion } from "framer-motion";
-import Loader from "@/components/ui/Loader"; // 🟢 Assure-toi que le chemin est correct
-import { useFilterContext } from "@/contexts/FilterContext";
+import React, { useState, useEffect } from "react";
+import { FaSort, FaSortUp, FaSortDown, FaChevronRight } from "react-icons/fa";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
-import ProductSalesStockChart from "@/components/laboratory/product/ProductSalesStockChart";
-import { FaChevronDown } from "react-icons/fa";
-import SalesDataComponent from "../global/sales/SalesDataComponent";
+import { useFilterContext } from "@/contexts/FilterContext";
+import SearchInput from "@/components/ui/inputs/SearchInput";
+import DataBlock from "../global/DataBlock";
+import { FaChevronDown } from "react-icons/fa"; // ✅ Import de l'icône flèche
+import { motion } from "framer-motion";
+import ProductSalesStockChart from "./ProductSalesStockChart";
 
-interface Product {
+interface ProductSalesData {
   code_13_ref: string;
-  name: string;
-  avg_sale_price: number;
-  min_sale_price: number;
-  max_sale_price: number;
+  product_name: string;
+  total_quantity: number;
+  revenue: number;
+  margin: number;
+  purchase_quantity: number;
+  purchase_amount: number;
+  avg_selling_price: number;
   avg_purchase_price: number;
   avg_margin: number;
-  pharmacies_in_stock: number;
-  total_quantity_sold: number;
-  revenue_share: number;  // ✅ Ajouté pour le calcul de l'indice
-  margin_share: number;   // ✅ Ajouté pour le calcul de l'indice
-  rentability_index: number; // ✅ Nouvelle propriété
+  type: "current" | "comparison";
+  previous?: { // ✅ Ajout de l'objet contenant les valeurs de comparaison
+    total_quantity: number;
+    revenue: number;
+    margin: number;
+    purchase_quantity: number;
+    purchase_amount: number;
+    avg_selling_price: number;
+    avg_purchase_price: number;
+    avg_margin: number;
+  };
 }
 
-
-
 const ProductTable: React.FC = () => {
-    const { filters } = useFilterContext();
-  const [products, setProducts] = useState<Product[]>([]);
+  const { filters } = useFilterContext();
+  const [products, setProducts] = useState<ProductSalesData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isTotalMode, setIsTotalMode] = useState(false);
-  const [sortColumn, setSortColumn] = useState<keyof Product | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<keyof ProductSalesData | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [showUnitValues, setShowUnitValues] = useState<boolean>(false);
+  const [sortedData, setSortedData] = useState<ProductSalesData[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>(""); // 🔍 État pour la recherche
+
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  // 🔹 États pour stocker les ventes mensuelles, le chargement et les erreurs
-  const [productSalesStock, setProductSalesStock] = useState<{ month: string; total_quantity_sold: number; avg_stock_quantity: number }[]>([]);
-  const [salesStockLoading, setSalesStockLoading] = useState<boolean>(false);
-  const [salesStockError, setSalesStockError] = useState<string | null>(null);
-  const hasSelectedData =
-  filters.distributors.length > 0 ||
-  filters.brands.length > 0 ||
-  filters.universes.length > 0 ||
-  filters.categories.length > 0 ||
-  filters.families.length > 0 ||
-  filters.specificities.length > 0;
-  // 📌 Traduction des colonnes
-  const columnHeaders: { [key in keyof Product]: string } = {
-    code_13_ref: "Ean",
-    name: "Nom",
-    avg_sale_price: "Prix de Vente(€)",
-    min_sale_price: "Prix Min(€)",
-    max_sale_price: "Prix Max(€)",
-    avg_purchase_price: "Prix d'Achat(€)",
-    avg_margin: "Marge(€)",
-    pharmacies_in_stock: "Pharmacies",
-    total_quantity_sold: "Quantité",
-    revenue_share: "Part CA (%)",
-    margin_share: "Part Marge (%)",
-    rentability_index: "Indice Rentabilité", // ✅ Ajout
+
+  const [salesStockData, setSalesStockData] = useState<Record<string, ProductSalesStockData[]>>({});
+  const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
+
+  const toggleDetails = async (code_13_ref: string) => {
+    setExpandedProduct((prev) => (prev === code_13_ref ? null : code_13_ref));
+  
+    // 📌 Si les données sont déjà chargées, ne pas refaire un appel API
+    if (salesStockData[code_13_ref] || loadingStockData[code_13_ref]) return;
+  
+    setLoadingStockData((prev) => ({ ...prev, [code_13_ref]: true }));
+  
+    try {
+      const response = await fetch("/api/sell-out/getProductSalesAndStock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code_13_ref, pharmacies: filters.pharmacies }),
+      });
+  
+      if (!response.ok) throw new Error("Erreur lors de la récupération des données de ventes/stocks.");
+  
+      const data = await response.json();
+      setSalesStockData((prev) => ({ ...prev, [code_13_ref]: data.salesStockData }));
+    } catch (error) {
+      console.error("❌ Erreur API :", error);
+    } finally {
+      setLoadingStockData((prev) => ({ ...prev, [code_13_ref]: false }));
+    }
   };
 
-  // 🚀 **Appel API pour récupérer les données**
+  // 📌 Récupération des données depuis l'API
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
+      setError(null);
+  
       try {
-        setLoading(true);
         const response = await fetch("/api/segmentation/getLabProducts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filters }), // 🔹 Mettre ici les vrais filtres
+          body: JSON.stringify({ filters }),
         });
-
+  
         if (!response.ok) throw new Error("Erreur lors de la récupération des produits");
-
+  
         const data = await response.json();
-        setProducts(data.products);
+  
+        // Regroupement des données actuelles et comparatives
+        const mergedProducts = data.products.reduce((acc: ProductSalesData[], product) => {
+          if (product.type === "current") {
+            const comparison = data.products.find(p => p.code_13_ref === product.code_13_ref && p.type === "comparison");
+            acc.push({ ...product, previous: comparison });
+          }
+          return acc;
+        }, []);
+  
+        setProducts(mergedProducts);
+        setSortedData(mergedProducts);
       } catch (err) {
-        setError("Impossible de charger les produits");
+        setError("Impossible de récupérer les données.");
       } finally {
         setLoading(false);
       }
     };
-
-    // 🚀 **Fetch des ventes mensuelles d'un produit**
-
+  
     fetchProducts();
   }, [filters]);
 
-  const fetchProductSalesAndStock = async (code_13_ref: string) => {
-    try {
-        setSalesStockLoading(true);
-        setSalesStockError(null);
-
-        const response = await fetch("/api/sell-out/getProductSalesAndStock", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code_13_ref, pharmacies: filters.pharmacies.length > 0 ? filters.pharmacies : null }),
-        });
-
-        if (!response.ok) throw new Error("Erreur lors de la récupération des ventes et stocks");
-
-        const data = await response.json();
-
-        // 🔹 Mise à jour avec stock_break_quantity inclus
-        setProductSalesStock(data.salesStockData.map((item: any) => ({
-            month: item.month,
-            total_quantity_sold: item.total_quantity_sold,
-            avg_stock_quantity: item.avg_stock_quantity,
-            stock_break_quantity: item.stock_break_quantity, // ✅ Ajout des ruptures
-        })));
-    } catch (err) {
-        setSalesStockError("Impossible de charger les données");
-    } finally {
-        setSalesStockLoading(false);
+  // 📌 Tri des données à chaque changement de `sortColumn` ou `sortOrder`
+  useEffect(() => {
+    if (!sortColumn) {
+      setSortedData(products);
+      return;
     }
-};
 
-  // 🔽🔼 Fonction de tri
-  const toggleSort = (column: keyof Product) => {
-    if (sortColumn === column) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortColumn(column);
-      setSortOrder("asc");
-    }
+    setSortedData([...products].sort((a, b) => {
+      let valA = a[sortColumn];
+      let valB = b[sortColumn];
+
+      if (valA == null) valA = sortColumn === "product_name" ? "" : -Infinity;
+      if (valB == null) valB = sortColumn === "product_name" ? "" : -Infinity;
+
+      const isNumeric = [
+        "total_quantity", "revenue", "margin", 
+        "purchase_quantity", "purchase_amount", 
+        "avg_selling_price", "avg_purchase_price", "avg_margin"
+      ].includes(sortColumn);
+
+      return isNumeric
+        ? (sortOrder === "asc" ? Number(valA) - Number(valB) : Number(valB) - Number(valA))
+        : (sortOrder === "asc" 
+          ? String(valA).localeCompare(String(valB)) 
+          : String(valB).localeCompare(String(valA)));
+    }));
+  }, [sortColumn, sortOrder, products]);
+
+  const filteredData = sortedData.filter((product) =>
+    product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.code_13_ref.includes(searchQuery)
+  );
+
+  // 📌 Gestion du tri des colonnes
+  const toggleSort = (column: keyof ProductSalesData) => {
+    setSortOrder(prev => (sortColumn === column ? (prev === "asc" ? "desc" : "asc") : "asc"));
+    setSortColumn(column);
   };
 
-  // 🔍 **Filtrage et tri des produits**
-  const filteredProducts = useMemo(() => {
-    let sorted = products
-      .map(product => ({
-        ...product,
-        rentability_index: product.margin_share - product.revenue_share, // ✅ Calcul dynamique de l'indice
-      }))
-      .filter(
-        (p) =>
-          (p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.code_13_ref.includes(searchQuery)) &&
-          p.total_quantity_sold > 0 // Filtrer les produits avec 0 ventes si nécessaire
-      );
-  
-    if (sortColumn) {
-      sorted = sorted.sort((a, b) => {
-        let valA = a[sortColumn];
-        let valB = b[sortColumn];
-  
-        if (typeof valA === "string") valA = parseFloat(valA);
-        if (typeof valB === "string") valB = parseFloat(valB);
-  
-        // ✅ Cas spécial pour "Indice Rentabilité"
-        if (sortColumn === "rentability_index") {
-          return sortOrder === "asc" ? valA - valB : valB - valA;
-        }
-  
-        // ✅ Cas spécial pour "Marge (€)"
-        if (sortColumn === "avg_margin") {
-          return sortOrder === "asc" ? valA - valB : valB - valA;
-        }
-  
-        // 🔢 Si c'est un nombre, trier numériquement
-        if (typeof valA === "number" && typeof valB === "number") {
-          return sortOrder === "asc" ? valA - valB : valB - valA;
-        }
-  
-        // 🔤 Sinon, trier alphabétiquement (nom, EAN...)
-        return sortOrder === "asc"
-          ? String(a[sortColumn]).localeCompare(String(b[sortColumn]))
-          : String(b[sortColumn]).localeCompare(String(a[sortColumn]));
-      });
-    }
-  
-    return sorted;
-  }, [searchQuery, sortColumn, sortOrder, products]);
-
-// 🟢 **Calcul des valeurs unitaires ou totales**
-const getValue = (product: Product, field: keyof Product) => {
-    const value = product[field] as number;
-
-    if (field === "avg_margin") {
-        // ✅ Correction : recalcul du pourcentage de marge avec gestion de NaN
-        const marginPercentage = (product.avg_sale_price > 0) 
-            ? ((product.avg_margin / product.avg_sale_price) * 100) 
-            : "0.00";
-        return formatLargeNumber(marginPercentage, false);
-    }
-
-    return isTotalMode ? formatLargeNumber(value * product.total_quantity_sold) : formatLargeNumber(value);
-};
-
-  // 📌 **Toggle détails du produit**
-  const toggleDetails = (code: string) => {
-    if (expandedProduct === code) {
-        setExpandedProduct(null);
-        setProductSalesStock([]); // 🔹 Réinitialise les ventes et stocks
-    } else {
-        setExpandedProduct(code);
-        fetchProductSalesAndStock(code); // 🔹 Appel unique pour récupérer ventes + stock
-    }
-};
-
-if (!hasSelectedData) return <p className="text-center">Sélectionnez un laboratoire.</p>;
-
   return (
-    <div className="max-w-8xl mx-auto p-8 space-y-16">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-center"
-      >
-        <h2 className="text-4xl font-extrabold text-teal-600 tracking-wide flex items-center justify-center gap-3">
-          <span className="text-yellow-500">📊</span> Suivi des Performances Commerciales
-        </h2>
-        <p className="text-gray-600 mt-2 text-lg">
-          Analyse des ventes, marges et prévisions pour une gestion optimale 📈
-        </p>
-      </motion.div>
+    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-8 border border-gray-300 relative">
+      {/* 📌 Titre */}
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        📊 Performances Produits
+      </h2>
 
-      {/* 📊 Section des données de ventes */}
-      <SalesDataComponent />
+      {/* 📌 Toggle entre Totaux et Valeurs Unitaires */}
+      
+      <div className="mb-6 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+  {/* 🔍 Barre de recherche */}
+  <div className="w-full md:w-2/3">
+    <SearchInput
+      value={searchQuery}
+      onChange={setSearchQuery}
+      placeholder="Rechercher par Code 13 ou Nom..."
+    />
+  </div>
 
-      <div className="max-w-6xl mx-auto p-6 bg-white rounded-xl shadow-lg border border-teal-300">
-        {/* 🔍 Barre de recherche et mode total */}
-        <div className="flex justify-between items-center mb-4">
-          <input
-            type="text"
-            placeholder="🔍 Rechercher par nom ou code..."
-            className="w-1/3 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button
-            onClick={() => setIsTotalMode(!isTotalMode)}
-            className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition"
-          >
-            {isTotalMode ? "Valeurs Unitaires" : "Totaux"}
-          </button>
-        </div>
+  {/* 🔄 Bouton pour switch entre Totaux & Unitaires */}
+  <button
+    onClick={() => setShowUnitValues((prev) => !prev)}
+    className="bg-blue-500 text-white px-6 py-3 rounded-lg text-sm font-semibold shadow-md hover:bg-blue-600 transition w-full md:w-auto"
+  >
+    {showUnitValues ? "Afficher Totaux" : "Afficher Valeurs Unitaires"}
+  </button>
+</div>
 
-        {/* 🚀 **Affichage du Loader ou de l'erreur** */}
-        {loading && <Loader message="Chargement des produits..." />}
-        {error && <p className="text-center text-red-500">{error}</p>}
+      {/* 🔹 Loader & Erreur */}
+      {loading && <p className="text-gray-500 text-center">⏳ Chargement des données...</p>}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-        {/* 📊 Tableau */}
-        {!loading && !error && (
-          <table className="w-full border-collapse border border-gray-300">
+      {/* 📌 Tableau des produits */}
+      {!loading && !error && filteredData.length > 0 && (
+        <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
+          <table className="w-full border-collapse rounded-lg table-auto">
+            {/* 🔹 En-tête */}
             <thead>
-              <tr className="bg-teal-100 text-teal-900">
-                {["code_13_ref", "name", "avg_sale_price", "avg_purchase_price", "avg_margin", "total_quantity_sold"].map(
-                  (col) => (
-                    <th key={col} className="p-3 cursor-pointer" onClick={() => toggleSort(col as keyof Product)}>
-                      {columnHeaders[col as keyof Product]} <FaSort className="inline-block ml-1" />
-                    </th>
-                  )
-                )}
-                <th className="p-3 cursor-pointer" onClick={() => toggleSort("rentability_index")}>
-                  Indice Rentabilité <FaSort className="inline-block ml-1" />
-                </th>
-                <th className="p-3">Détails</th>
-              </tr>
-            </thead>
-            <tbody>
-    {filteredProducts.map((product) => {
-      const rentabilityIndex = product.margin_share - product.revenue_share; // 🔥 Calcul de l'indice de rentabilité
-
-      return (
-        <React.Fragment key={product.code_13_ref}>
-          <tr className="border-b hover:bg-teal-50">
-            <td className="p-3 text-center">{product.code_13_ref}</td>
-            <td className="p-3">{product.name}</td>
-            <td className="p-3 text-center">{getValue(product, "avg_sale_price")}</td>
-            <td className="p-3 text-center">{getValue(product, "avg_purchase_price")}</td>
-            <td className="p-3 text-center">{getValue(product, "avg_margin")}%</td>
-            <td className="p-3 text-center">{formatLargeNumber(product.total_quantity_sold, false)}</td>
-            
-            {/* 🔥 Nouvelle colonne pour l'Indice de Rentabilité */}
-            <td className="p-3 text-center">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  rentabilityIndex > 0 ? "bg-green-400 text-white" 
-                  : rentabilityIndex < 0 ? "bg-red-400 text-white" 
-                  : "bg-gray-300 text-gray-700"
-                }`}
-              >
-                {rentabilityIndex > 0 ? "+" : ""}
-                {rentabilityIndex.toFixed(2)}%
-              </span>
-            </td>
-
-            <td className="p-3 text-center">
-              <motion.button
-                animate={{ rotate: expandedProduct === product.code_13_ref ? 90 : 0 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => toggleDetails(product.code_13_ref)}
-                className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
-              >
-                <FaChevronRight className="text-white text-lg w-full" />
-              </motion.button>
-            </td>
-          </tr>
-
-          {/* 🔽 Fiche Détails améliorée */}
-          {expandedProduct === product.code_13_ref && (
-            <tr>
-              <td colSpan={8} className="p-4 bg-teal-100 shadow-md">
-                <motion.div className="flex w-full flex-col items-center justify-between text-teal-900">
-                  <div className="flex items-center gap-2 w-full justify-between text-teal-900 p-2">
-                      <p className="flex items-center justify-center gap-2"><FaTag/><strong>Prix Min :</strong> {product.min_sale_price} €</p>
-                      <p className="flex items-center justify-center gap-2"><FaTag/><strong>Prix Max :</strong> {product.max_sale_price} €</p>
-                      <p className="flex items-center justify-center gap-2"><FaWarehouse/><strong>Pharmacies en Stock :</strong> {product.pharmacies_in_stock}</p>
-                      <p className="flex items-center justify-center gap-2 font-bold">
-                        <FaTag/><strong>Part du CA :</strong> {product.revenue_share}%
-                      </p>
-                      <p className="flex items-center justify-center gap-2 font-bold">
-                        <FaTag/><strong>Part de la Marge :</strong> {product.margin_share}%
-                      </p>
-                  </div>
-                  {/* 📊 Section des ventes mensuelles */}
-                  {!salesStockLoading && !salesStockError && (
-                      <ProductSalesStockChart salesStockData={productSalesStock} />
-                  )}
-                </motion.div>
-              </td>
-            </tr>
+  <tr className="bg-blue-500 text-white text-md rounded-lg">
+    {[
+      { key: "code_13_ref", label: "Code 13", width: "15%" },
+      { key: "product_name", label: "Produit", width: "25%" },
+      { key: "total_quantity", label: "Qte", width: "10%" },
+      ...(showUnitValues
+        ? [
+            { key: "avg_selling_price", label: "Prix Vente Moy (€)", width: "15%" },
+            { key: "avg_margin", label: "Marge Moy (€)", width: "10%" },
+            { key: "purchase_quantity", label: "Qte Achetée", width: "10%" },
+            { key: "avg_purchase_price", label: "Prix Achat Moy (€)", width: "15%" },
+          ]
+        : [
+            { key: "revenue", label: "CA (€)", width: "15%" },
+            { key: "margin", label: "Marge (€)", width: "10%" },
+            { key: "purchase_quantity", label: "Qte Achetée", width: "10%" },
+            { key: "purchase_amount", label: "Montant Achat (€)", width: "15%" },
+          ]),
+    ].map(({ key, label, width }) => (
+      <th
+        key={key}
+        className="p-4 cursor-pointer transition hover:bg-blue-600"
+        style={{ width }}
+        onClick={() => toggleSort(key as keyof ProductSalesData)}
+      >
+        <div className="flex justify-center items-center gap-2">
+          {label}
+          {sortColumn === key ? (
+            sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />
+          ) : (
+            <FaSort />
           )}
-        </React.Fragment>
-      );
-    })}
-  </tbody>
-          </table>
+        </div>
+      </th>
+    ))}
+
+    {/* ✅ Colonne "Détails" placée EN DERNIER */}
+    <th className="p-4 text-center">Détails</th>
+  </tr>
+</thead>
+
+            {/* 🔹 Contenu */}
+            <tbody>
+  {filteredData.map((product, index) => (
+    <React.Fragment key={`${product.code_13_ref}-${index}`}>
+      <tr className="border-b bg-gray-50 hover:bg-gray-200 transition text-center">
+        {/* ✅ Code 13 (EAN) */}
+        <td className="p-3">{product.code_13_ref}</td>
+
+        {/* ✅ Nom du produit */}
+        <td className="p-3">{product.product_name}</td>
+
+        {/* ✅ Quantité */}
+        <td className="p-3">
+          {formatLargeNumber(product.total_quantity, false)}
+          {product.previous && (
+            <span className="block text-xs text-gray-500">
+              {getEvolution(product.total_quantity, product.previous.total_quantity)}
+            </span>
+          )}
+        </td>
+
+        {showUnitValues ? (
+          <>
+            <td className="p-3">
+              {formatLargeNumber(product.avg_selling_price)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.avg_selling_price, product.previous.avg_selling_price)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.avg_margin)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.avg_margin, product.previous.avg_margin)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.purchase_quantity, false)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.purchase_quantity, product.previous.purchase_quantity)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.avg_purchase_price)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.avg_purchase_price, product.previous.avg_purchase_price)}
+                </span>
+              )}
+            </td>
+          </>
+        ) : (
+          <>
+            <td className="p-3">
+              {formatLargeNumber(product.revenue)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.revenue, product.previous.revenue)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.margin)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.margin, product.previous.margin)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.purchase_quantity, false)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.purchase_quantity, product.previous.purchase_quantity)}
+                </span>
+              )}
+            </td>
+            <td className="p-3">
+              {formatLargeNumber(product.purchase_amount)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.purchase_amount, product.previous.purchase_amount)}
+                </span>
+              )}
+            </td>
+          </>
         )}
-      </div>
+
+        {/* ✅ Colonne "Détails" placée EN DERNIER pour correspondre au thead */}
+        <td className="p-3 text-center">
+          <motion.button
+            animate={{ rotate: expandedProduct === product.code_13_ref ? 90 : 0 }}
+            transition={{ duration: 0.3 }}
+            onClick={() => toggleDetails(product.code_13_ref)}
+            className="p-2 rounded-full bg-blue-600 flex items-center justify-center text-center"
+          >
+            <FaChevronRight className="text-white text-lg w-full" />
+          </motion.button>
+        </td>
+      </tr>
+
+      {/* ✅ Détails du produit (expandable) */}
+      {expandedProduct === product.code_13_ref && (
+        <tr>
+          <td colSpan={showUnitValues ? 9 : 9} className="p-4 bg-blue-100 text-center text-blue-900">
+            {/* 🔄 Loader en attendant l'affichage */}
+            {loadingStockData[product.code_13_ref] && <p className="text-gray-500">Chargement des données...</p>}
+
+            {/* 📊 Affichage du graphique seulement si les données sont disponibles */}
+            {salesStockData[product.code_13_ref] && (
+              <div className="mt-4">
+                <ProductSalesStockChart salesStockData={salesStockData[product.code_13_ref]} />
+              </div>
+            )}
+          </td>
+        </tr>
+      )}
+    </React.Fragment>
+  ))}
+</tbody>
+          </table>
+        </div>
+      )}
     </div>
-    
   );
 };
 
 export default ProductTable;
+
+
+const getEvolution = (current: number, previous?: number) => {
+  if (previous === undefined || previous === null) return <span className="text-gray-500">N/A</span>;
+  if (previous === 0) return current > 0 ? <span className="text-green-500">+100%</span> : <span className="text-gray-500">0%</span>;
+
+  const percentage = ((current - previous) / previous) * 100;
+  const isPositive = percentage >= 0;
+
+  return (
+    <span className={isPositive ? "text-green-500" : "text-red-500"}>
+      {isPositive ? "+" : ""}
+      {percentage.toFixed(1)}%
+    </span>
+  );
+};

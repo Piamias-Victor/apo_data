@@ -47,7 +47,6 @@ const SegmentationPage: React.FC = () => {
     // 📌 Applique uniquement si une mise à jour est nécessaire
     if (JSON.stringify(filters) !== JSON.stringify(newFilters)) {
       setFilters(newFilters);
-      console.log("✅ Filtres mis à jour :", newFilters);
     }
   }, [query]); // **Dépendance uniquement à `query` pour éviter une boucle infinie**
 

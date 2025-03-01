@@ -3,7 +3,6 @@ import { FaTag, FaStore, FaChartLine } from "react-icons/fa";
 import { useFilterContext } from "@/contexts/FilterContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import DataBlock from "../DataBlock";
 
 // Interface des données récupérées
@@ -39,19 +38,19 @@ const AnnualMetrics2025: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-
+    
       try {
         const response = await fetch("/api/getLabMetrics", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
         });
-
+    
         if (!response.ok) throw new Error("Erreur API");
-
+    
         const result = await response.json();
-
-        // Conversion des valeurs string en number
+    
+        // 🔹 Transformation des données : conversion des strings en nombres
         const formattedMetrics = result.metrics.map((item: any) => ({
           avgSellPrice: parseFloat(item.avgsellprice),
           avgSellPriceEvolution: item.avgsellpriceevolution ? parseFloat(item.avgsellpriceevolution) : null,
@@ -69,7 +68,8 @@ const AnnualMetrics2025: React.FC = () => {
           numPharmaciesSoldEvolution: item.numpharmaciessoldevolution ? parseInt(item.numpharmaciessoldevolution, 10) : null,
           type: item.type,
         }));
-
+    
+    
         setMetrics(formattedMetrics);
       } catch (err) {
         setError("Impossible de récupérer les données.");
@@ -86,54 +86,60 @@ const AnnualMetrics2025: React.FC = () => {
   const comparisonPeriod = metrics.find((data) => data.type === "comparison");
 
   // 🔹 Formatage des dates
-  const formattedStartDate = dateRange[0] ? format(dateRange[0], "dd/MM/yy", { locale: fr }) : "--/--/--";
-  const formattedEndDate = dateRange[1] ? format(dateRange[1], "dd/MM/yy", { locale: fr }) : "--/--/--";
-
-  const formattedComparisonStartDate = comparisonDateRange[0]
-    ? format(comparisonDateRange[0], "dd/MM/yy", { locale: fr })
-    : "--/--/--";
-  const formattedComparisonEndDate = comparisonDateRange[1]
-    ? format(comparisonDateRange[1], "dd/MM/yy", { locale: fr })
-    : "--/--/--";
+  const formatDate = (date: Date | null) =>
+    date ? format(date, "dd/MM/yy", { locale: fr }) : "--/--/--";
 
   return (
-    <div className="p-6 bg-gradient-to-r from-teal-500 to-teal-700 text-white rounded-xl shadow-lg border border-white">
-      {/* 📊 Titre */}
-      <div className="flex justify-between items-center border-b border-white pb-4 mb-4">
-        <h2 className="text-lg font-semibold">📊 Résumé Annuel (2025)</h2>
+    <div className="p-8 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-300 relative">
+      {/* 📊 Titre & Dates */}
+      <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-300 pb-5 mb-6 relative z-10">
+        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          📊 Résumé Annuel (2025)
+        </h2>
 
         {/* 🔹 Bloc des périodes */}
-        <div className="flex text-right px-3 py-2 rounded-lg bg-white bg-opacity-20 gap-8">
-          <div className="flex flex-col gap-1 text-left">
-            <p className="text-xs uppercase text-gray-200 font-semibold tracking-wide">Période</p>
-            <p className="text-sm font-medium">{formattedStartDate} → {formattedEndDate}</p>
+        <div className="flex justify-center md:justify-start gap-8 bg-violet-500 hover:bg-violet-600 px-4 py-2 rounded-lg text-white shadow-sm relative z-10">
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase">Période</span>
+            <span className="text-sm font-medium">{formatDate(dateRange[0])} → {formatDate(dateRange[1])}</span>
           </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-xs uppercase text-gray-200 font-semibold tracking-wide">Comparaison</p>
-            <p className="text-sm font-medium">{formattedComparisonStartDate} → {formattedComparisonEndDate}</p>
+          <div className="flex flex-col">
+            <span className="text-xs font-semibold uppercase">Comparaison</span>
+            <span className="text-sm font-medium">{formatDate(comparisonDateRange[0])} → {formatDate(comparisonDateRange[1])}</span>
           </div>
         </div>
       </div>
 
       {/* 🟢 Affichage du statut de chargement / erreur */}
       {loading ? (
-        <p className="text-center text-white">⏳ Chargement des données...</p>
+        <p className="text-center text-gray-800 mt-6">⏳ Chargement des données...</p>
       ) : error ? (
-        <p className="text-center text-red-300">{error}</p>
+        <p className="text-center text-red-500 mt-6">{error}</p>
       ) : (
-        <div>
-          <h3 className="text-md font-semibold mb-3 flex items-center border-b border-white pb-2">
-            <FaChartLine className="mr-2" /> Indicateurs Clés
-          </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 relative z-10">
+          {/* 🔵 INDICATEURS CLÉS */}
+          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
+            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-violet-600">
+              <FaChartLine className="mr-2" /> Indicateurs Clés
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              <DataBlock title="Prix Vente Moyen" value={currentPeriod?.avgSellPrice || 0} previousValue={comparisonPeriod?.avgSellPrice || 0} isCurrency />
+              <DataBlock title="Prix Achat Moyen" value={currentPeriod?.avgWeightedBuyPrice || 0} previousValue={comparisonPeriod?.avgWeightedBuyPrice || 0} isCurrency />
+              <DataBlock title="Marge Moyenne" value={currentPeriod?.avgMargin || 0} previousValue={comparisonPeriod?.avgMargin || 0} isCurrency />
+              <DataBlock title="Marge %" value={currentPeriod?.avgMarginPercentage || 0} previousValue={comparisonPeriod?.avgMarginPercentage || 0} isPercentage />
+            </div>
+          </div>
 
-          {/* 🌟 Affichage des métriques */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            <DataBlock title="Prix Vente Moyen" value={currentPeriod?.avgSellPrice || 0} previousValue={comparisonPeriod?.avgSellPrice || 0} isCurrency />
-            <DataBlock title="Prix Achat Moyen" value={currentPeriod?.avgWeightedBuyPrice || 0} previousValue={comparisonPeriod?.avgWeightedBuyPrice || 0} isCurrency />
-            <DataBlock title="Marge Moyenne" value={currentPeriod?.avgMargin || 0} previousValue={comparisonPeriod?.avgMargin || 0} isCurrency />
-            <DataBlock title="Marge %" value={currentPeriod?.avgMarginPercentage || 0} previousValue={comparisonPeriod?.avgMarginPercentage || 0} isPercentage />
-            <DataBlock title="Réfs Vendues" value={currentPeriod?.numReferencesSold || 0} previousValue={comparisonPeriod?.numReferencesSold || 0} />
-            <DataBlock title="Pharmacies" value={currentPeriod?.numPharmaciesSold || 0} previousValue={comparisonPeriod?.numPharmaciesSold || 0} />
+          {/* 🟠 STOCK & DISTRIBUTION */}
+          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
+            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-violet-600">
+              <FaStore className="mr-2" /> Stock & Distribution
+            </h3>
+            <div className="grid grid-cols-2 gap-6">
+              <DataBlock title="Valeur Moyenne du Stock" value={currentPeriod?.avgStockValue || 0} previousValue={comparisonPeriod?.avgStockValue || 0} isCurrency />
+              <DataBlock title="Réfs Vendues" value={currentPeriod?.numReferencesSold || 0} previousValue={comparisonPeriod?.numReferencesSold || 0} />
+              <DataBlock title="Pharmacies" value={currentPeriod?.numPharmaciesSold || 0} previousValue={comparisonPeriod?.numPharmaciesSold || 0} />
+            </div>
           </div>
         </div>
       )}

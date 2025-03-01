@@ -166,7 +166,6 @@ ORDER BY type ASC;
       filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison
     ]);
 
-    console.log('rows :', rows)
     return res.status(200).json({ salesData: rows });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des données :", error);

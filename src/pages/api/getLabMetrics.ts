@@ -136,7 +136,6 @@ ORDER BY type ASC;
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // Correction : ajout du bon paramètre
       filters.comparisonDateRange[0], filters.comparisonDateRange[1] // Période de comparaison
     ]);
-    console.log('rows metrics :', rows)
 
     return res.status(200).json({ metrics: rows });
   } catch (error) {

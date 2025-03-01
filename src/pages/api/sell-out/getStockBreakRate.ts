@@ -134,7 +134,6 @@ ORDER BY type ASC;
       filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison
     ]);
 
-    console.log('rows 2 :', rows)
     return res.status(200).json({ stockBreakData: rows });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des données :", error);

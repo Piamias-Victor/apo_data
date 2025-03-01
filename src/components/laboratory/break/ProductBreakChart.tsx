@@ -18,7 +18,6 @@ interface ProductBreakChartProps {
 
 // 📊 **Composant du graphique des ruptures mensuelles**
 const ProductBreakChart: React.FC<ProductBreakChartProps> = ({ breakData }) => {
-  console.log("📊 Données du graphique :", breakData); // 🔍 Vérification des données
   if (breakData.length === 0) return <p className="text-gray-500 text-center mt-2">Aucune donnée disponible.</p>;
 
   // 📅 Labels des mois

@@ -141,7 +141,6 @@ ORDER BY sd.type ASC;
       filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison
     ]);
 
-    console.log('Stock Sales Data:', rows);
     return res.status(200).json({ stockSalesData: rows });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des stocks et des ventes :", error);

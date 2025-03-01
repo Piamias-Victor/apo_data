@@ -19,8 +19,8 @@ interface StockBreakDataMonthlyProps {
 
 const StockBreakDataMonthly: React.FC<StockBreakDataMonthlyProps> = ({ stockBreakData, loading, error }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [sortColumn, setSortColumn] = useState<keyof StockBreakData | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [sortColumn, setSortColumn] = useState<keyof StockBreakData>("stock_break_amount"); // 📌 Tri par défaut sur montant des ruptures
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc"); // 📌 Descendant par défaut
 
   // 📌 Fonction de tri des colonnes
   const toggleSort = (column: keyof StockBreakData) => {
@@ -28,37 +28,34 @@ const StockBreakDataMonthly: React.FC<StockBreakDataMonthlyProps> = ({ stockBrea
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(column);
-      setSortOrder("asc");
+      setSortOrder("desc");
     }
   };
 
   // 📌 Tri des données en fonction de la colonne sélectionnée
   const sortedData = [...stockBreakData].sort((a, b) => {
-    if (!sortColumn) return 0;
-
-    let valA = a[sortColumn] ?? 0;
-    let valB = b[sortColumn] ?? 0;
-
-    // 🔹 Conversion en nombre pour éviter un tri alphabétique
-    valA = typeof valA === "string" ? parseFloat(valA.replace(/[^0-9.-]+/g, "")) : valA;
-    valB = typeof valB === "string" ? parseFloat(valB.replace(/[^0-9.-]+/g, "")) : valB;
-
-    return sortOrder === "asc" ? valA - valB : valB - valA;
+    if (sortColumn === "month") {
+      return sortOrder === "asc"
+        ? a.month.localeCompare(b.month)
+        : b.month.localeCompare(a.month);
+    }
+    return sortOrder === "asc" ? a[sortColumn] - b[sortColumn] : b[sortColumn] - a[sortColumn];
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 border border-gray-200 relative">
-      {/* 📌 Bouton de toggle */}
+    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-8 border border-gray-300 relative">
+      {/* 📌 Bouton de toggle avec animation */}
       <button
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow-md hover:bg-red-600 transition flex items-center"
+        className="absolute top-4 right-4 bg-red-500 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-red-600 transition flex items-center gap-2"
       >
-        {isCollapsed ? "Afficher détails" : "Masquer détails"}
-        {isCollapsed ? <FaChevronDown className="ml-2" /> : <FaChevronUp className="ml-2" />}
+        {isCollapsed ? "Afficher détails" : "Masquer détails"} {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
       </button>
 
       {/* 📌 Titre */}
-      <h2 className="text-lg font-semibold text-gray-700 mb-4">📅 Détails Mensuels des Ruptures</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        🚨 <span>Suivi des Ruptures de Stock</span>
+      </h2>
 
       {/* 📌 Contenu animé */}
       <AnimatePresence>
@@ -68,6 +65,7 @@ const StockBreakDataMonthly: React.FC<StockBreakDataMonthlyProps> = ({ stockBrea
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
           >
             {/* 🔹 Loader & Erreur */}
             {loading && <p className="text-gray-500 text-center">Chargement des données...</p>}
@@ -75,58 +73,46 @@ const StockBreakDataMonthly: React.FC<StockBreakDataMonthlyProps> = ({ stockBrea
 
             {/* 📌 Tableau des données */}
             {!loading && !error && stockBreakData.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  {/* 🔹 En-tête du tableau */}
+              <div className="overflow-hidden rounded-lg border border-gray-200 shadow-lg transition-all duration-300 ease-in-out">
+                <table className="w-full border-collapse">
+                  {/* 🔹 En-tête du tableau avec colonnes fixes */}
                   <thead>
-                    <tr className="bg-red-100 text-red-900">
-                      <th className={`p-3 cursor-pointer ${sortColumn === "month" ? "bg-red-300 text-white" : ""}`} onClick={() => toggleSort("month")}>
-                        <div className="flex items-center gap-2">
-                          Mois {sortColumn === "month" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
-                        </div> 
-                      </th>
-                      <th className={`p-3 cursor-pointer ${sortColumn === "total_products_ordered" ? "bg-red-300 text-white" : ""}`} onClick={() => toggleSort("total_products_ordered")}>
-                        <div className="flex items-center gap-2">
-                          Produits Commandés {sortColumn === "total_products_ordered" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
-                        </div>
-                      </th>
-                      <th className={`p-3 cursor-pointer ${sortColumn === "stock_break_products" ? "bg-red-300 text-white" : ""}`} onClick={() => toggleSort("stock_break_products")}>
-                        <div className="flex items-center gap-2">
-                          Produits en Rupture {sortColumn === "stock_break_products" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
-                        </div>
-                      </th>
-                      <th className={`p-3 cursor-pointer ${sortColumn === "stock_break_rate" ? "bg-red-300 text-white" : ""}`} onClick={() => toggleSort("stock_break_rate")}>
-                        <div className="flex items-center gap-2">
-                          Taux de Rupture {sortColumn === "stock_break_rate" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
-                        </div>
-                      </th>
-                      <th className={`p-3 cursor-pointer ${sortColumn === "stock_break_amount" ? "bg-red-300 text-white" : ""}`} onClick={() => toggleSort("stock_break_amount")}>
-                        <div className="flex items-center gap-2">
-                          Montant des Ruptures (€) {sortColumn === "stock_break_amount" ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
-                        </div>
-                      </th>
+                    <tr className="bg-red-500 text-white text-md">
+                      {[
+                        { key: "month", label: "Mois" },
+                        { key: "total_products_ordered", label: "Produits Commandés" },
+                        { key: "stock_break_products", label: "Produits en Rupture" },
+                        { key: "stock_break_rate", label: "Taux de Rupture (%)" },
+                        { key: "stock_break_amount", label: "Montant des Ruptures (€)" },
+                      ].map(({ key, label }) => (
+                        <th
+                          key={key}
+                          className="p-4 cursor-pointer w-1/6 transition hover:bg-red-600"
+                          onClick={() => toggleSort(key as keyof StockBreakData)}
+                        >
+                          <div className="flex justify-center items-center gap-2">
+                            {label}
+                            {sortColumn === key ? (sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />) : <FaSort />}
+                          </div>
+                        </th>
+                      ))}
                     </tr>
                   </thead>
-                  
+
                   {/* 🔹 Contenu du tableau */}
                   <tbody>
                     {sortedData.map((data, index) => (
-                      <tr key={index} className="border-b hover:bg-red-50 text-center">
-                        <td className="p-3">{data.month}</td>
-                        <td className="p-3">{formatLargeNumber(data.total_products_ordered, false)}</td>
-                        <td className="p-3">{formatLargeNumber(data.stock_break_products, false)}</td>
-                        <td className="p-3">{formatLargeNumber(data.stock_break_rate, false)}%</td>
-                        <td className="p-3">{formatLargeNumber(data.stock_break_amount, true)}</td>
+                      <tr key={index} className="border-b hover:bg-red-50 transition text-center">
+                        <td className="p-5">{data.month}</td>
+                        <td className="p-5">{formatLargeNumber(data.total_products_ordered, false)}</td>
+                        <td className="p-5">{formatLargeNumber(data.stock_break_products, false)}</td>
+                        <td className="p-5">{formatLargeNumber(data.stock_break_rate, false)}%</td>
+                        <td className="p-5">{formatLargeNumber(data.stock_break_amount, true)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-
-            {/* 🔹 Message si pas de données */}
-            {!loading && !error && stockBreakData.length === 0 && (
-              <p className="text-gray-500 text-center col-span-2">Aucune donnée disponible.</p>
             )}
           </motion.div>
         )}

@@ -25,18 +25,13 @@ const LabDropdown: React.FC = () => {
 
   const handleSelectLab = (item: string) => {
     const isLab = distributors.some((lab) => lab.lab_distributor === item);
-  
-    console.log('isLab :', isLab);
-  
+    
     // Récupère les filtres actuels
     const { distributors: selectedLabs, brands: selectedBrands } = filters;
   
     const alreadySelected = isLab
       ? selectedLabs.includes(item)
       : selectedBrands.includes(item);
-  
-    console.log('alreadySelected :', alreadySelected);
-    console.log('Filtres avant mise à jour :', filters);
   
     // Construire les nouveaux filtres
     const newFilters = {
