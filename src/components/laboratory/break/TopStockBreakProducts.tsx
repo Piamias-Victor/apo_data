@@ -14,7 +14,6 @@ interface ProductStockBreakData {
 }
 
 const normalizeNumber = (value: string | number | null | undefined): number => {
-  console.log('value :', value);
   if (value === null || value === undefined || value === "") return 0;
   return Number(value);
 };
@@ -24,9 +23,7 @@ const TopStockBreakProducts: React.FC<{ products: ProductStockBreakData[] }> = (
   const normalizedProducts = products.map((product) => {
     const stockBreakQty = normalizeNumber(product.stock_break_products);
     const stockBreakAmount = normalizeNumber(product.stock_break_amount);
-  
-    console.log(`Produit : ${product.product_name} | Rupture : ${stockBreakQty}`);
-  
+    
     return {
       ...product,
       stock_break_products: stockBreakQty,
@@ -40,8 +37,6 @@ const TopStockBreakProducts: React.FC<{ products: ProductStockBreakData[] }> = (
         : undefined,
     };
   });
-
-  console.log('normalizedProducts :', normalizedProducts);
     // 📌 Trier les produits par quantité de rupture
   const topBreakQuantity = [...normalizedProducts]
     .sort((a, b) => b.stock_break_products - a.stock_break_products)

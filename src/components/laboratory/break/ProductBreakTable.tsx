@@ -55,8 +55,6 @@ const ProductBreakTable: React.FC<{ products: ProductStockBreakData[] }> = ({ pr
   const [salesStockData, setSalesStockData] = useState<Record<string, ProductSalesStockData[]>>({});
   const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
 
-  console.log("🚀 ~ file: ProductBreakTable.tsx ~ line 45 ~ ProductBreakTable ~ products", products)
-
   // 📌 Fetch des données de stock et de rupture
   const toggleDetails = async (code_13_ref: string) => {
     setExpandedProduct((prev) => (prev === code_13_ref ? null : code_13_ref));

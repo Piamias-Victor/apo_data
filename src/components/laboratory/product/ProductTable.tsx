@@ -19,8 +19,11 @@ interface ProductSalesData {
   avg_selling_price: number;
   avg_purchase_price: number;
   avg_margin: number;
+  part_ca_labo: number; // ✅ Part du produit sur le CA du labo
+  part_marge_labo: number; // ✅ Part du produit sur la Marge du labo
+  indice_rentabilite: number; // ✅ Indice de rentabilité
   type: "current" | "comparison";
-  previous?: { // ✅ Ajout de l'objet contenant les valeurs de comparaison
+  previous?: {
     total_quantity: number;
     revenue: number;
     margin: number;
@@ -29,6 +32,9 @@ interface ProductSalesData {
     avg_selling_price: number;
     avg_purchase_price: number;
     avg_margin: number;
+    part_ca_labo: number;
+    part_marge_labo: number;
+    indice_rentabilite: number;
   };
 }
 
@@ -192,21 +198,22 @@ const ProductTable: React.FC = () => {
   <tr className="bg-blue-500 text-white text-md rounded-lg">
     {[
       { key: "code_13_ref", label: "Code 13", width: "15%" },
-      { key: "product_name", label: "Produit", width: "25%" },
+      { key: "product_name", label: "Produit", width: "20%" },
       { key: "total_quantity", label: "Qte", width: "10%" },
       ...(showUnitValues
         ? [
-            { key: "avg_selling_price", label: "Prix Vente Moy (€)", width: "15%" },
-            { key: "avg_margin", label: "Marge Moy (€)", width: "10%" },
+            { key: "avg_selling_price", label: "Prix (€)", width: "15%" },
+            { key: "avg_margin", label: "Marge (€)", width: "10%" },
             { key: "purchase_quantity", label: "Qte Achetée", width: "10%" },
-            { key: "avg_purchase_price", label: "Prix Achat Moy (€)", width: "15%" },
+            { key: "avg_purchase_price", label: "Achat (€)", width: "15%" },
           ]
         : [
             { key: "revenue", label: "CA (€)", width: "15%" },
             { key: "margin", label: "Marge (€)", width: "10%" },
             { key: "purchase_quantity", label: "Qte Achetée", width: "10%" },
-            { key: "purchase_amount", label: "Montant Achat (€)", width: "15%" },
+            { key: "purchase_amount", label: "Achat (€)", width: "15%" },
           ]),
+          { key: "indice_rentabilite", label: "Rentabilité", width: "10%" },
     ].map(({ key, label, width }) => (
       <th
         key={key}
@@ -323,6 +330,15 @@ const ProductTable: React.FC = () => {
           </>
         )}
 
+            <td className="p-3">
+              {formatLargeNumber(product.indice_rentabilite, false)}
+              {product.previous && (
+                <span className="block text-xs text-gray-500">
+                  {getEvolution(product.indice_rentabilite, product.previous.indice_rentabilite)}
+                </span>
+              )}
+            </td>
+
         {/* ✅ Colonne "Détails" placée EN DERNIER pour correspondre au thead */}
         <td className="p-3 text-center">
           <motion.button
@@ -374,8 +390,7 @@ const getEvolution = (current: number, previous?: number) => {
 
   return (
     <span className={isPositive ? "text-green-500" : "text-red-500"}>
-      {isPositive ? "+" : ""}
-      {percentage.toFixed(1)}%
+      {isNaN(percentage) || !isFinite(percentage) ? "0%" : (isPositive ? "+" : "") + percentage.toFixed(1) + "%"}
     </span>
   );
 };

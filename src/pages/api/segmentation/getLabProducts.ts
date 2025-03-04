@@ -33,7 +33,7 @@ export default async function handler(
 
     const query = `
 WITH filtered_products AS (
-    SELECT dgp.code_13_ref, dgp.name AS product_name, dgp.tva_percentage
+    SELECT dgp.code_13_ref, dgp.name AS product_name, dgp.tva_percentage, dgp.lab_distributor
     FROM data_globalproduct dgp
     WHERE 
         ($1::text[] IS NULL OR dgp.lab_distributor = ANY($1))
@@ -131,6 +131,18 @@ purchase_data AS (
     WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
       AND dor.sent_date BETWEEN $13 AND $14 
     GROUP BY dip.code_13_ref_id
+),
+
+lab_total_sales AS (
+    -- 🔹 Récupère le CA total et la marge totale du laboratoire
+    SELECT 
+        fp.lab_distributor,
+        SUM(sd.revenue) AS lab_revenue,
+        SUM(sd.margin) AS lab_margin,
+        sd.type
+    FROM sales_data sd
+    JOIN filtered_products fp ON sd.code_13_ref = fp.code_13_ref
+    GROUP BY fp.lab_distributor, sd.type
 )
 
 SELECT 
@@ -147,11 +159,19 @@ SELECT
         WHEN SUM(sd.total_quantity) > 0 THEN SUM(sd.margin) / SUM(sd.total_quantity) 
         ELSE 0 
     END AS avg_margin,
+    ROUND((COALESCE(SUM(sd.revenue), 0) / NULLIF(COALESCE(lts.lab_revenue, 0), 0)) * 100, 2) AS part_ca_labo,
+    ROUND((COALESCE(SUM(sd.margin), 0) / NULLIF(COALESCE(lts.lab_margin, 0), 0)) * 100, 2) AS part_marge_labo,
+    ROUND(
+        NULLIF((COALESCE(SUM(sd.revenue), 0) / NULLIF(COALESCE(lts.lab_revenue, 0), 0)) * 100, 0) / 
+        NULLIF((COALESCE(SUM(sd.margin), 0) / NULLIF(COALESCE(lts.lab_margin, 0), 0)) * 100, 0), 
+        2
+    ) AS indice_rentabilite,
     sd.type
 FROM sales_data sd
 FULL JOIN purchase_data pd ON sd.code_13_ref = pd.code_13_ref AND sd.type = pd.type
 JOIN filtered_products fp ON sd.code_13_ref = fp.code_13_ref
-GROUP BY fp.code_13_ref, fp.product_name, sd.type
+LEFT JOIN lab_total_sales lts ON fp.lab_distributor = lts.lab_distributor AND sd.type = lts.type
+GROUP BY fp.code_13_ref, fp.product_name, sd.type, lts.lab_revenue, lts.lab_margin
 ORDER BY sd.type ASC;
     `;
 
@@ -170,7 +190,6 @@ ORDER BY sd.type ASC;
       filters.comparisonDateRange[0], filters.comparisonDateRange[1],
     ]);
 
-    console.log('rows :', rows)
     return res.status(200).json({ products: rows });
   } catch (error) {
     console.error("❌ Erreur API :", error);

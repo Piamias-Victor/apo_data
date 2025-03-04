@@ -153,8 +153,6 @@ ORDER BY sb.type ASC;
       filters.comparisonDateRange[0], filters.comparisonDateRange[1],
     ]);
 
-    console.log('rows :', rows);
-
     return res.status(200).json({ stockBreakData: rows });
   } catch (error) {
     console.error("❌ Erreur API Ruptures :", error);

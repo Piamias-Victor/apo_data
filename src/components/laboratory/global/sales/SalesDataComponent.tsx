@@ -55,8 +55,6 @@ const SalesDataComponent: React.FC = () => {
   const [fullForecastPurchaseAmount, setFullForecastPurchaseAmount] = useState(0);
 
   useEffect(() => {
-    if (!hasSelectedData) return;
-
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -153,7 +151,7 @@ const SalesDataComponent: React.FC = () => {
     };
 
     fetchData();
-  }, [filters, hasSelectedData]);
+  }, [filters]);
 
   useEffect(() => {
     if (!hasSelectedData || salesData.length === 0) return;

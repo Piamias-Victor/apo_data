@@ -38,7 +38,6 @@ const StockBreakDashboard: React.FC = () => {
         if (!response.ok) throw new Error("Erreur lors de la récupération des ruptures");
 
         const data = await response.json();
-        console.log("Données API reçues :", data.stockBreakData);
 
         // Regroupement des données actuelles et comparatives
         const mergedProducts = data.stockBreakData.reduce((acc: ProductStockBreakData[], product) => {
@@ -48,8 +47,6 @@ const StockBreakDashboard: React.FC = () => {
           }
           return acc;
         }, []);
-
-        console.log("Produits traités avant stockage :", mergedProducts);
 
         setProducts(mergedProducts);
       } catch (err) {

@@ -6,27 +6,23 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // 🎯 Définition de l'interface des données
-interface ProductSalesStockChartProps {
+interface SegmentationSalesStockChartProps {
   salesStockData: { 
     month: string; 
     total_quantity_sold: number; 
     avg_stock_quantity: number; 
-    stock_break_quantity: number; 
-    max_selling_price: number;  // ✅ Ajout du prix de vente max
-    min_selling_price: number;  // ✅ Ajout du prix de vente min
+    stock_break_quantity: number;
   }[];
 }
 
 // 📊 **Composant du graphique des ventes, stocks et ruptures**
-const ProductSalesStockChart: React.FC<ProductSalesStockChartProps> = ({ salesStockData }) => {
-  if (salesStockData.length === 0) return <p className="text-gray-500 text-center mt-2">Aucune donnée enregistrée.</p>;
+const SegmentationSalesStockChart: React.FC<SegmentationSalesStockChartProps> = ({ salesStockData }) => {
+  if (salesStockData.length === 0) return <p className="text-gray-500 text-center mt-2">Aucune donnée disponible.</p>;
+
+  console.log('salesStockData', salesStockData);
 
   // 📅 Labels des mois
   const labels = salesStockData.map((data) => data.month);
-
-  // 📌 Récupérer les prix max et min sur toute la période
-  const maxPrice = Math.max(...salesStockData.map((data) => data.max_selling_price));
-  const minPrice = Math.min(...salesStockData.map((data) => data.min_selling_price));
 
   // 📊 Données du graphique
   const data = {
@@ -52,18 +48,6 @@ const ProductSalesStockChart: React.FC<ProductSalesStockChartProps> = ({ salesSt
 
   return (
     <div className="mt-4 bg-white shadow p-4 rounded-lg w-full">
-      {/* ✅ Affichage des prix max et min */}
-      <div className="flex justify-between items-center bg-gray-100 p-4 rounded-md shadow-sm mb-4">
-        <div className="text-center">
-          <p className="text-sm text-gray-600">💰 Prix Minimum</p>
-          <p className="text-lg font-bold text-green-600">{minPrice.toFixed(2)} €</p>
-        </div>
-        <div className="text-center">
-          <p className="text-sm text-gray-600">💰 Prix Maximum</p>
-          <p className="text-lg font-bold text-red-600">{maxPrice.toFixed(2)} €</p>
-        </div>
-      </div>
-
       {/* 📊 Titre du graphique */}
       <h3 className="text-lg font-semibold text-teal-900 mb-2">📊 Ventes, Stocks & Ruptures Mensuelles</h3>
       
@@ -73,4 +57,4 @@ const ProductSalesStockChart: React.FC<ProductSalesStockChartProps> = ({ salesSt
   );
 };
 
-export default ProductSalesStockChart;
+export default SegmentationSalesStockChart;
