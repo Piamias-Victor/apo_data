@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import SegmentationTable from "./SegmentationTable";
-import TreemapChart from "./TreemapChart";
+import dynamic from "next/dynamic";
+const TreemapChart = dynamic(() => import("@/components/laboratory/segmentation/TreemapChart"), { ssr: false });
 
 interface SegmentationComparisonData {
   segment: string;
