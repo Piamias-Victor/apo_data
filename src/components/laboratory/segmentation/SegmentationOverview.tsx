@@ -118,7 +118,6 @@ const SegmentationOverview: React.FC = () => {
   const revenueBySubCategory = aggregateByKey("sub_category");
   const revenueByFamily = aggregateByKey("family");
   const revenueBySubFamily = aggregateByKey("sub_family");
-  const revenueByRange = aggregateByKey("range_name");
   const revenueBySpecificity = aggregateByKey("specificity");
 
   // 📌 Liste des segments à afficher
@@ -137,42 +136,54 @@ const SegmentationOverview: React.FC = () => {
     const revenue: number[] = [];
     const margin: number[] = [];
     const quantity: number[] = [];
-    const seen = new Set(); // Pour éviter les doublons
-  
-    data.forEach((item) => {
-      const levels = {
-        universe: item.universe,
-        category: item.category,
-        sub_category: item.sub_category,
-        family: item.family,
-        sub_family: item.sub_family,
-        specificity: item.specificity,
-      };
-  
-      let parent = "";
-      
-      Object.entries(levels).forEach(([key, name]) => {
-        if (name && !seen.has(name)) {
-          seen.add(name);
-  
-          labels.push(name);
-          parents.push(parent); // Associe chaque niveau à son parent
-          revenue.push(item.revenue_current);
-          margin.push(item.margin_current);
-          quantity.push(item.quantity_sold_current);
-  
-          parent = name; // Le parent devient le niveau courant
-        }
-  
-        // 💡 Stoppe l'ajout dès qu'on atteint le niveau sélectionné
-        if (key === selectedLevel) return;
-      });
-    });
-  
-    return { labels, parents, revenue, margin, quantity };
-  };
 
-  console.log("🔍 revenueByUniverse:", revenueByUniverse);
+    // 🚀 Sets pour éviter les doublons
+    const seenLevels = {
+        universe: new Set<string>(),
+        category: new Set<string>(),
+        family: new Set<string>(),
+    };
+
+    // 🌳 Hiérarchie : univers > category > family
+    data.forEach((item) => {
+        const { universe, category, family } = item;
+
+        if (universe && !seenLevels.universe.has(universe)) {
+            seenLevels.universe.add(universe);
+            labels.push(universe);
+            parents.push(""); // univers est la racine
+            revenue.push(item.revenue_current);
+            margin.push(item.margin_current);
+            quantity.push(item.quantity_sold_current);
+        }
+
+        if (category && !seenLevels.category.has(category)) {
+            // 💡 Vérifier que category n'existe pas en tant que univers avant d'ajouter
+            if (!seenLevels.universe.has(category)) {
+                seenLevels.category.add(category);
+                labels.push(category);
+                parents.push(universe);
+                revenue.push(item.revenue_current);
+                margin.push(item.margin_current);
+                quantity.push(item.quantity_sold_current);
+            }
+        }
+
+        if (family && !seenLevels.family.has(family)) {
+            // 💡 Vérifier que family n'existe pas en tant que category ou univers avant d'ajouter
+            if (!seenLevels.universe.has(family) && !seenLevels.category.has(family)) {
+                seenLevels.family.add(family);
+                labels.push(family);
+                parents.push(category);
+                revenue.push(item.revenue_current);
+                margin.push(item.margin_current);
+                quantity.push(item.quantity_sold_current);
+            }
+        }
+    });
+
+    return { labels, parents, revenue, margin, quantity };
+};
 
   return (
     <div className="rounded-xl p-8 relative">
@@ -191,7 +202,7 @@ const SegmentationOverview: React.FC = () => {
           <div key={title} className="bg-gray-50 shadow-md rounded-lg p-4 relative border border-gray-200">
             {/* 🔹 Bouton "Afficher/Masquer" spécifique à chaque tableau */}
             <button
-              className="absolute top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-blue-600 transition flex items-center gap-2"
+              className="absolute top-4 right-4 bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-teal-600 transition flex items-center gap-2"
               onClick={() => setExpandedTables((prev) => ({ ...prev, [title]: !prev[title] }))}
             >
               {expandedTables[title] ? "Masquer" : "Afficher"} détails {expandedTables[title] ? <FaChevronUp /> : <FaChevronDown />}

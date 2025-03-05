@@ -112,8 +112,6 @@ ORDER BY lm.month ASC;
 
     const { rows } = await pool.query<SegmentationSalesStockData>(query, [segment]);
 
-    console.log("📊 Données SQL retournées :", rows);
-
     return res.status(200).json({ salesStockData: rows });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des ventes, stocks et ruptures :", error);

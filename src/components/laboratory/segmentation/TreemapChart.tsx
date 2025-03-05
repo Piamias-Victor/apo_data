@@ -1,6 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Plot from "react-plotly.js";
 import { motion } from "framer-motion";
+import { FaChartPie } from "react-icons/fa";
+import { formatLargeNumber } from "@/libs/utils/formatUtils";
+import Link from "next/link";
 
 interface TreemapChartProps {
   labels: string[];
@@ -12,25 +15,39 @@ interface TreemapChartProps {
 
 const TreemapChart: React.FC<TreemapChartProps> = ({ labels, parents, revenue, margin, quantity }) => {
   const [selectedMetric, setSelectedMetric] = useState<"revenue" | "margin" | "quantity">("revenue");
-  const [selectedLevel, setSelectedLevel] = useState<"universe" | "category" | "sub_category" | "family" | "sub_family" | "specificity">("universe");
+  const [selectedLevel, setSelectedLevel] = useState<"universe" | "category" | "family">("universe");
 
-  // 📊 Sélection des valeurs affichées
+  // 📌 Sélection des valeurs affichées
   const values = selectedMetric === "revenue" ? revenue : selectedMetric === "margin" ? margin : quantity;
   const metricLabel = selectedMetric === "revenue" ? "Chiffre d'Affaires (€)" : selectedMetric === "margin" ? "Marge (€)" : "Quantité vendue";
 
+  // 🔹 Traduction des niveaux
+  const levelTranslations: Record<string, string> = {
+    universe: "Univers",
+    category: "Catégorie",
+    family: "Famille",
+  };
+
   // 📌 Extraction du **Top 5** basé sur `selectedLevel`
   const levelItems = useMemo(() => {
-    // On filtre uniquement les éléments correspondant au niveau sélectionné
-    const filteredItems = labels.map((label, index) => ({
+    let filteredItems = labels.map((label, index) => ({
       label,
       value: values[index],
       parent: parents[index],
-    })).filter((item) => item.parent === "" || selectedLevel === "universe" || item.parent === selectedLevel);
+    }));
 
-    return filteredItems
-      .sort((a, b) => b.value - a.value) // 🔽 Trie par valeur décroissante
-      .slice(0, 5); // ✅ Garde le Top 5
-  }, [selectedLevel, values]);
+    if (selectedLevel === "universe") {
+      filteredItems = filteredItems.filter((item) => item.parent === "");
+    } else if (selectedLevel === "category") {
+      const validUniverses = new Set(labels.filter((_, index) => parents[index] === ""));
+      filteredItems = filteredItems.filter((item) => validUniverses.has(item.parent));
+    } else if (selectedLevel === "family") {
+      const validCategories = new Set(labels.filter((_, index) => parents[index] !== "" && parents[index] !== labels[index]));
+      filteredItems = filteredItems.filter((item) => validCategories.has(item.parent));
+    }
+
+    return filteredItems.sort((a, b) => b.value - a.value).slice(0, 5);
+  }, [selectedLevel, values, labels, parents]);
 
   return (
     <motion.div 
@@ -69,7 +86,7 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ labels, parents, revenue, m
             width: "100%",
             paper_bgcolor: "rgba(255,255,255,0)",
             plot_bgcolor: "rgba(255,255,255,0)",
-            margin: { t: 10, l: 0, r: 0, b: 0 },
+            margin: { t: 20, l: 0, r: 0, b: 0 },
           }}
           config={{ displayModeBar: false }}
         />
@@ -77,60 +94,69 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ labels, parents, revenue, m
 
       <div className="h-2 w-[10%]" />
 
-      {/* 🎛️ Boutons et légende */}
-      <div className="w-full flex md:flex-col space-x-4 md:space-x-0 md:space-y-4 justify-end md:justify-center mt-6 md:mt-0">
-        <button
-          onClick={() => setSelectedMetric("revenue")}
-          className={`px-6 py-3 rounded-lg text-sm font-semibold shadow-md transition w-full md:w-auto ${
-            selectedMetric === "revenue" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          📊 Chiffre d'Affaires
-        </button>
-        <button
-          onClick={() => setSelectedMetric("margin")}
-          className={`px-6 py-3 rounded-lg text-sm font-semibold shadow-md transition w-full md:w-auto ${
-            selectedMetric === "margin" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          💰 Marge
-        </button>
-        <button
-          onClick={() => setSelectedMetric("quantity")}
-          className={`px-6 py-3 rounded-lg text-sm font-semibold shadow-md transition w-full md:w-auto ${
-            selectedMetric === "quantity" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          📦 Quantité
-        </button>
+      {/* 🎛️ Boutons et légende avec TOP 5 */}
+      <div className="w-full flex flex-col space-y-4 justify-end mt-6 md:mt-0">
+        {/* 📌 Sélecteur pour la métrique */}
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setSelectedMetric("revenue")}
+            className={`px-4 py-2 rounded-md font-semibold ${selectedMetric === "revenue" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"}`}
+          >
+            📊 CA
+          </button>
+          <button
+            onClick={() => setSelectedMetric("margin")}
+            className={`px-4 py-2 rounded-md font-semibold ${selectedMetric === "margin" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"}`}
+          >
+            💰 Marge
+          </button>
+          <button
+            onClick={() => setSelectedMetric("quantity")}
+            className={`px-4 py-2 rounded-md font-semibold ${selectedMetric === "quantity" ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-700"}`}
+          >
+            📦 Quantité
+          </button>
+        </div>
 
-        {/* 📌 Légende dynamique */}
-        <div className="mt-6 bg-gray-100 p-4 rounded-lg shadow-md w-full md:w-auto">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">📌 {metricLabel} - Top 5 {selectedLevel}</h3>
-          <ul className="space-y-2">
-            {levelItems.map((item, index) => (
-              <li key={index} className="flex justify-between text-gray-700">
-                <span className="font-medium">{item.label}</span>
-                <span className="font-semibold text-teal-700">{item.value.toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
-
-          {/* 🔽 Sélecteur pour choisir le niveau */}
-          <div className="mt-4">
+        <div className="mt-4">
             <select
               value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value as any)}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 shadow-sm bg-white text-gray-700 font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500"
+              onChange={(e) => setSelectedLevel(e.target.value as "universe" | "category" | "family")}
+              className="w-full px-4 py-2 rounded-md border bg-white text-gray-700 font-semibold focus:ring-2 focus:ring-teal-500"
             >
               <option value="universe">🌍 Univers</option>
-              <option value="category">📦 Catégories</option>
-              <option value="sub_category">📌 Sous-Catégories</option>
-              <option value="family">👨‍👩‍👧 Familles</option>
-              <option value="sub_family">👶 Sous-Familles</option>
-              <option value="specificity">🛠️ Spécificités</option>
+              <option value="category">📦 Catégorie</option>
+              <option value="family">👨‍👩‍👧 Famille</option>
             </select>
           </div>
+
+        {/* 📌 Légende dynamique - Top 5 */}
+        <div className="bg-gray-100 p-4 rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">📌 {metricLabel} - Top 5 {levelTranslations[selectedLevel]}</h3>
+          <ul className="space-y-2">
+            {levelItems.map((item, index) => {
+              const segmentUrl = `/segmentation?${selectedLevel}=${encodeURIComponent(item.label)}`;
+
+              return (
+                <li key={index} className="p-4 bg-white rounded-md shadow-md border border-gray-300 flex justify-between items-center">
+                  <div>
+                    <span className="text-lg font-semibold text-gray-900">{item.label}</span>
+                    <p className="text-sm font-medium text-gray-600">{formatLargeNumber(item.value)}</p>
+                  </div>
+
+                  {/* 🔗 Bouton avec lien */}
+                  <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
+                    <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
+                      <FaChartPie className="text-teal-400" /> 
+                      Voir
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* 🔽 Sélecteur du niveau */}
         </div>
       </div>
     </motion.div>

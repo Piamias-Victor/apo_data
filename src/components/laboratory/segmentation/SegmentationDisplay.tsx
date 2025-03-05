@@ -32,6 +32,17 @@ const SegmentationDisplay: React.FC = () => {
     dateRange,
   });
 
+  const groupedSegmentation = segmentation.reduce((acc, item) => {
+    const labBrandKey = `${item.lab_distributor} - ${item.brand_lab}`;
+  
+    if (!acc[labBrandKey]) {
+      acc[labBrandKey] = [];
+    }
+    acc[labBrandKey].push(item);
+  
+    return acc;
+  }, {} as Record<string, Segmentation[]>);
+
   useEffect(() => {
     if (!hasSelectedLabs) return;
 
@@ -116,15 +127,17 @@ const SegmentationDisplay: React.FC = () => {
 
   return (
     <div className="mt-4 w-full">
-      {loading && <Loader />}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+  {loading && <Loader />}
+  {error && <p className="text-red-500 text-center">{error}</p>}
 
-      {!loading && !error && segmentation.length > 0 && (
-        <>
-          {/* ✅ Utilisation du composant SearchInput */}
-          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un élément de segmentation..." />
+  {!loading && !error && segmentation.length > 0 && (
+    <>
+      <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un élément de segmentation..." />
 
-          {/* ✅ Affichage des segments filtrés */}
+      {Object.entries(groupedSegmentation).map(([labBrand, segments]) => (
+        <div key={labBrand} className="mb-6 p-4 border rounded-lg shadow-sm">
+          <h2 className="text-lg font-bold">{labBrand}</h2>
+
           {segmentationFilters.map(({ key, dataKey, label }) => (
             <SegmentationFilter
               key={key}
@@ -135,11 +148,13 @@ const SegmentationDisplay: React.FC = () => {
               toggleFilter={toggleFilter}
             />
           ))}
+        </div>
+      ))}
 
-          <ActionButtons onApply={applyFilters} onReset={resetFilters} isApplied={isApplied} />
-        </>
-      )}
-    </div>
+      <ActionButtons onApply={applyFilters} onReset={resetFilters} isApplied={isApplied} />
+    </>
+  )}
+</div>
   );
 };
 

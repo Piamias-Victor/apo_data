@@ -19,8 +19,6 @@ interface SegmentationSalesStockChartProps {
 const SegmentationSalesStockChart: React.FC<SegmentationSalesStockChartProps> = ({ salesStockData }) => {
   if (salesStockData.length === 0) return <p className="text-gray-500 text-center mt-2">Aucune donnée disponible.</p>;
 
-  console.log('salesStockData', salesStockData);
-
   // 📅 Labels des mois
   const labels = salesStockData.map((data) => data.month);
 

@@ -64,12 +64,6 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
           setLoadingGraphs((prev) => ({ ...prev, [segment]: false }));
           return;
         }
-
-        console.log("📤 Envoi API : ", {
-            segment: segment,
-            type: segmentKey,
-            filters: filters,
-          });
       
         try {
           const response = await fetch("/api/segmentation/getDetailSegmentation", {
@@ -83,8 +77,6 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
           });
       
           const result = await response.json();
-
-          console.log('result :', result)
       
           if (!response.ok) {
             console.error("❌ Erreur API:", result);
@@ -143,7 +135,6 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
 
   // 📌 Gère l'affichage des détails
   const toggleDetails = (key: string) => {
-    console.log("📌 Toggle segment:", key, "Type:", title);
   
     setExpandedRows((prev) => {
       const newState = { ...prev, [key]: !prev[key] };
@@ -174,7 +165,7 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
       <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
         <table className="w-full border-collapse rounded-lg table-auto">
           <thead>
-            <tr className="bg-blue-500 text-white text-md">
+            <tr className="bg-teal-500 text-white text-md">
               <th className="p-4 text-left">Segment</th>
               {[
                 { key: "revenue_current", label: "💰 CA (€)" },
@@ -226,7 +217,7 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
                         animate={{ rotate: expandedRows[key] ? 180 : 0 }} // ✅ Rotation correcte
                         transition={{ duration: 0.3 }}
                         onClick={() => toggleDetails(key)}
-                        className="p-2 rounded-full bg-blue-600 flex items-center justify-center text-center"
+                        className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
                     >
                         {expandedRows[key] ? <FaChevronDown className="text-white text-lg" /> : <FaChevronRight className="text-white text-lg" />}
                     </motion.button>
