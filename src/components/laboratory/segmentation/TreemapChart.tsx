@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Plot from "react-plotly.js";
 import { motion } from "framer-motion";
-import { FaChartPie } from "react-icons/fa";
+import { FaChartPie, FaChevronRight } from "react-icons/fa";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import Link from "next/link";
 
@@ -138,19 +138,15 @@ const TreemapChart: React.FC<TreemapChartProps> = ({ labels, parents, revenue, m
               const segmentUrl = `/segmentation?${selectedLevel}=${encodeURIComponent(item.label)}`;
 
               return (
-                <li key={index} className="p-4 bg-white rounded-md shadow-md border border-gray-300 flex justify-between items-center">
-                  <div>
-                    <span className="text-lg font-semibold text-gray-900">{item.label}</span>
-                    <p className="text-sm font-medium text-gray-600">{formatLargeNumber(item.value)}</p>
-                  </div>
-
-                  {/* 🔗 Bouton avec lien */}
+                <li key={index} className="p-4 bg-white  text-sm rounded-md shadow-md border border-gray-300 flex justify-between items-center gap-1">
                   <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
-                    <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
-                      <FaChartPie className="text-teal-400" /> 
-                      Voir
-                    </div>
-                  </Link>
+  <div className="p-3 bg-teal-50 border border-teal-500 rounded-md font-semibold text-teal-700 flex items-center justify-between cursor-pointer hover:bg-teal-100 hover:border-teal-600 transition-all duration-200">
+    <span>{item.label}</span>
+    <FaChevronRight className="text-teal-600 transition-transform duration-200 group-hover:translate-x-1" />
+  </div>
+</Link>
+
+<p className="text-xs font-medium text-gray-600">{formatLargeNumber(item.value)}</p>
                 </li>
               );
             })}

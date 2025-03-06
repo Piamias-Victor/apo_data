@@ -228,11 +228,12 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
         <React.Fragment key={key}>
           <tr className="border-b bg-gray-50 hover:bg-gray-200 transition">
             <td className="p-4 font-medium">
-              <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
-                <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
-                  {key}
-                </div>
-              </Link>
+            <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
+              <div className="text-lg font-semibold flex items-center gap-3 px-3 py-2 rounded-md border border-teal-500 text-teal-700 bg-teal-50 hover:bg-teal-200 hover:border-teal-600 transition-all duration-200">
+                <span>{key}</span>
+                <FaChevronRight className="text-teal-600 transition-transform duration-200 group-hover:translate-x-1" />
+              </div>
+            </Link>
             </td>
 
             {["revenue_current", "margin_current", "quantity_sold_current"].map((column) => {
