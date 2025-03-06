@@ -71,9 +71,13 @@ const LaboratoryDashboardGlobal: React.FC = () => {
         <h2 className="text-4xl font-extrabold text-indigo-600 tracking-wide flex items-center justify-center gap-3">
           <span className="text-green-500">📦</span> Analyse des Stocks
         </h2>
+        <p className="text-sm text-gray-600 italic">
+  📢 Attention : Les données de stock ne sont pas disponibles avant 2025 pour les pharmacies LGPI.
+</p>
         <p className="text-gray-600 mt-2 text-lg">
           Évaluation des niveaux de stock et de leur impact sur la trésorerie 📊
         </p>
+        
       </motion.div>
 
       {/* 📦 Section Stock */}
