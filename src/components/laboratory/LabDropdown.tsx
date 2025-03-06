@@ -3,6 +3,7 @@ import { FaSearch, FaChevronDown, FaCheck, FaTimes } from "react-icons/fa";
 import { useSegmentationContext } from "@/contexts/segmentation/SegmentationContext";
 import { useFilterContext } from "@/contexts/FilterContext";
 import Loader from "@/components/ui/Loader"; // ✅ Import du loader
+import FilterSummary from "../layout/FilterSummary";
 
 const LabDropdown: React.FC = () => {
   const { distributors, loading, error } = useSegmentationContext();

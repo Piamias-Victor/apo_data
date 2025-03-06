@@ -94,7 +94,7 @@ const AnnualMetrics2025: React.FC = () => {
       {/* 📊 Titre & Dates */}
       <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-300 pb-5 mb-6 relative z-10">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          📊 Résumé Annuel (2025)
+          📊 Résumé Annuel
         </h2>
 
         {/* 🔹 Bloc des périodes */}

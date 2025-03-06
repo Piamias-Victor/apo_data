@@ -9,6 +9,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 import PharmacyDrawer from "./PharmacyDrawer";
 import DateRangeDrawer from "./DateRangeDrawer";
+import FilterSummary from "./FilterSummary";
 
 const Header: React.FC = () => {
   const [menuState, setMenuState] = useState({
@@ -73,16 +74,53 @@ const Header: React.FC = () => {
           onClose={() => setMenuState((prev) => ({ ...prev, isPharmacyFilterOpen: false }))}
         />
         {/* Category Filter */}
-        {/* <button
-          onClick={() => setMenuState({ ...menuState, isCategoryFilterOpen: !menuState.isCategoryFilterOpen })}
-          className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
-        >
-          <FaListAlt className="text-orange-600" />
-          <span className="text-gray-700 text-sm">
-            {selectedCategoryCount > 0 ? `${selectedCategoryCount} filtre(s)` : "Filtres Catégories"}
-          </span>
-        </button> */}
+{/* Category Filter */}
+<button
+  onClick={() => setMenuState({ ...menuState, isCategoryFilterOpen: !menuState.isCategoryFilterOpen })}
+  className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
+>
+  <FaListAlt className="text-orange-600" />
+  <span className="text-gray-700 text-sm">
+    {[
+      ...filters.universes,
+      ...filters.categories,
+      ...filters.subCategories,
+      ...filters.families,
+      ...filters.subFamilies,
+      ...filters.specificities
+    ].length > 0
+      ? `${[
+          ...filters.universes,
+          ...filters.categories,
+          ...filters.subCategories,
+          ...filters.families,
+          ...filters.subFamilies,
+          ...filters.specificities
+        ].length} sélectionné(s)`
+      : "Filtres Catégories"}
+  </span>
+</button>
 
+<button
+  className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
+>
+  <FaTags className="text-green-600" />
+  <span className="text-gray-700 text-sm">
+    {[
+      ...filters.brands,
+      ...filters.distributors,
+      ...filters.ranges
+    ].length > 0
+      ? `${[
+          ...filters.brands,
+          ...filters.distributors,
+          ...filters.ranges
+        ].length} sélectionné(s)`
+      : "Filtres Marques"}
+  </span>
+</button>
+
+    
         {/* Product Filter */}
         {/* <button
           onClick={() => setMenuState({ ...menuState, isProductFilterOpen: !menuState.isProductFilterOpen })}
