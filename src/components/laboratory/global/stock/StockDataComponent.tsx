@@ -4,7 +4,6 @@ import Loader from "@/components/ui/Loader";
 import StockSummary2025 from "./StockSummary2025";
 import StockDataMonthly from "./StockDataMonthly";
 import ForecastSummary2025 from "./ForecastSummary2025";
-import StockAnnualSummary2024 from "./StockAnnualSummary2024";
 
 interface StockSalesData {
   month: string;
@@ -22,7 +21,8 @@ const StockDataComponent: React.FC = () => {
   filters.universes.length > 0 ||
   filters.categories.length > 0 ||
   filters.families.length > 0 ||
-  filters.specificities.length > 0;
+  filters.specificities.length > 0 || 
+  filters.ean13Products.length > 0;
 
   const [stockSalesData, setStockSalesData] = useState<StockSalesData[]>([]);
   const [loading, setLoading] = useState(true);

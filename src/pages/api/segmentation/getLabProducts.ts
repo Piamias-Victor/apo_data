@@ -45,6 +45,7 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10))
 ),
 
 sales_data AS (
@@ -63,8 +64,8 @@ sales_data AS (
     JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $11 AND $12 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $12 AND $13 
     GROUP BY dip.code_13_ref_id, fp.tva_percentage
 
     UNION ALL
@@ -84,8 +85,8 @@ sales_data AS (
     JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $13 AND $14 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $14 AND $15 
     GROUP BY dip.code_13_ref_id, fp.tva_percentage
 ),
 
@@ -106,8 +107,8 @@ purchase_data AS (
     JOIN data_order dor ON dpo.order_id = dor.id
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $11 AND $12 
+    WHERE ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+      AND dor.sent_date BETWEEN $12 AND $13 
     GROUP BY dip.code_13_ref_id
 
     UNION ALL
@@ -128,21 +129,9 @@ purchase_data AS (
     JOIN data_order dor ON dpo.order_id = dor.id
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $13 AND $14 
+    WHERE ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+      AND dor.sent_date BETWEEN $14 AND $15 
     GROUP BY dip.code_13_ref_id
-),
-
-lab_total_sales AS (
-    -- 🔹 Récupère le CA total et la marge totale du laboratoire
-    SELECT 
-        fp.lab_distributor,
-        SUM(sd.revenue) AS lab_revenue,
-        SUM(sd.margin) AS lab_margin,
-        sd.type
-    FROM sales_data sd
-    JOIN filtered_products fp ON sd.code_13_ref = fp.code_13_ref
-    GROUP BY fp.lab_distributor, sd.type
 )
 
 SELECT 
@@ -159,19 +148,11 @@ SELECT
         WHEN SUM(sd.total_quantity) > 0 THEN SUM(sd.margin) / SUM(sd.total_quantity) 
         ELSE 0 
     END AS avg_margin,
-    ROUND((COALESCE(SUM(sd.revenue), 0) / NULLIF(COALESCE(lts.lab_revenue, 0), 0)) * 100, 2) AS part_ca_labo,
-    ROUND((COALESCE(SUM(sd.margin), 0) / NULLIF(COALESCE(lts.lab_margin, 0), 0)) * 100, 2) AS part_marge_labo,
-    ROUND(
-        NULLIF((COALESCE(SUM(sd.revenue), 0) / NULLIF(COALESCE(lts.lab_revenue, 0), 0)) * 100, 0) / 
-        NULLIF((COALESCE(SUM(sd.margin), 0) / NULLIF(COALESCE(lts.lab_margin, 0), 0)) * 100, 0), 
-        2
-    ) AS indice_rentabilite,
     sd.type
 FROM sales_data sd
 FULL JOIN purchase_data pd ON sd.code_13_ref = pd.code_13_ref AND sd.type = pd.type
 JOIN filtered_products fp ON sd.code_13_ref = fp.code_13_ref
-LEFT JOIN lab_total_sales lts ON fp.lab_distributor = lts.lab_distributor AND sd.type = lts.type
-GROUP BY fp.code_13_ref, fp.product_name, sd.type, lts.lab_revenue, lts.lab_margin
+GROUP BY fp.code_13_ref, fp.product_name, sd.type
 ORDER BY sd.type ASC;
     `;
 
@@ -185,6 +166,7 @@ ORDER BY sd.type ASC;
       filters.families.length ? filters.families : null,
       filters.subFamilies.length ? filters.subFamilies : null,
       filters.specificities.length ? filters.specificities : null,
+      filters.ean13Products.length ? filters.ean13Products.map(String) : null, // ✅ Ajout du filtre `code_13_ref`
       filters.pharmacies.length ? filters.pharmacies.map(id => id) : null,
       filters.dateRange[0], filters.dateRange[1],
       filters.comparisonDateRange[0], filters.comparisonDateRange[1],

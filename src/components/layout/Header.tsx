@@ -10,6 +10,7 @@ import "react-date-range/dist/theme/default.css";
 import PharmacyDrawer from "./PharmacyDrawer";
 import DateRangeDrawer from "./DateRangeDrawer";
 import FilterSummary from "./FilterSummary";
+import ProductDrawer from "./ProductDrawer";
 
 const Header: React.FC = () => {
   const [menuState, setMenuState] = useState({
@@ -119,6 +120,21 @@ const Header: React.FC = () => {
       : "Filtres Marques"}
   </span>
 </button>
+
+<button
+  onClick={() => setMenuState({ ...menuState, isProductFilterOpen: !menuState.isProductFilterOpen })}
+  className="flex items-center gap-2 bg-white border border-gray-300 rounded-md px-4 py-2 shadow-md hover:bg-gray-100 transition"
+>
+  <FaTags className="text-red-600" />
+  <span className="text-gray-700 text-sm">
+    {filters.ean13Products?.length > 0 ? `${filters.ean13Products.length} produit(s)` : "Filtres Produits"}
+  </span>
+</button>
+
+<ProductDrawer
+  isOpen={menuState.isProductFilterOpen}
+  onClose={() => setMenuState((prev) => ({ ...prev, isProductFilterOpen: false }))}
+ />
 
     
         {/* Product Filter */}

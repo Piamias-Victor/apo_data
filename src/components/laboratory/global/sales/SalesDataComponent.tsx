@@ -23,7 +23,8 @@ const SalesDataComponent: React.FC = () => {
   filters.universes.length > 0 ||
   filters.categories.length > 0 ||
   filters.families.length > 0 ||
-  filters.specificities.length > 0;
+  filters.specificities.length > 0 || 
+  filters.ean13Products.length > 0;
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ const SalesDataComponent: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
+      console.log("🔍 Envoi des filtres :", JSON.stringify(filters, null, 2)); // 🔥 Ajout du log
       try {
         const response = await fetch("/api/sell-out/getSalesByMonth", {
           method: "POST",

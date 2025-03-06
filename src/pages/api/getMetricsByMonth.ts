@@ -13,7 +13,7 @@ interface PriceMarginData {
 }
 
 /**
- * API pour récupérer les statistiques des prix, marges et ventes par mois
+ * API pour récupérer les statistiques des prix, marges et ventes par mois avec filtre sur EAN13.
  */
 export default async function handler(
   req: NextApiRequest,
@@ -26,6 +26,9 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
+    console.log("📌 API `getPriceMarginData` appelée !");
+    console.log("📌 Filtres reçus :", JSON.stringify(filters, null, 2));
+
     if (
       !filters ||
       (!filters.pharmacies.length &&
@@ -34,10 +37,16 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.specificities.length)
+        !filters.specificities.length &&
+        !filters.ean13Products.length) // ✅ Vérification ajoutée pour prendre en compte le filtre EAN13
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
+
+    // ✅ Vérification que `ean13Products` est bien un tableau de chaînes de caractères
+    const ean13Products = filters.ean13Products?.length ? filters.ean13Products.map(String) : null;
+
+    console.log("📌 Filtrage avec codes EAN13 :", ean13Products);
 
     const query = `
 WITH filtered_products AS (
@@ -53,6 +62,7 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre par code 13
 )
 
 , latest_inventory_snapshot AS (
@@ -86,7 +96,7 @@ WITH filtered_products AS (
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
     LEFT JOIN latest_inventory_snapshot lis ON lis.product_id = dis.product_id AND lis.pharmacy_id = dip.pharmacy_id
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[])) -- ✅ Filtrage par pharmacie ajouté
     GROUP BY month
 )
 
@@ -107,18 +117,25 @@ LEFT JOIN sales_data sd ON am.month = sd.month
 ORDER BY am.month ASC;
     `;
 
-    const { rows } = await pool.query<PriceMarginData>(query, [
-      filters.distributors.length > 0 ? filters.distributors : null,
-      filters.ranges.length > 0 ? filters.ranges : null,
-      filters.universes.length > 0 ? filters.universes : null,
-      filters.categories.length > 0 ? filters.categories : null,
-      filters.subCategories.length > 0 ? filters.subCategories : null,
-      filters.brands.length > 0 ? filters.brands : null,
-      filters.families.length > 0 ? filters.families : null,
-      filters.subFamilies.length > 0 ? filters.subFamilies : null,
-      filters.specificities.length > 0 ? filters.specificities : null,
-      filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
-    ]);
+    // ✅ Paramètres SQL envoyés
+    const queryParams = [
+      filters.distributors.length ? filters.distributors : null,
+      filters.ranges.length ? filters.ranges : null,
+      filters.universes.length ? filters.universes : null,
+      filters.categories.length ? filters.categories : null,
+      filters.subCategories.length ? filters.subCategories : null,
+      filters.brands.length ? filters.brands : null,
+      filters.families.length ? filters.families : null,
+      filters.subFamilies.length ? filters.subFamilies : null,
+      filters.specificities.length ? filters.specificities : null,
+      ean13Products, // ✅ Ajout du filtre par code 13
+      filters.pharmacies.length ? filters.pharmacies.map(String) : null, // ✅ Filtrage pharmacies
+    ];
+
+    console.log("📌 Paramètres SQL envoyés :", queryParams);
+
+    // ✅ Exécution de la requête SQL
+    const { rows } = await pool.query<PriceMarginData>(query, queryParams);
 
     return res.status(200).json({ priceMarginData: rows });
   } catch (error) {

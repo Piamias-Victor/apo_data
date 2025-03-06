@@ -22,7 +22,8 @@ const StockBreakDataComponent: React.FC = () => {
   filters.universes.length > 0 ||
   filters.categories.length > 0 ||
   filters.families.length > 0 ||
-  filters.specificities.length > 0;
+  filters.specificities.length > 0 || 
+  filters.ean13Products.length > 0;;
   const [stockBreakData, setStockBreakData] = useState<StockBreakData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

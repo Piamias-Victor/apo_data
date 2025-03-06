@@ -35,7 +35,8 @@ const SalesDataTest: React.FC = () => {
     filters.categories.length > 0 ||
     filters.families.length > 0 ||
     filters.specificities.length > 0 ||
-    filters.pharmacies.length > 0;
+    filters.pharmacies.length > 0 || 
+    filters.ean13Products.length > 0;;
 
   const [salesData, setSalesData] = useState<SalesDataWithEvolution[]>([]);
   const [loading, setLoading] = useState(true);

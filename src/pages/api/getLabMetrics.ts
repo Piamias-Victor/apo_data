@@ -31,11 +31,17 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
+    console.log("📌 API `getLabMetrics` appelée !");
+    console.log("📌 Filtres reçus :", JSON.stringify(filters, null, 2));
+
     if (!filters || !filters.dateRange || !filters.comparisonDateRange) {
       return res.status(400).json({ error: "Filtres ou périodes invalides" });
     }
 
-    const { dateRange, comparisonDateRange } = filters;
+    // ✅ Vérification que `ean13Products` est bien un tableau de chaînes de caractères
+    const ean13Products = filters.ean13Products?.length ? filters.ean13Products.map(String) : null;
+
+    console.log("📌 Filtrage avec codes EAN13 :", ean13Products);
 
     const query = `
 WITH filtered_products AS (
@@ -51,9 +57,10 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
-),
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre sur les codes 13
+)
 
-lab_metrics_data AS (
+, lab_metrics_data AS (
     SELECT 
         AVG(dis.price_with_tax) AS avgSellPrice,
         AVG(dis.weighted_average_price * (1 + dip."TVA")) AS avgWeightedBuyPrice,
@@ -70,11 +77,11 @@ lab_metrics_data AS (
         COUNT(DISTINCT dip.pharmacy_id) AS numPharmaciesSold,
         'current' AS type
     FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id -- 🔹 Correction ici
-    JOIN data_internalproduct dip ON dis.product_id = dip.id -- 🔹 Correction ici
+    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
+    JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN $10 AND $11
-      AND ($12::uuid[] IS NULL OR dip.pharmacy_id = ANY($12::uuid[]))
+    WHERE ds.date BETWEEN $11 AND $12
+      AND ($13::uuid[] IS NULL OR dip.pharmacy_id = ANY($13::uuid[]))
 
     UNION ALL
 
@@ -94,11 +101,11 @@ lab_metrics_data AS (
         COUNT(DISTINCT dip.pharmacy_id) AS numPharmaciesSold,
         'comparison' AS type
     FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id -- 🔹 Correction ici
-    JOIN data_internalproduct dip ON dis.product_id = dip.id -- 🔹 Correction ici
+    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
+    JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN $13 AND $14
-      AND ($12::uuid[] IS NULL OR dip.pharmacy_id = ANY($12::uuid[]))
+    WHERE ds.date BETWEEN $14 AND $15
+      AND ($13::uuid[] IS NULL OR dip.pharmacy_id = ANY($13::uuid[]))
 )
 
 SELECT 
@@ -121,21 +128,25 @@ FROM lab_metrics_data
 ORDER BY type ASC;
     `;
 
-    // 🔹 Exécution de la requête SQL
-    const { rows } = await pool.query<LabMetrics>(query, [
-      filters.distributors.length > 0 ? filters.distributors : null,
-      filters.ranges.length > 0 ? filters.ranges : null,
-      filters.universes.length > 0 ? filters.universes : null,
-      filters.categories.length > 0 ? filters.categories : null,
-      filters.subCategories.length > 0 ? filters.subCategories : null,
-      filters.brands.length > 0 ? filters.brands : null,
-      filters.families.length > 0 ? filters.families : null,
-      filters.subFamilies.length > 0 ? filters.subFamilies : null,
-      filters.specificities.length > 0 ? filters.specificities : null,
+    const queryParams = [
+      filters.distributors.length ? filters.distributors : null,
+      filters.ranges.length ? filters.ranges : null,
+      filters.universes.length ? filters.universes : null,
+      filters.categories.length ? filters.categories : null,
+      filters.subCategories.length ? filters.subCategories : null,
+      filters.brands.length ? filters.brands : null,
+      filters.families.length ? filters.families : null,
+      filters.subFamilies.length ? filters.subFamilies : null,
+      filters.specificities.length ? filters.specificities : null,
+      ean13Products, // ✅ Ajout du filtre par code 13
       filters.dateRange[0], filters.dateRange[1], // Période principale
-      filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // Correction : ajout du bon paramètre
+      filters.pharmacies.length ? filters.pharmacies.map(String) : null, // Correction UUID
       filters.comparisonDateRange[0], filters.comparisonDateRange[1] // Période de comparaison
-    ]);
+    ];
+
+    console.log("📌 Paramètres SQL envoyés :", queryParams);
+
+    const { rows } = await pool.query<LabMetrics>(query, queryParams);
 
     return res.status(200).json({ metrics: rows });
   } catch (error) {

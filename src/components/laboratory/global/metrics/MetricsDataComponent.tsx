@@ -29,7 +29,8 @@ const MetricsDataComponent: React.FC = () => {
   filters.universes.length > 0 ||
   filters.categories.length > 0 ||
   filters.families.length > 0 ||
-  filters.specificities.length > 0;
+  filters.specificities.length > 0 || 
+  filters.ean13Products.length > 0;
 
   const [metricsData, setMetricsData] = useState<PriceMarginData[]>([]);
   const [loading, setLoading] = useState(true);

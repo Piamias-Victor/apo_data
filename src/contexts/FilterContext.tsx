@@ -13,8 +13,9 @@ export interface FilterState {
   subFamilies: string[];
   specificities: string[];
   ranges: string[];
+  ean13Products: string[]; // ✅ Ajout du stockage des EAN13 des produits sélectionnés
   dateRange: [Date | null, Date | null];
-  comparisonDateRange: [Date | null, Date | null]; // 🔹 Ajout des dates de comparaison
+  comparisonDateRange: [Date | null, Date | null];
   type: "global" | "medicament" | "parapharmacie" | null;
 }
 
@@ -54,6 +55,7 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
     subFamilies: [],
     specificities: [],
     ranges: [],
+    ean13Products: [], // ✅ Initialisation vide des EAN13
     dateRange: [lastMonthStart, lastMonthEnd], // 🔹 Par défaut : dernier mois
     comparisonDateRange: [lastYearStart, lastYearEnd], // 🔹 Par défaut : même mois N-1
     type: null,
@@ -78,6 +80,7 @@ export const FilterProvider = ({ children }: { children: React.ReactNode }) => {
       subFamilies: [],
       specificities: [],
       ranges: [],
+      ean13Products: [], // ✅ Reset des EAN13 aussi
       dateRange: [lastMonthStart, lastMonthEnd], // 🔹 Reset avec le dernier mois
       comparisonDateRange: [lastYearStart, lastYearEnd], // 🔹 Reset avec même mois N-1
       type: null,

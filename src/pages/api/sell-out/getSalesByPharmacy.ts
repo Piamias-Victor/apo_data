@@ -31,7 +31,8 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.specificities.length)
+        !filters.specificities.length &&
+        !filters.ean13Products.length) // ✅ Ajout du filtre EAN13
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
@@ -41,6 +42,11 @@ export default async function handler(
     if (!dateRange || !comparisonDateRange) {
       return res.status(400).json({ error: "Périodes de filtrage manquantes" });
     }
+
+    // ✅ Vérification et transformation des codes EAN13 en tableau de chaînes
+    const ean13Products = filters.ean13Products?.length ? filters.ean13Products.map(String) : null;
+
+    console.log("📌 Filtrage avec codes EAN13 :", ean13Products);
 
     const query = `
 WITH filtered_products AS (
@@ -56,12 +62,13 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
-),
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre par code 13
+)
 
-sales_data AS (
+,sales_data AS (
     SELECT 
         dip.pharmacy_id,
-        p.name AS pharmacy_name, -- ✅ Correction ici
+        p.name AS pharmacy_name, 
         SUM(ds.quantity) AS total_quantity,
         SUM(ds.quantity * dis.price_with_tax) AS revenue,
         SUM(
@@ -76,15 +83,15 @@ sales_data AS (
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
     JOIN data_pharmacy p ON dip.pharmacy_id = p.id
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $11 AND $12 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $12 AND $13 
     GROUP BY dip.pharmacy_id, p.name
 
     UNION ALL
 
     SELECT 
         dip.pharmacy_id,
-        p.name AS pharmacy_name, -- ✅ Correction ici
+        p.name AS pharmacy_name, 
         SUM(ds.quantity) AS total_quantity,
         SUM(ds.quantity * dis.price_with_tax) AS revenue,
         SUM(
@@ -99,57 +106,9 @@ sales_data AS (
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
     JOIN data_pharmacy p ON dip.pharmacy_id = p.id
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $13 AND $14 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $14 AND $15 
     GROUP BY dip.pharmacy_id, p.name
-),
-
-purchase_data AS (
-    SELECT 
-        dor.pharmacy_id,
-        p.name AS pharmacy_name, -- ✅ Correction ici
-        0 AS total_quantity,
-        0 AS revenue,
-        0 AS margin,
-        SUM(dpo.qte + dpo.qte_ug) AS purchase_quantity,
-        SUM((dpo.qte + dpo.qte_ug) * COALESCE(
-            (SELECT AVG(dis.weighted_average_price) 
-             FROM data_inventorysnapshot dis 
-             WHERE dis.product_id = dip.id), 0
-        )) AS purchase_amount,
-        'current' AS type
-    FROM data_productorder dpo
-    JOIN data_order dor ON dpo.order_id = dor.id
-    JOIN data_internalproduct dip ON dpo.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    JOIN data_pharmacy p ON dor.pharmacy_id = p.id
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $11 AND $12 
-    GROUP BY dor.pharmacy_id, p.name
-
-    UNION ALL
-
-    SELECT 
-        dor.pharmacy_id,
-        p.name AS pharmacy_name, -- ✅ Correction ici
-        0 AS total_quantity,
-        0 AS revenue,
-        0 AS margin,
-        SUM(dpo.qte + dpo.qte_ug) AS purchase_quantity,
-        SUM((dpo.qte + dpo.qte_ug) * COALESCE(
-            (SELECT AVG(dis.weighted_average_price) 
-             FROM data_inventorysnapshot dis 
-             WHERE dis.product_id = dip.id), 0
-        )) AS purchase_amount,
-        'comparison' AS type
-    FROM data_productorder dpo
-    JOIN data_order dor ON dpo.order_id = dor.id
-    JOIN data_internalproduct dip ON dpo.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    JOIN data_pharmacy p ON dor.pharmacy_id = p.id
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $13 AND $14 
-    GROUP BY dor.pharmacy_id, p.name
 )
 
 SELECT 
@@ -161,33 +120,41 @@ SELECT
     COALESCE(SUM(purchase_quantity), 0) AS purchase_quantity,
     COALESCE(SUM(purchase_amount), 0) AS purchase_amount,
     type
-FROM (
-    SELECT * FROM sales_data
-    UNION ALL
-    SELECT * FROM purchase_data
-) combined_data
+FROM sales_data
 GROUP BY pharmacy_id, pharmacy_name, type
 ORDER BY pharmacy_name, type ASC;
     `;
 
-    const { rows } = await pool.query<SalesData>(query, [
-      filters.distributors.length > 0 ? filters.distributors : null,
-      filters.ranges.length > 0 ? filters.ranges : null,
-      filters.universes.length > 0 ? filters.universes : null,
-      filters.categories.length > 0 ? filters.categories : null,
-      filters.subCategories.length > 0 ? filters.subCategories : null,
-      filters.brands.length > 0 ? filters.brands : null,
-      filters.families.length > 0 ? filters.families : null,
-      filters.subFamilies.length > 0 ? filters.subFamilies : null,
-      filters.specificities.length > 0 ? filters.specificities : null,
-      filters.pharmacies.length > 0 ? filters.pharmacies : null,
-      filters.dateRange[0], filters.dateRange[1],
-      filters.comparisonDateRange[0], filters.comparisonDateRange[1],
-    ]);
+    // ✅ Vérification des paramètres SQL avant exécution
+    const queryParams = [
+      filters.distributors?.length ? filters.distributors : null,
+      filters.ranges?.length ? filters.ranges : null,
+      filters.universes?.length ? filters.universes : null,
+      filters.categories?.length ? filters.categories : null,
+      filters.subCategories?.length ? filters.subCategories : null,
+      filters.brands?.length ? filters.brands : null,
+      filters.families?.length ? filters.families : null,
+      filters.subFamilies?.length ? filters.subFamilies : null,
+      filters.specificities?.length ? filters.specificities : null,
+      ean13Products, // ✅ Ajout du filtre par code 13
+      filters.pharmacies?.length ? filters.pharmacies.map(String) : null,
+      dateRange[0], dateRange[1], // Période principale
+      comparisonDateRange[0], comparisonDateRange[1] // Période de comparaison
+    ];
 
-    return res.status(200).json({ salesData: rows });
+    console.log("📌 Paramètres SQL envoyés :", queryParams);
+
+    // ✅ Exécution de la requête SQL avec gestion des erreurs
+    try {
+      const { rows } = await pool.query<SalesData>(query, queryParams);
+      console.log("✅ Résultat retourné :", rows);
+      return res.status(200).json({ salesData: rows });
+    } catch (sqlError) {
+      console.error("❌ Erreur SQL :", sqlError);
+      return res.status(500).json({ error: "Erreur lors de l'exécution de la requête SQL" });
+    }
   } catch (error) {
-    console.error("❌ Erreur :", error);
+    console.error("❌ Erreur générale :", error);
     return res.status(500).json({ error: "Erreur serveur" });
   }
 }

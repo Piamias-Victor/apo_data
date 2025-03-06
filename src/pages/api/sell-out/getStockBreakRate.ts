@@ -24,6 +24,9 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
+    console.log("📌 API `getStockBreakData` appelée !");
+    console.log("📌 Requête reçue :", JSON.stringify(filters, null, 2));
+
     if (!filters || !filters.dateRange || !filters.comparisonDateRange) {
       return res.status(400).json({ error: "Filtres ou périodes invalides" });
     }
@@ -46,7 +49,8 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre sur les codes 13
+        AND ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
 ),
 
 stock_break_data AS (
@@ -73,8 +77,8 @@ stock_break_data AS (
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.id = fp.internal_product_id
     WHERE 
-        ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-        AND dor.sent_date BETWEEN $11 AND $12
+        ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+        AND dor.sent_date BETWEEN $12 AND $13
         AND dpo.qte_r > 0  -- ✅ Condition ajoutée pour inclure uniquement les commandes avec réception
 
     UNION ALL
@@ -102,8 +106,8 @@ stock_break_data AS (
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.id = fp.internal_product_id
     WHERE 
-        ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-        AND dor.sent_date BETWEEN $13 AND $14
+        ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+        AND dor.sent_date BETWEEN $14 AND $15
         AND dpo.qte_r > 0  -- ✅ Condition ajoutée pour inclure uniquement les commandes avec réception
 )
 
@@ -118,6 +122,11 @@ FROM stock_break_data
 ORDER BY type ASC;
     `;
 
+    // ✅ Vérification que les EAN13 sont bien des chaînes de caractères
+    const ean13Products = filters.ean13Products.length > 0 ? filters.ean13Products.map(String) : null;
+
+    console.log("📌 Envoi des filtres SQL avec codes 13 :", ean13Products);
+
     // Exécution de la requête SQL avec les filtres
     const { rows } = await pool.query<StockBreakRateData>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
@@ -129,6 +138,7 @@ ORDER BY type ASC;
       filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
       filters.specificities.length > 0 ? filters.specificities : null,
+      ean13Products, // ✅ Ajout du filtre par code 13
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
       filters.dateRange[0], filters.dateRange[1], // Période principale
       filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison
