@@ -257,13 +257,6 @@ setGlobalStockValuePercentage2024(totalGlobalStockValuePercentage2024);
         globalStockValuePercentage2024={adjustedStockValuePercentage2024}
       />
 
-      <StockAnnualSummary2024
-        globalAvgStock2024={globalAvgStock2024}
-        globalStockValue2024={globalStockValue2024}
-        globalMonthsOfStock2024={globalMonthsOfStock2024}
-        globalStockValuePercentage2024={globalStockValuePercentage2024}
-      />
-
       <StockDataMonthly stockData={stockSalesData} loading={loading} error={error} />
 
     </div>

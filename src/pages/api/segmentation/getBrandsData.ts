@@ -28,8 +28,6 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
-    console.log("📥 Filtres reçus :", filters);
-
     if (
       !filters ||
       (!filters.pharmacies?.length &&
@@ -131,11 +129,7 @@ ORDER BY revenue_share DESC;
       filters.pharmacies?.length ? filters.pharmacies.map((id) => id) : null,
     ];
 
-    console.log("📝 Paramètres SQL envoyés :", params);
-
     const { rows } = await pool.query<BrandData>(query, params);
-
-    console.log("🔎 Résultats récupérés :", rows);
 
     return res.status(200).json({ brands: rows });
   } catch (error) {

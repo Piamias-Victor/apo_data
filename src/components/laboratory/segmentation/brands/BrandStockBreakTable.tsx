@@ -115,8 +115,6 @@ const BrandStockBreakTable: React.FC = () => {
       
           return acc;
       }, {});
-
-          console.log('breakDataByBrand :', breakDataByBrand)
   
         setRuptures(Object.values(aggregatedData).map(rupture => ({
             ...rupture,
@@ -254,7 +252,6 @@ const BrandStockBreakTable: React.FC = () => {
                             className="bg-white shadow-md rounded-lg p-4 border border-gray-300"
                         >
                             <h3 className="text-lg font-bold text-teal-700">📊 Détails des Ruptures</h3>
-                            {console.log("✅ Données propres pour ProductBreakChart :", brandBreakData[rupture.brand_lab])}
                             {/* 📊 Intégration du graphique */}
                             {brandBreakData[rupture.brand_lab] && brandBreakData[rupture.brand_lab].length > 0 ? (
                             <ProductBreakChart breakData={brandBreakData[rupture.brand_lab]} />

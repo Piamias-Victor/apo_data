@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
-// Interface pour structurer la réponse
+// Interface des données retournées
 interface LabMetrics {
   avgSellPrice: number;
   avgSellPriceEvolution: number;
@@ -17,11 +17,12 @@ interface LabMetrics {
   numReferencesSoldEvolution: number;
   numPharmaciesSold: number;
   numPharmaciesSoldEvolution: number;
+  type: "current" | "comparison";
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<{ metrics: LabMetrics } | { error: string }>
+  res: NextApiResponse<{ metrics: LabMetrics[] } | { error: string }>
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Méthode non autorisée" });
@@ -30,18 +31,11 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
-    if (
-        !filters ||
-        (!filters.pharmacies.length &&
-          !filters.distributors.length &&
-          !filters.brands.length &&
-          !filters.universes.length &&
-          !filters.categories.length &&
-          !filters.families.length &&
-          !filters.specificities.length)
-      ) {
-        return res.status(400).json({ error: "Filtres invalides" });
-      }
+    if (!filters || !filters.dateRange || !filters.comparisonDateRange) {
+      return res.status(400).json({ error: "Filtres ou périodes invalides" });
+    }
+
+    const { dateRange, comparisonDateRange } = filters;
 
     const query = `
 WITH filtered_products AS (
@@ -59,128 +53,76 @@ WITH filtered_products AS (
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
 ),
 
-sales_data AS (
+lab_metrics_data AS (
     SELECT 
-        dip.id AS product_id,
-        AVG(dis.price_with_tax) AS avg_sell_price,
-        AVG(dis.weighted_average_price * (1 + dip."TVA")) AS avg_weighted_buy_price_ttc,
-        AVG(dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) AS avg_margin,
+        AVG(dis.price_with_tax) AS avgSellPrice,
+        AVG(dis.weighted_average_price * (1 + dip."TVA")) AS avgWeightedBuyPrice,
+        AVG(dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) AS avgMargin,
         AVG(
             CASE 
                 WHEN dis.price_with_tax > 0 
                 THEN (dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) / dis.price_with_tax * 100
                 ELSE NULL 
             END
-        ) AS avg_margin_percentage
+        ) AS avgMarginPercentage,
+        AVG(dis.stock * dis.weighted_average_price) AS avgStockValue,
+        COUNT(DISTINCT dip.id) AS numReferencesSold,
+        COUNT(DISTINCT dip.pharmacy_id) AS numPharmaciesSold,
+        'current' AS type
     FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
+    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id -- 🔹 Correction ici
+    JOIN data_internalproduct dip ON dis.product_id = dip.id -- 🔹 Correction ici
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN NOW() - INTERVAL '12 months' AND NOW()
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-    GROUP BY dip.id, dip."TVA"
-),
+    WHERE ds.date BETWEEN $10 AND $11
+      AND ($12::uuid[] IS NULL OR dip.pharmacy_id = ANY($12::uuid[]))
 
-previous_sales_data AS (
+    UNION ALL
+
     SELECT 
-        dip.id AS product_id,
-        AVG(dis.price_with_tax) AS prev_avg_sell_price,
-        AVG(dis.weighted_average_price * (1 + dip."TVA")) AS prev_avg_weighted_buy_price_ttc,
-        AVG(dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) AS prev_avg_margin,
+        AVG(dis.price_with_tax) AS avgSellPrice,
+        AVG(dis.weighted_average_price * (1 + dip."TVA")) AS avgWeightedBuyPrice,
+        AVG(dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) AS avgMargin,
         AVG(
             CASE 
                 WHEN dis.price_with_tax > 0 
                 THEN (dis.price_with_tax - (dis.weighted_average_price * (1 + dip."TVA"))) / dis.price_with_tax * 100
                 ELSE NULL 
             END
-        ) AS prev_avg_margin_percentage
+        ) AS avgMarginPercentage,
+        AVG(dis.stock * dis.weighted_average_price) AS avgStockValue,
+        COUNT(DISTINCT dip.id) AS numReferencesSold,
+        COUNT(DISTINCT dip.pharmacy_id) AS numPharmaciesSold,
+        'comparison' AS type
     FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
+    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id -- 🔹 Correction ici
+    JOIN data_internalproduct dip ON dis.product_id = dip.id -- 🔹 Correction ici
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months'
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-    GROUP BY dip.id, dip."TVA"
-),
-
-stock_data AS (
-    SELECT 
-        dis.product_id,
-        AVG(dis.stock * dis.weighted_average_price) AS avg_stock_value
-    FROM data_inventorysnapshot dis
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE dis.date BETWEEN NOW() - INTERVAL '12 months' AND NOW()
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-    GROUP BY dis.product_id
-),
-
-previous_stock_data AS (
-    SELECT 
-        dis.product_id,
-        AVG(dis.stock * dis.weighted_average_price) AS prev_avg_stock_value
-    FROM data_inventorysnapshot dis
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE dis.date BETWEEN NOW() - INTERVAL '24 months' AND NOW() - INTERVAL '12 months'
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-    GROUP BY dis.product_id
-),
-
--- 🔹 Nombre total de références vendues
-sold_references AS (
-    SELECT COUNT(DISTINCT dip.id) AS num_references_sold
-    FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN NOW() - INTERVAL '12 months' AND NOW()
-),
-
--- 🔹 Nombre de pharmacies ayant vendu des références
-sold_pharmacies AS (
-    SELECT COUNT(DISTINCT dip.pharmacy_id) AS num_pharmacies_sold
-    FROM data_sales ds
-    JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-    JOIN data_internalproduct dip ON dis.product_id = dip.id
-    JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ds.date BETWEEN NOW() - INTERVAL '12 months' AND NOW()
+    WHERE ds.date BETWEEN $13 AND $14
+      AND ($12::uuid[] IS NULL OR dip.pharmacy_id = ANY($12::uuid[]))
 )
 
 SELECT 
-    -- Valeurs actuelles
-    AVG(sd.avg_sell_price) AS avgSellPrice,
-    AVG(sd.avg_weighted_buy_price_ttc) AS avgWeightedBuyPrice,
-    AVG(sd.avg_margin) AS avgMargin,
-    AVG(sd.avg_margin_percentage) AS avgMarginPercentage,
-    AVG(st.avg_stock_value) AS avgStockValue,
-
-    -- Valeurs précédentes
-    AVG(psd.prev_avg_sell_price) AS prevAvgSellPrice,
-    AVG(psd.prev_avg_weighted_buy_price_ttc) AS prevAvgWeightedBuyPrice,
-    AVG(psd.prev_avg_margin) AS prevAvgMargin,
-    AVG(psd.prev_avg_margin_percentage) AS prevAvgMarginPercentage,
-    AVG(pst.prev_avg_stock_value) AS prevAvgStockValue,
-
-    -- Nombre de références vendues
-    (SELECT num_references_sold FROM sold_references) AS numReferencesSold,
-    
-    -- Nombre de pharmacies ayant vendu
-    (SELECT num_pharmacies_sold FROM sold_pharmacies) AS numPharmaciesSold,
-
-    -- Évolution en pourcentage
-    ((AVG(sd.avg_sell_price) - AVG(psd.prev_avg_sell_price)) / NULLIF(AVG(psd.prev_avg_sell_price), 0)) * 100 AS avgSellPriceEvolution,
-    ((AVG(sd.avg_weighted_buy_price_ttc) - AVG(psd.prev_avg_weighted_buy_price_ttc)) / NULLIF(AVG(psd.prev_avg_weighted_buy_price_ttc), 0)) * 100 AS avgWeightedBuyPriceEvolution,
-    ((AVG(sd.avg_margin) - AVG(psd.prev_avg_margin)) / NULLIF(AVG(psd.prev_avg_margin), 0)) * 100 AS avgMarginEvolution,
-    ((AVG(sd.avg_margin_percentage) - AVG(psd.prev_avg_margin_percentage)) / NULLIF(AVG(psd.prev_avg_margin_percentage), 0)) * 100 AS avgMarginPercentageEvolution,
-    ((AVG(st.avg_stock_value) - AVG(pst.prev_avg_stock_value)) / NULLIF(AVG(pst.prev_avg_stock_value), 0)) * 100 AS avgStockValueEvolution
-FROM sales_data sd
-LEFT JOIN previous_sales_data psd ON sd.product_id = psd.product_id
-LEFT JOIN stock_data st ON sd.product_id = st.product_id
-LEFT JOIN previous_stock_data pst ON st.product_id = pst.product_id;
+    avgSellPrice,
+    avgWeightedBuyPrice,
+    avgMargin,
+    avgMarginPercentage,
+    avgStockValue,
+    numReferencesSold,
+    numPharmaciesSold,
+    type,
+    ((avgSellPrice - LAG(avgSellPrice) OVER (ORDER BY type)) / NULLIF(LAG(avgSellPrice) OVER (ORDER BY type), 0)) * 100 AS avgSellPriceEvolution,
+    ((avgWeightedBuyPrice - LAG(avgWeightedBuyPrice) OVER (ORDER BY type)) / NULLIF(LAG(avgWeightedBuyPrice) OVER (ORDER BY type), 0)) * 100 AS avgWeightedBuyPriceEvolution,
+    ((avgMargin - LAG(avgMargin) OVER (ORDER BY type)) / NULLIF(LAG(avgMargin) OVER (ORDER BY type), 0)) * 100 AS avgMarginEvolution,
+    ((avgMarginPercentage - LAG(avgMarginPercentage) OVER (ORDER BY type)) / NULLIF(LAG(avgMarginPercentage) OVER (ORDER BY type), 0)) * 100 AS avgMarginPercentageEvolution,
+    ((avgStockValue - LAG(avgStockValue) OVER (ORDER BY type)) / NULLIF(LAG(avgStockValue) OVER (ORDER BY type), 0)) * 100 AS avgStockValueEvolution,
+    ((numReferencesSold - LAG(numReferencesSold) OVER (ORDER BY type)) / NULLIF(LAG(numReferencesSold) OVER (ORDER BY type), 0)) * 100 AS numReferencesSoldEvolution,
+    ((numPharmaciesSold - LAG(numPharmaciesSold) OVER (ORDER BY type)) / NULLIF(LAG(numPharmaciesSold) OVER (ORDER BY type), 0)) * 100 AS numPharmaciesSoldEvolution
+FROM lab_metrics_data
+ORDER BY type ASC;
     `;
 
-    const { rows } = await pool.query(query, [
+    // 🔹 Exécution de la requête SQL
+    const { rows } = await pool.query<LabMetrics>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
       filters.ranges.length > 0 ? filters.ranges : null,
       filters.universes.length > 0 ? filters.universes : null,
@@ -190,12 +132,14 @@ LEFT JOIN previous_stock_data pst ON st.product_id = pst.product_id;
       filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
       filters.specificities.length > 0 ? filters.specificities : null,
-      filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
+      filters.dateRange[0], filters.dateRange[1], // Période principale
+      filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // Correction : ajout du bon paramètre
+      filters.comparisonDateRange[0], filters.comparisonDateRange[1] // Période de comparaison
     ]);
 
-    return res.status(200).json({ metrics: rows[0] });
+    return res.status(200).json({ metrics: rows });
   } catch (error) {
-    console.error("❌ Erreur :", error);
+    console.error("❌ Erreur lors de la récupération des métriques :", error);
     return res.status(500).json({ error: "Erreur serveur" });
   }
 }

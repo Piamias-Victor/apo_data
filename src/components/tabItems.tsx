@@ -1,9 +1,9 @@
 // src/config/tabItems.ts
 
-import ProductStockBreakTable from "@/components/laboratory/break/ProductStockBreakTable";
 import LaboratoryDashboardGlobal from "@/components/laboratory/global/Dashboard";
-import ProductTable from "@/components/laboratory/product/ProductTable";
-import LabRevenueDashboard from "@/components/laboratory/segment/LabRevenueDashboard";
+import ProductsDashboard from "./laboratory/product/ProductsDashboard";
+import StockBreakDashboard from "./laboratory/break/StockBreakDashboard";
+import SegmentationOverview from "./laboratory/segmentation/SegmentationOverview";
 
 export const tabItems = [
   {
@@ -12,14 +12,14 @@ export const tabItems = [
   },
   {
     label: "⭐ Produits",
-    content: <ProductTable/>,
+    content: <ProductsDashboard/>,
   },
   {
     label: "🚨 Rupture",
-    content: <ProductStockBreakTable/>,
+    content: <StockBreakDashboard/>,
   },
   {
     label: "🔍 Segmentation",
-    content: <LabRevenueDashboard/>,
+    content: <SegmentationOverview/>,
   },
 ];

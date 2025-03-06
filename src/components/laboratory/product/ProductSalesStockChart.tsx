@@ -12,6 +12,8 @@ interface ProductSalesStockChartProps {
     total_quantity_sold: number; 
     avg_stock_quantity: number; 
     stock_break_quantity: number; 
+    max_selling_price: number;  // ✅ Ajout du prix de vente max
+    min_selling_price: number;  // ✅ Ajout du prix de vente min
   }[];
 }
 
@@ -21,6 +23,10 @@ const ProductSalesStockChart: React.FC<ProductSalesStockChartProps> = ({ salesSt
 
   // 📅 Labels des mois
   const labels = salesStockData.map((data) => data.month);
+
+  // 📌 Récupérer les prix max et min sur toute la période
+  const maxPrice = Math.max(...salesStockData.map((data) => data.max_selling_price));
+  const minPrice = Math.min(...salesStockData.map((data) => data.min_selling_price));
 
   // 📊 Données du graphique
   const data = {
@@ -46,7 +52,22 @@ const ProductSalesStockChart: React.FC<ProductSalesStockChartProps> = ({ salesSt
 
   return (
     <div className="mt-4 bg-white shadow p-4 rounded-lg w-full">
+      {/* ✅ Affichage des prix max et min */}
+      <div className="flex justify-between items-center bg-gray-100 p-4 rounded-md shadow-sm mb-4">
+        <div className="text-center">
+          <p className="text-sm text-gray-600">💰 Prix Minimum</p>
+          <p className="text-lg font-bold text-green-600">{minPrice.toFixed(2)} €</p>
+        </div>
+        <div className="text-center">
+          <p className="text-sm text-gray-600">💰 Prix Maximum</p>
+          <p className="text-lg font-bold text-red-600">{maxPrice.toFixed(2)} €</p>
+        </div>
+      </div>
+
+      {/* 📊 Titre du graphique */}
       <h3 className="text-lg font-semibold text-teal-900 mb-2">📊 Ventes, Stocks & Ruptures Mensuelles</h3>
+      
+      {/* 📊 Affichage du graphique */}
       <Bar data={data} />
     </div>
   );

@@ -12,7 +12,6 @@ export default function MyApp({ Component, pageProps }: AppProps) {
         const originalFetch = window.fetch;
         
         window.fetch = async (...args) => {
-          console.log("🌍 API Call:", args[0]); // 🔍 Log l'URL appelée
           const response = await originalFetch(...args);
           return response;
         };

@@ -31,10 +31,6 @@ export default async function handler(
 
   try {
     const { filters } = req.body;
-
-    console.log("✅ Filtres envoyés :", JSON.stringify(filters, null, 2));
-    console.log("✅ Exécution de la requête SQL...");
-
     if (
       !filters ||
       (!filters.pharmacies.length &&
@@ -161,9 +157,6 @@ export default async function handler(
       filters.specificities.length > 0 ? filters.specificities : null,
       filters.pharmacies.length > 0 ? filters.pharmacies.map((id) => id) : null,
     ]);
-
-    console.log("✅ Résultats SQL :", JSON.stringify(rows, null, 2));
-
 
 
     return res.status(200).json({ ruptures: rows });

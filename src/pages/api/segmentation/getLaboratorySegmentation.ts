@@ -20,7 +20,7 @@ export default async function handler(
   }
 
   try {
-    const { filters } = req.body;
+    const { filters, brand } = req.body; // Ajout du filtre "brand"
 
     // ✅ Vérifier si au moins un laboratoire OU une marque est sélectionné(e)
     if (
@@ -31,40 +31,49 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.specificities.length)
+        !filters.specificities.length &&
+        !brand) // S'assurer qu'au moins un filtre ou une brand spécifique est fournie
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
 
     const query = `
-      SELECT DISTINCT 
-          universe, 
-          category, 
-          sub_category, 
-          family, 
-          sub_family, 
-          specificity,
-          range_name
-      FROM data_globalproduct
-      WHERE 
-        (lab_distributor = ANY($1) OR brand_lab = ANY($2))  -- 🔹 Filtre UNIQUEMENT par laboratoire ou marque
-      ORDER BY universe, category, sub_category, family, sub_family, specificity, range_name;
-    `;
+    SELECT DISTINCT 
+        universe, 
+        category, 
+        sub_category, 
+        family, 
+        sub_family, 
+        specificity,
+        range_name,
+        lab_distributor,
+        brand_lab
+    FROM data_globalproduct
+    WHERE 
+      (lab_distributor = ANY($1) OR brand_lab = ANY($2))  
+      ${brand ? "AND brand_lab = $3" : ""}  -- Filtrer par brand si elle est fournie
+    ORDER BY lab_distributor, brand_lab, universe, category, sub_category, family, sub_family, specificity, range_name;
+  `;
 
-    const { rows } = await pool.query<Segmentation & { range_name: string }>(query, [
+    const queryParams = [
       filters.distributors.length > 0 ? filters.distributors : null,
       filters.brands.length > 0 ? filters.brands : null,
-    ]);
+    ];
 
-    if (rows.length === 0) {
-      return res.status(404).json({ error: "Aucune donnée trouvée pour ce laboratoire ou cette marque" });
+    if (brand) {
+      queryParams.push(brand); // Ajouter la brand comme paramètre si elle est définie
     }
 
-    // 🔹 Regrouper les gammes (`range_name`) par combinaison unique des autres critères
-    const segmentationMap = new Map<string, Segmentation>();
+    const { rows } = await pool.query<Segmentation & { range_name: string; lab_distributor: string; brand_lab: string }>(
+      query,
+      queryParams
+    );
 
-    rows.forEach(({ universe, category, sub_category, family, sub_family, specificity, range_name }) => {
-      const key = `${universe}-${category}-${sub_category}-${family}-${sub_family}-${specificity}`;
+    // 🔹 Regrouper les gammes (`range_name`) par combinaison unique des autres critères, en ajoutant `lab_distributor` et `brand_lab`
+    const segmentationMap = new Map<string, Segmentation & { lab_distributor: string; brand_lab: string }>();
+
+    rows.forEach(({ universe, category, sub_category, family, sub_family, specificity, range_name, lab_distributor, brand_lab }) => {
+      const key = `${lab_distributor}-${brand_lab}-${universe}-${category}-${sub_category}-${family}-${sub_family}-${specificity}`;
 
       if (!segmentationMap.has(key)) {
         segmentationMap.set(key, {
@@ -75,6 +84,8 @@ export default async function handler(
           sub_family,
           specificity,
           ranges: [],
+          lab_distributor,
+          brand_lab,
         });
       }
 
@@ -82,6 +93,8 @@ export default async function handler(
         segmentationMap.get(key)!.ranges.push(range_name);
       }
     });
+
+    console.log('Array.from(segmentationMap.values())', Array.from(segmentationMap.values()));
 
     return res.status(200).json({ segmentation: Array.from(segmentationMap.values()) });
   } catch (error) {

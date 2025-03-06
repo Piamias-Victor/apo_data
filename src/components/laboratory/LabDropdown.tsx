@@ -3,6 +3,7 @@ import { FaSearch, FaChevronDown, FaCheck, FaTimes } from "react-icons/fa";
 import { useSegmentationContext } from "@/contexts/segmentation/SegmentationContext";
 import { useFilterContext } from "@/contexts/FilterContext";
 import Loader from "@/components/ui/Loader"; // ✅ Import du loader
+import FilterSummary from "../layout/FilterSummary";
 
 const LabDropdown: React.FC = () => {
   const { distributors, loading, error } = useSegmentationContext();
@@ -25,18 +26,34 @@ const LabDropdown: React.FC = () => {
 
   const handleSelectLab = (item: string) => {
     const isLab = distributors.some((lab) => lab.lab_distributor === item);
-
-    setFilters({
-      distributors: isLab ? [item] : [],
-      brands: isLab ? [] : [item],
-      ranges: filters.ranges || [],
-    });
-
-    setIsDropdownOpen(false);
+    
+    // Récupère les filtres actuels
+    const { distributors: selectedLabs, brands: selectedBrands } = filters;
+  
+    const alreadySelected = isLab
+      ? selectedLabs.includes(item)
+      : selectedBrands.includes(item);
+  
+    // Construire les nouveaux filtres
+    const newFilters = {
+      distributors: isLab
+        ? alreadySelected
+          ? selectedLabs.filter((lab) => lab !== item) // Supprime si déjà sélectionné
+          : [...selectedLabs, item] // Ajoute sinon
+        : selectedLabs,
+      brands: !isLab
+        ? alreadySelected
+          ? selectedBrands.filter((brand) => brand !== item) // Supprime si déjà sélectionné
+          : [...selectedBrands, item] // Ajoute sinon
+        : selectedBrands,
+    };
+  
+    // Mettre à jour les filtres
+    setFilters(newFilters);
   };
 
   const handleClearSelection = () => {
-    setFilters({ distributors: [], brands: [], ranges: [] });
+    setFilters({ distributors: [], brands: [], ranges: filters.ranges || [] });
   };
 
   return (
@@ -52,13 +69,9 @@ const LabDropdown: React.FC = () => {
             className="flex items-center justify-between w-full bg-white border border-gray-300 rounded-md px-4 py-3 shadow-md hover:bg-gray-100 transition"
           >
             <span className="text-gray-700 text-sm truncate">
-              {selectedLabs.length === 1
-                ? selectedLabs[0] // ✅ Affiche le nom si 1 seul labo sélectionné
-                : selectedBrands.length === 1
-                ? selectedBrands[0] // ✅ Affiche le nom si 1 seule marque sélectionnée
-                : selectedLabs.length + selectedBrands.length > 1
-                ? "Plusieurs laboratoires sélectionnés" // ✅ Si plusieurs sélectionnés
-                : "Choisir un laboratoire ou une marque"} {/* ✅ Valeur par défaut */}
+              {selectedLabs.length + selectedBrands.length > 0
+                ? `${selectedLabs.length + selectedBrands.length} sélectionné(s)`
+                : "Choisir un laboratoire ou une marque"}
             </span>
             <FaChevronDown className="text-gray-500" />
           </button>
@@ -92,6 +105,25 @@ const LabDropdown: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {selectedLabs.length + selectedBrands.length > 0 && (
+                <div className="p-3 bg-gray-50 border-t border-gray-200">
+                  <p className="text-xs uppercase text-gray-600 font-semibold mb-2">Sélectionnés :</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[...selectedLabs, ...selectedBrands].map((item) => (
+                      <span
+                        key={item}
+                        className="bg-teal-500 text-white px-3 py-1 rounded-md text-sm flex items-center gap-2"
+                      >
+                        {item}
+                        <button onClick={() => handleSelectLab(item)} className="text-white">
+                          <FaTimes className="text-xs" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-start items-center gap-3 p-3 border-t border-gray-200">
                 <button

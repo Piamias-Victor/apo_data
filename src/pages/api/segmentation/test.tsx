@@ -31,10 +31,6 @@ export default async function handler(
 
   try {
     const { filters } = req.body;
-
-    console.log("✅ Filtres envoyés :", filters);
-console.log("✅ Exécution de la requête SQL...");
-
     if (
       !filters ||
       (!filters.pharmacies.length &&

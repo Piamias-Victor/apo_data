@@ -15,7 +15,6 @@ const LaboratoryPage: React.FC = () => {
   useEffect(() => {
     if (typeof brand === "string" && !filters.brands.includes(brand)) {
       // setFilters({ brands: [brand] });
-      console.log('brand :', brand)
       setFilters({ brands: [brand] });
     }
   }, [brand, setFilters, filters.brands]);
