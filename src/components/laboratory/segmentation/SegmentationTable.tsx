@@ -50,15 +50,17 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
       const segmentKeyMap: Record<string, string> = {
         "chiffre d'affaires par famille": "family",
         "chiffre d'affaires par univers": "universe",
-        "chiffre d'affaires par catégorie": "category",
+        "chiffre d'affaires par catgorie": "category",
         "chiffre d'affaires par sous-catégorie": "sub_category",
         "chiffre d'affaires par gamme": "range_name",
-        "chiffre d'affaires par spécificité": "specificity",
+        "chiffre d'affaires par spcificit": "specificity",
         "chiffre d'affaires par sous-famille": "sub_family", // ✅ Ajouté pour éviter l'erreur
       };
       
       const fetchSegmentData = async (segment: string) => {
         setLoadingSegments((prev) => ({ ...prev, [segment]: true }));
+
+
       
         const normalizedTitle = normalizeTitle(title);
         const segmentKey = segmentKeyMap[normalizedTitle];
@@ -120,6 +122,7 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
     return `${evolution > 0 ? "+" : ""}${evolution.toFixed(1)}%`;
   };
 
+
   // 📌 Fonction pour trier les données
   const sortedData = Object.entries(data)
     .filter(([key]) => key.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -135,6 +138,7 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
     setSortOrder(prev => (sortColumn === column ? (prev === "asc" ? "desc" : "asc") : "asc"));
     setSortColumn(column);
   };
+
 
   const validSegmentKeys = [
     "universe",
@@ -159,6 +163,7 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
       return newState;
     });
   };
+
 
   return (
     <motion.div
@@ -195,86 +200,96 @@ const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>(
             </tr>
           </thead>
           <tbody>
-  {sortedData.map(([key, values]) => {
-    // ✅ Génération de l'URL dynamique
-    const normalizedTitle = normalizeTitle(title);
-    const segmentKey = segmentKeyMap[normalizedTitle] || null;
-if (!segmentKey) {
-  console.error(`❌ Erreur : Clé de segmentation invalide 🛑 "${title}" → "${normalizedTitle}"`);
-  setLoadingSegments((prev) => ({ ...prev, [key]: false }));
-  return;
-}
-    const segmentUrl = segmentKey ? `/segmentation?${segmentKey}=${encodeURIComponent(key)}` : "#";
+  {sortedData.length === 0 ? (
+    <tr>
+      <td colSpan={7} className="text-center text-gray-500 p-4">Aucune donnée disponible.</td>
+    </tr>
+  ) : (
+    sortedData.map(([key, values]) => {
+      if (!values) return null; // ⚡ Empêche les erreurs
 
-    return (
-      <React.Fragment key={key}>
-        {/* 📌 Ligne principale */}
-        <tr className="border-b bg-gray-50 hover:bg-gray-200 transition">
-          <td className="p-4 font-medium">
-            <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
-              <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
-                {key}
-              </div>
-            </Link>
-          </td>
+      
 
-          {["revenue_current", "margin_current", "quantity_sold_current"].map((column) => {
-  const evolution = calculateEvolution(values[column], values[`${column.replace("_current", "_comparison")}`]);
-  const numericEvolution = parseFloat(evolution); // ✅ Convertit correctement la valeur en nombre
+      // ✅ Génération de l'URL dynamique
+      const normalizedTitle = normalizeTitle(title);
+      console.log("🔗 normalizedTitle :", normalizedTitle);
 
-  return (
-    <td key={column} className="p-4 text-right">
-      <div className="flex flex-col items-center justify-center">
-        <span className="font-semibold text-gray-900">
-          {formatLargeNumber(toNumber(values[column]))}
-        </span>
-        <span
-          className={`text-sm font-medium px-2 py-1 rounded-full ${
-            evolution !== "N/A" && numericEvolution < 0 ? "bg-red-400 text-white" : "bg-green-400 text-white"
-          }`}
-        >
-          {evolution}
-        </span>
-      </div>
-    </td>
-  );
-})}
+      const segmentKey = segmentKeyMap[normalizedTitle] || null;
 
-          {/* ✅ Bouton Détails */}
-          <td className="p-4 text-center">
-            <motion.button
-              animate={{ rotate: expandedRows[key] ? 90 : 0 }} 
-              transition={{ duration: 0.3 }}
-              onClick={() => toggleDetails(key)}
-              className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
-            >
-              {expandedRows[key] ? <FaChevronRight className="text-white text-lg" /> : <FaChevronRight className="text-white text-lg" />}
-            </motion.button>
-          </td>
-        </tr>
+      console.log("🔗 segmentKey :", segmentKey);
 
-        {/* 📌 Ligne de détails (visible si ouvert) */}
-        {expandedRows[key] && (
-  <tr className="bg-gray-100">
-    <td colSpan={7} className="p-4">
-      {loadingSegments[key] ? (
-        <p className="text-gray-500">📊 Chargement des données...</p>
-      ) : segmentData[key] ? (
-        <SegmentDetailTable
-          segmentName={key}
-          globalData={segmentData[key].global}
-          brandDetails={segmentData[key].brands}
-          selectedLab={filters.brands[0]}
-        />
-      ) : (
-        <p className="text-gray-500 text-center">Aucune donnée disponible.</p>
-      )}
-    </td>
-  </tr>
-)}
-      </React.Fragment>
-    );
-  })}
+      if (!segmentKey) return null;
+
+      const segmentUrl = segmentKey ? `/segmentation?${segmentKey}=${encodeURIComponent(key)}` : "#";
+
+      console.log("🔗 segment :", key);
+
+      return (
+        <React.Fragment key={key}>
+          <tr className="border-b bg-gray-50 hover:bg-gray-200 transition">
+            <td className="p-4 font-medium">
+              <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
+                <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
+                  {key}
+                </div>
+              </Link>
+            </td>
+
+            {["revenue_current", "margin_current", "quantity_sold_current"].map((column) => {
+              const currentValue = toNumber(values[column] || "0");
+              const comparisonValue = toNumber(values[`${column.replace("_current", "_comparison")}`] || "0");
+              const evolution = calculateEvolution(currentValue.toString(), comparisonValue.toString());
+
+              return (
+                <td key={column} className="p-4 text-right">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="font-semibold text-gray-900">
+                      {formatLargeNumber(currentValue)}
+                    </span>
+                    <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                      evolution !== "N/A" && parseFloat(evolution) < 0 ? "bg-red-400 text-white" : "bg-green-400 text-white"
+                    }`}>
+                      {evolution}
+                    </span>
+                  </div>
+                </td>
+              );
+            })}
+
+            <td className="p-4 text-center">
+              <motion.button
+                animate={{ rotate: expandedRows[key] ? 90 : 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => toggleDetails(key)}
+                className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
+              >
+                {expandedRows[key] ? <FaChevronRight className="text-white text-lg" /> : <FaChevronRight className="text-white text-lg" />}
+              </motion.button>
+            </td>
+          </tr>
+
+          {expandedRows[key] && (
+            <tr className="bg-gray-100">
+              <td colSpan={7} className="p-4">
+                {loadingSegments[key] ? (
+                  <p className="text-gray-500">📊 Chargement des données...</p>
+                ) : segmentData[key] ? (
+                  <SegmentDetailTable
+                    segmentName={key}
+                    globalData={segmentData[key].global}
+                    brandDetails={segmentData[key].brands}
+                    selectedLab={filters.brands[0]}
+                  />
+                ) : (
+                  <p className="text-gray-500 text-center">Aucune donnée disponible.</p>
+                )}
+              </td>
+            </tr>
+          )}
+        </React.Fragment>
+      );
+    })
+  )}
 </tbody>
         </table>
       </div>

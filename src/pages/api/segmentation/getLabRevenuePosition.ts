@@ -138,6 +138,8 @@ export default async function handler(
       purchase_amount_comparison: Number(item.purchase_amount_comparison) || 0,
     }));
 
+    console.log("📊 Résultat de l'API:", formattedData);
+
     return res.status(200).json({ segmentationData: formattedData });
   } catch (error) {
     console.error("❌ Erreur lors de la récupération des données :", error);
