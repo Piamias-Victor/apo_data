@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaArrowUp, FaArrowDown } from "react-icons/fa";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import { AnimatePresence, motion } from "framer-motion";
+import SearchInput from "@/components/ui/inputs/SearchInput"; // ✅ Import du champ de recherche
 
 interface SalesData {
   pharmacy_id: string;
@@ -30,6 +31,7 @@ const SalesDataByPharmacy: React.FC<SalesDataByPharmacyProps> = ({ salesData, lo
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [sortColumn, setSortColumn] = useState<keyof SalesData>("revenue");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [searchTerm, setSearchTerm] = useState(""); // ✅ État pour la recherche
 
   const toggleSort = (column: keyof SalesData) => {
     if (sortColumn === column) {
@@ -48,14 +50,18 @@ const SalesDataByPharmacy: React.FC<SalesDataByPharmacyProps> = ({ salesData, lo
     return <span className="text-gray-400 text-xs flex justify-center mt-1">0%</span>;
   };
 
-  const sortedData = [...salesData].sort((a, b) => {
-    if (sortColumn === "pharmacy_name") {
-      return sortOrder === "asc"
-        ? a.pharmacy_name.localeCompare(b.pharmacy_name)
-        : b.pharmacy_name.localeCompare(a.pharmacy_name);
-    }
-    return sortOrder === "asc" ? a[sortColumn] - b[sortColumn] : b[sortColumn] - a[sortColumn];
-  });
+  const sortedData = [...salesData]
+    .filter((data) => 
+      data.pharmacy_name.toLowerCase().includes(searchTerm.toLowerCase()) // ✅ Filtre selon la recherche
+    )
+    .sort((a, b) => {
+      if (sortColumn === "pharmacy_name") {
+        return sortOrder === "asc"
+          ? a.pharmacy_name.localeCompare(b.pharmacy_name)
+          : b.pharmacy_name.localeCompare(a.pharmacy_name);
+      }
+      return sortOrder === "asc" ? a[sortColumn] - b[sortColumn] : b[sortColumn] - a[sortColumn];
+    });
 
   return (
     <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-8 border border-gray-300 relative">
@@ -72,6 +78,13 @@ const SalesDataByPharmacy: React.FC<SalesDataByPharmacyProps> = ({ salesData, lo
         🏥 <span>Ventes par Pharmacie</span>
       </h2>
 
+      {/* 🔍 Barre de recherche */}
+      <SearchInput 
+        value={searchTerm} 
+        onChange={setSearchTerm} 
+        placeholder="Rechercher une pharmacie..."
+      />
+
       <AnimatePresence>
         {!isCollapsed && (
           <motion.div
@@ -83,8 +96,8 @@ const SalesDataByPharmacy: React.FC<SalesDataByPharmacyProps> = ({ salesData, lo
             {loading && <p className="text-gray-500 text-center">⏳ Chargement des données...</p>}
             {error && <p className="text-red-500 text-center">{error}</p>}
 
-            {!loading && !error && salesData.length > 0 && (
-              <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
+            {!loading && !error && sortedData.length > 0 && (
+              <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg mt-4">
                 <table className="w-full border-collapse rounded-lg">
                   <thead>
                     <tr className="bg-pink-500 text-white text-md rounded-lg">
@@ -123,6 +136,10 @@ const SalesDataByPharmacy: React.FC<SalesDataByPharmacyProps> = ({ salesData, lo
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {!loading && !error && sortedData.length === 0 && (
+              <p className="text-gray-500 text-center mt-4">Aucune pharmacie trouvée.</p>
             )}
           </motion.div>
         )}
