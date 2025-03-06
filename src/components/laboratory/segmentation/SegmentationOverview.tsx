@@ -135,49 +135,59 @@ const SegmentationOverview: React.FC = () => {
     const margin: number[] = [];
     const quantity: number[] = [];
 
-    // 🚀 Sets pour éviter les doublons
-    const seenLevels = {
-        universe: new Set<string>(),
-        category: new Set<string>(),
-        family: new Set<string>(),
-    };
+    // 🔹 Stocker les valeurs agrégées par niveau
+    const aggregatedData = new Map<string, { revenue: number; margin: number; quantity: number; parent: string }>();
 
     // 🌳 Hiérarchie : univers > category > family
     data.forEach((item) => {
-        const { universe, category, family } = item;
+        const { universe, category, family, revenue_current, margin_current, quantity_sold_current } = item;
 
-        if (universe && !seenLevels.universe.has(universe)) {
-            seenLevels.universe.add(universe);
-            labels.push(universe);
-            parents.push(""); // univers est la racine
-            revenue.push(item.revenue_current);
-            margin.push(item.margin_current);
-            quantity.push(item.quantity_sold_current);
-        }
+        // ✅ Assurer que toutes les valeurs sont bien des nombres
+        const revenueNum = Number(revenue_current) || 0;
+        const marginNum = Number(margin_current) || 0;
+        const quantityNum = Number(quantity_sold_current) || 0;
 
-        if (category && !seenLevels.category.has(category)) {
-            // 💡 Vérifier que category n'existe pas en tant que univers avant d'ajouter
-            if (!seenLevels.universe.has(category)) {
-                seenLevels.category.add(category);
-                labels.push(category);
-                parents.push(universe);
-                revenue.push(item.revenue_current);
-                margin.push(item.margin_current);
-                quantity.push(item.quantity_sold_current);
+        // 🔹 Univers (Niveau 1 - Root)
+        if (universe) {
+            if (!aggregatedData.has(universe)) {
+                aggregatedData.set(universe, { revenue: 0, margin: 0, quantity: 0, parent: "" });
             }
+            const entry = aggregatedData.get(universe)!;
+            entry.revenue += revenueNum;
+            entry.margin += marginNum;
+            entry.quantity += quantityNum;
         }
 
-        if (family && !seenLevels.family.has(family)) {
-            // 💡 Vérifier que family n'existe pas en tant que category ou univers avant d'ajouter
-            if (!seenLevels.universe.has(family) && !seenLevels.category.has(family)) {
-                seenLevels.family.add(family);
-                labels.push(family);
-                parents.push(category);
-                revenue.push(item.revenue_current);
-                margin.push(item.margin_current);
-                quantity.push(item.quantity_sold_current);
+        // 🔹 Catégorie (Niveau 2 - Parent = Univers)
+        if (category) {
+            if (!aggregatedData.has(category)) {
+                aggregatedData.set(category, { revenue: 0, margin: 0, quantity: 0, parent: universe });
             }
+            const entry = aggregatedData.get(category)!;
+            entry.revenue += revenueNum;
+            entry.margin += marginNum;
+            entry.quantity += quantityNum;
         }
+
+        // 🔹 Famille (Niveau 3 - Parent = Catégorie)
+        if (family) {
+            if (!aggregatedData.has(family)) {
+                aggregatedData.set(family, { revenue: 0, margin: 0, quantity: 0, parent: category });
+            }
+            const entry = aggregatedData.get(family)!;
+            entry.revenue += revenueNum;
+            entry.margin += marginNum;
+            entry.quantity += quantityNum;
+        }
+    });
+
+    // 🚀 Convertir en format lisible par le treemap
+    aggregatedData.forEach((value, key) => {
+        labels.push(key);
+        parents.push(value.parent);
+        revenue.push(value.revenue);
+        margin.push(value.margin);
+        quantity.push(value.quantity);
     });
 
     return { labels, parents, revenue, margin, quantity };
