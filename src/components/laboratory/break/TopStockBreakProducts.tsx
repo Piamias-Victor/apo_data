@@ -173,7 +173,7 @@ const DataBlock: React.FC<DataBlockProps> = ({ title, code, value, previousValue
       {previousValue !== undefined && previousValue !== null && (
         <div className="flex items-center justify-center mt-2">
           <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center ${
-            percentageChange.includes("-") ? "bg-green-500 text-white" : "bg-red-500 text-white"
+            percentageChange.includes("-") ? "bg-green-400 text-white" : "bg-red-400 text-white"
           }`}>
             {percentageChange}
           </span>

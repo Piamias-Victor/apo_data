@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { FaSort, FaSortUp, FaSortDown, FaChevronRight } from "react-icons/fa";
+import { FaSort, FaSortUp, FaSortDown, FaChevronRight, FaChevronUp } from "react-icons/fa";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
 import { useFilterContext } from "@/contexts/FilterContext";
 import SearchInput from "@/components/ui/inputs/SearchInput";
 import DataBlock from "../global/DataBlock";
 import { FaChevronDown } from "react-icons/fa"; // ✅ Import de l'icône flèche
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import ProductSalesStockChart from "./ProductSalesStockChart";
 
 interface ProductSalesData {
@@ -53,6 +53,8 @@ const ProductTable: React.FC = () => {
 
   const [salesStockData, setSalesStockData] = useState<Record<string, ProductSalesStockData[]>>({});
   const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(true); // ✅ Permet de masquer/afficher le tableau
 
   const toggleDetails = async (code_13_ref: string) => {
     setExpandedProduct((prev) => (prev === code_13_ref ? null : code_13_ref));
@@ -163,6 +165,15 @@ const ProductTable: React.FC = () => {
       <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
         📊 Performances Produits
       </h2>
+      
+      {/* 📌 Bouton Toggle avec animation */}
+<button
+  onClick={() => setIsCollapsed((prev) => !prev)}
+  className="absolute top-4 right-4 bg-blue-500 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md hover:bg-blue-600 transition flex items-center gap-2"
+>
+  {isCollapsed ? "Afficher Produits" : "Masquer Produits"}{" "}
+  {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+</button>
 
       {/* 📌 Toggle entre Totaux et Valeurs Unitaires */}
       
@@ -187,15 +198,23 @@ const ProductTable: React.FC = () => {
 
       {/* 🔹 Loader & Erreur */}
       {loading && <p className="text-gray-500 text-center">⏳ Chargement des données...</p>}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {error && <p className="text-red-400 text-center">{error}</p>}
 
       {/* 📌 Tableau des produits */}
-      {!loading && !error && filteredData.length > 0 && (
-        <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
+     {/* 📌 Tableau des produits avec animation */}
+<AnimatePresence>
+  {!loading && !error && filteredData.length > 0 && !isCollapsed && (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+      className="overflow-hidden border border-gray-200 shadow-lg rounded-lg"
+    >
           <table className="w-full border-collapse rounded-lg table-auto">
             {/* 🔹 En-tête */}
             <thead>
-  <tr className="bg-blue-500 text-white text-md rounded-lg">
+    <tr className="bg-blue-500 text-white text-md rounded-lg">
     {[
       { key: "code_13_ref", label: "Code 13", width: "15%" },
       { key: "product_name", label: "Produit", width: "20%" },
@@ -233,13 +252,13 @@ const ProductTable: React.FC = () => {
     ))}
 
     {/* ✅ Colonne "Détails" placée EN DERNIER */}
-    <th className="p-4 text-center">Détails</th>
-  </tr>
-</thead>
+      <th className="p-4 text-center">Détails</th>
+      </tr>
+    </thead>
 
             {/* 🔹 Contenu */}
             <tbody className="text-sm">
-  {filteredData.map((product, index) => (
+    {filteredData.map((product, index) => (
     <React.Fragment key={`${product.code_13_ref}-${index}`}>
       <tr className="border-b bg-gray-50 hover:bg-gray-200 transition text-center">
         {/* ✅ Code 13 (EAN) */}
@@ -376,8 +395,10 @@ const ProductTable: React.FC = () => {
   ))}
 </tbody>
           </table>
-        </div>
-      )}
+          
+          </motion.div>
+  )}
+</AnimatePresence>
     </div>
   );
 };

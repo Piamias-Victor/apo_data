@@ -39,7 +39,7 @@ const calculateEvolution = (oldValue: number | string | undefined, newValue: num
     const isPositive = change >= 0;
   
     return (
-      <span className={isPositive ? "text-green-500" : "text-red-500"}>
+      <span className={isPositive ? "text-green-400" : "text-red-400"}>
         {isPositive ? "+" : ""}
         {change.toFixed(1)}%
       </span>

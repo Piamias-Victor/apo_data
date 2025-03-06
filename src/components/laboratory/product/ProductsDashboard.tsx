@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useFilterContext } from "@/contexts/FilterContext";
 import TopProductsCard from "./TopProductsCard";
 import ProductTable from "./ProductTable";
+import SalesDataTest from "../global/pharmacies/SalesPharmaciesComponent";
 
 interface ProductSalesData {
   code_13_ref: string;
@@ -121,6 +122,8 @@ const ProductsDashboard: React.FC = () => {
           </motion.div>
 
           <ProductTable />
+
+          <SalesDataTest/>
         </>
       )}
     </div>
