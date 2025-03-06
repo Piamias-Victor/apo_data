@@ -238,7 +238,7 @@ const ProductTable: React.FC = () => {
 </thead>
 
             {/* 🔹 Contenu */}
-            <tbody>
+            <tbody className="text-sm">
   {filteredData.map((product, index) => (
     <React.Fragment key={`${product.code_13_ref}-${index}`}>
       <tr className="border-b bg-gray-50 hover:bg-gray-200 transition text-center">
@@ -246,7 +246,11 @@ const ProductTable: React.FC = () => {
         <td className="p-3">{product.code_13_ref}</td>
 
         {/* ✅ Nom du produit */}
-        <td className="p-3">{product.product_name}</td>
+        <td className="p-3">
+          <div className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={product.product_name}>
+            {product.product_name}
+          </div>
+        </td>
 
         {/* ✅ Quantité */}
         <td className="p-3">

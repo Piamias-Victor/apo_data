@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import pool from "@/libs/fetch/db";
 
 interface SegmentationComparisonData {
-  segment: string;
   universe: string;
   category: string;
   sub_category: string;
@@ -41,13 +40,11 @@ export default async function handler(
 
     const query = `
     WITH filtered_products AS (
-        SELECT dgp.code_13_ref, dgp.universe, dgp.category, dgp.sub_category,
-               dgp.range_name, dgp.family, dgp.sub_family, dgp.specificity,
-               dgp.tva_percentage
+        SELECT dgp.code_13_ref, dgp.tva_percentage, dgp.universe, dgp.category, dgp.sub_category,
+               dgp.range_name, dgp.family, dgp.sub_family, dgp.specificity
         FROM data_globalproduct dgp
         WHERE 
-            dgp.code_13_ref NOT LIKE '34009%'
-            AND ($1::text[] IS NULL OR dgp.lab_distributor = ANY($1))
+            ($1::text[] IS NULL OR dgp.lab_distributor = ANY($1))
             AND ($2::text[] IS NULL OR dgp.range_name = ANY($2))
             AND ($3::text[] IS NULL OR dgp.universe = ANY($3))
             AND ($4::text[] IS NULL OR dgp.category = ANY($4))
@@ -55,6 +52,7 @@ export default async function handler(
             AND ($6::text[] IS NULL OR dgp.family = ANY($6))
             AND ($7::text[] IS NULL OR dgp.sub_family = ANY($7))
             AND ($8::text[] IS NULL OR dgp.specificity = ANY($8))
+            AND ($9::text[] IS NULL OR dgp.brand_lab = ANY($9)) 
     )
     
     , sales_data AS (
@@ -71,8 +69,8 @@ export default async function handler(
         JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-        WHERE ($9::uuid[] IS NULL OR dip.pharmacy_id = ANY($9::uuid[]))
-          AND ds.date BETWEEN $10 AND $11
+        WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+          AND ds.date BETWEEN $11 AND $12
         GROUP BY fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity
     
         UNION ALL
@@ -90,38 +88,8 @@ export default async function handler(
         JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
         JOIN data_internalproduct dip ON dis.product_id = dip.id
         JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-        WHERE ($9::uuid[] IS NULL OR dip.pharmacy_id = ANY($9::uuid[]))
-          AND ds.date BETWEEN $12 AND $13
-        GROUP BY fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity
-    )
-    
-    , purchase_data AS (
-        SELECT 
-            fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity,
-            SUM(ds.quantity) AS quantity_purchased,
-            SUM(ds.quantity * dis.weighted_average_price) AS purchase_amount,
-            'current' AS period
-        FROM data_sales ds
-        JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-        JOIN data_internalproduct dip ON dis.product_id = dip.id
-        JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-        WHERE ($9::uuid[] IS NULL OR dip.pharmacy_id = ANY($9::uuid[]))
-          AND ds.date BETWEEN $10 AND $11
-        GROUP BY fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity
-    
-        UNION ALL
-    
-        SELECT 
-            fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity,
-            SUM(ds.quantity) AS quantity_purchased,
-            SUM(ds.quantity * dis.weighted_average_price) AS purchase_amount,
-            'comparison' AS period
-        FROM data_sales ds
-        JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
-        JOIN data_internalproduct dip ON dis.product_id = dip.id
-        JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-        WHERE ($9::uuid[] IS NULL OR dip.pharmacy_id = ANY($9::uuid[]))
-          AND ds.date BETWEEN $12 AND $13
+        WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+          AND ds.date BETWEEN $13 AND $14
         GROUP BY fp.universe, fp.category, fp.sub_category, fp.range_name, fp.family, fp.sub_family, fp.specificity
     )
     
@@ -132,23 +100,11 @@ export default async function handler(
         COALESCE(SUM(CASE WHEN sd.period = 'current' THEN sd.quantity_sold END), 0) AS quantity_sold_current,
         COALESCE(SUM(CASE WHEN sd.period = 'comparison' THEN sd.revenue END), 0) AS revenue_comparison,
         COALESCE(SUM(CASE WHEN sd.period = 'comparison' THEN sd.margin END), 0) AS margin_comparison,
-        COALESCE(SUM(CASE WHEN sd.period = 'comparison' THEN sd.quantity_sold END), 0) AS quantity_sold_comparison,
-        COALESCE(SUM(CASE WHEN pd.period = 'current' THEN pd.quantity_purchased END), 0) AS quantity_purchased_current,
-        COALESCE(SUM(CASE WHEN pd.period = 'current' THEN pd.purchase_amount END), 0) AS purchase_amount_current,
-        COALESCE(SUM(CASE WHEN pd.period = 'comparison' THEN pd.quantity_purchased END), 0) AS quantity_purchased_comparison,
-        COALESCE(SUM(CASE WHEN pd.period = 'comparison' THEN pd.purchase_amount END), 0) AS purchase_amount_comparison
+        COALESCE(SUM(CASE WHEN sd.period = 'comparison' THEN sd.quantity_sold END), 0) AS quantity_sold_comparison
     FROM sales_data sd
-    LEFT JOIN purchase_data pd 
-        ON sd.universe = pd.universe 
-        AND sd.category = pd.category
-        AND sd.sub_category = pd.sub_category
-        AND sd.range_name = pd.range_name
-        AND sd.family = pd.family
-        AND sd.sub_family = pd.sub_family
-        AND sd.specificity = pd.specificity
     GROUP BY sd.universe, sd.category, sd.sub_category, sd.range_name, sd.family, sd.sub_family, sd.specificity
     ORDER BY revenue_current DESC;
-        `;
+    `;
 
     const { rows } = await pool.query<SegmentationComparisonData>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
@@ -159,12 +115,13 @@ export default async function handler(
       filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
       filters.specificities.length > 0 ? filters.specificities : null,
+      filters.brands.length > 0 ? filters.brands : null,
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
-      filters.dateRange[0], filters.dateRange[1], // Période principale
-      filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison
+      filters.dateRange[0], filters.dateRange[1],
+      filters.comparisonDateRange[0], filters.comparisonDateRange[1],
     ]);
 
-    // ✅ Conversion des valeurs en nombres pour éviter les erreurs
+    // 🔹 Convertit toutes les valeurs en nombres avant retour
     const formattedData = rows.map((item) => ({
       ...item,
       revenue_current: Number(item.revenue_current) || 0,
@@ -180,7 +137,6 @@ export default async function handler(
       purchase_amount_current: Number(item.purchase_amount_current) || 0,
       purchase_amount_comparison: Number(item.purchase_amount_comparison) || 0,
     }));
-
 
     return res.status(200).json({ segmentationData: formattedData });
   } catch (error) {

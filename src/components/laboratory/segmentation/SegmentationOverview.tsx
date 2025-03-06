@@ -124,9 +124,7 @@ const SegmentationOverview: React.FC = () => {
   const segments = [
     { title: "🌍 Chiffre d'affaires par Univers", data: revenueByUniverse },
     { title: "📦 Chiffre d'affaires par Catégorie", data: revenueByCategory },
-    { title: "📌 Chiffre d'affaires par Sous-Catégorie", data: revenueBySubCategory },
     { title: "👨‍👩‍👧 Chiffre d'affaires par Famille", data: revenueByFamily },
-    { title: "👶 Chiffre d'affaires par Sous-Famille", data: revenueBySubFamily },
     { title: "🛠️ Chiffre d'affaires par Spécificité", data: revenueBySpecificity },
   ];
 

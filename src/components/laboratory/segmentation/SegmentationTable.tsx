@@ -5,6 +5,8 @@ import SearchInput from "@/components/ui/inputs/SearchInput";
 import { motion } from "framer-motion";
 import SegmentationSalesStockChart from "./SegmentationSalesStockChart"; // ✅ Import du graphique
 import { useFilterContext } from "@/contexts/FilterContext";
+import Link from "next/link";
+import SegmentDetailTable from "./SegmentDetailTable";
 
 interface SegmentationData {
   [key: string]: { 
@@ -31,48 +33,52 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [salesStockData, setSalesStockData] = useState<Record<string, any[]>>({});
-    const [loadingGraphs, setLoadingGraphs] = useState<Record<string, boolean>>({});
+  const [segmentData, setSegmentData] = useState<Record<string, any>>({});
+const [loadingSegments, setLoadingSegments] = useState<Record<string, boolean>>({});
     const { filters } = useFilterContext();
     
     
 
     const normalizeTitle = (title: string): string => {
-        return title
-          .toLowerCase()
-          .replace(/[^\w\s]/gi, '') // Supprime les caractères spéciaux comme 📦
-          .trim();
-      };
+      return title
+        .toLowerCase()
+        .replace(/[^\w\s']/gi, '') // ✅ Garde les apostrophes pour "d'affaires"
+        .replace(/\s+/g, ' ') // ✅ Remplace les espaces multiples par un seul espace
+        .trim();
+    };
       
       const segmentKeyMap: Record<string, string> = {
-        "chiffre daffaires par famille": "family",
-        "chiffre daffaires par univers": "universe",
-        "chiffre daffaires par categorie": "category",
-        "chiffre daffaires par sous-categorie": "sub_category",
-        "chiffre daffaires par gamme": "range_name",
-        "chiffre daffaires par specificite": "specificity",
+        "chiffre d'affaires par famille": "family",
+        "chiffre d'affaires par univers": "universe",
+        "chiffre d'affaires par catégorie": "category",
+        "chiffre d'affaires par sous-catégorie": "sub_category",
+        "chiffre d'affaires par gamme": "range_name",
+        "chiffre d'affaires par spécificité": "specificity",
+        "chiffre d'affaires par sous-famille": "sub_family", // ✅ Ajouté pour éviter l'erreur
       };
       
-      const fetchSegmentSalesStock = async (segment: string) => {
-        setLoadingGraphs((prev) => ({ ...prev, [segment]: true }));
+      const fetchSegmentData = async (segment: string) => {
+        setLoadingSegments((prev) => ({ ...prev, [segment]: true }));
       
         const normalizedTitle = normalizeTitle(title);
         const segmentKey = segmentKeyMap[normalizedTitle];
       
         if (!segmentKey) {
           console.error("❌ Erreur : Clé de segmentation invalide", title, "→", normalizedTitle);
-          setLoadingGraphs((prev) => ({ ...prev, [segment]: false }));
+          setLoadingSegments((prev) => ({ ...prev, [segment]: false }));
           return;
         }
       
         try {
-          const response = await fetch("/api/segmentation/getDetailSegmentation", {
+          const response = await fetch("/api/segmentation/GetGlobalSegmentData", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              segment: segment, // ✅ Correction → Assigne bien le segment à envoyer
-              type: segmentKey, // ✅ Correction → Envoie le bon type
-              filters: filters, // ✅ Correction → Envoie bien `filters`, sans l'encapsuler
+              segment: segment,
+              type: segmentKey,
+              pharmacies: filters.pharmacies.length > 0 ? filters.pharmacies : null,
+              dateRange: filters.dateRange,
+              comparisonDateRange: filters.comparisonDateRange, // ✅ Ajout de la période de comparaison
             }),
           });
       
@@ -83,11 +89,18 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
             throw new Error(result.error || "Erreur inconnue");
           }
       
-          setSalesStockData((prev) => ({ ...prev, [segment]: result.salesStockData }));
+          // ✅ Stocker les deux jeux de données
+          setSegmentData((prev) => ({
+            ...prev,
+            [segment]: {
+              global: result.segmentData,
+              brands: result.brandDetails, // ✅ Stocke les données par marque
+            },
+          }));
         } catch (error) {
-          console.error("❌ Erreur lors du chargement des données du graphique :", error);
+          console.error("❌ Erreur lors du chargement des données du segment :", error);
         } finally {
-          setLoadingGraphs((prev) => ({ ...prev, [segment]: false }));
+          setLoadingSegments((prev) => ({ ...prev, [segment]: false }));
         }
       };
   // 📌 Fonction pour convertir une valeur string en nombre
@@ -135,13 +148,12 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
 
   // 📌 Gère l'affichage des détails
   const toggleDetails = (key: string) => {
-  
     setExpandedRows((prev) => {
       const newState = { ...prev, [key]: !prev[key] };
   
-      // ⚡ Appeler fetchSegmentSalesStock uniquement si on ouvre la ligne
-      if (!prev[key] && !salesStockData[key]) {
-        fetchSegmentSalesStock(key);
+      // ⚡ Appeler fetchSegmentData uniquement si on ouvre la ligne
+      if (!prev[key] && !segmentData[key]) {
+        fetchSegmentData(key);
       }
   
       return newState;
@@ -171,8 +183,6 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
                 { key: "revenue_current", label: "💰 CA (€)" },
                 { key: "margin_current", label: "💵 Marge (€)" },
                 { key: "quantity_sold_current", label: "📦 Quantité Vendue" },
-                { key: "quantity_purchased_current", label: "📥 Quantité Achetée" },
-                { key: "purchase_amount_current", label: "💰 Montant Achats (€)" },
               ].map(({ key, label }) => (
                 <th key={key} className="p-4 text-right cursor-pointer" onClick={() => toggleSort(key as keyof SegmentationData[string])}>
                   <div className="flex justify-end items-center gap-2">
@@ -185,62 +195,87 @@ const SegmentationTable: React.FC<SegmentationTableProps> = ({ title, data }) =>
             </tr>
           </thead>
           <tbody>
-            {sortedData.map(([key, values]) => (
-              <React.Fragment key={key}>
-                {/* 📌 Ligne principale */}
-                <tr className="border-b bg-gray-50 hover:bg-gray-200 transition">
-                  <td className="p-4 font-medium">{key}</td>
-                  {["revenue_current", "margin_current", "quantity_sold_current", "quantity_purchased_current", "purchase_amount_current"].map((column) => (
-                    <td key={column} className="p-4 text-right">
-                      <div className="flex flex-col items-center justify-center">
-                        {/* Valeur actuelle */}
-                        <span className="font-semibold text-gray-900">
-                          {formatLargeNumber(toNumber(values[column]))}
-                        </span>
-                        {/* Évolution */}
-                        <span
-                          className={`text-sm font-medium px-2 py-1 rounded-full ${
-                            calculateEvolution(values[column], values[`${column.replace("_current", "_comparison")}`]) !== "N/A" &&
-                            parseFloat(calculateEvolution(values[column], values[`${column.replace("_current", "_comparison")}`])) ?? 0 >= 0
-                              ? "bg-green-500 text-white"
-                              : "bg-red-500 text-white"
-                          }`}
-                        >
-                          {calculateEvolution(values[column], values[`${column.replace("_current", "_comparison")}`])}
-                        </span>
-                      </div>
-                    </td>
-                  ))}
-                  {/* ✅ Bouton Détails */}
-                  <td className="p-4 text-center">
-                    <motion.button
-                        animate={{ rotate: expandedRows[key] ? 180 : 0 }} // ✅ Rotation correcte
-                        transition={{ duration: 0.3 }}
-                        onClick={() => toggleDetails(key)}
-                        className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
-                    >
-                        {expandedRows[key] ? <FaChevronDown className="text-white text-lg" /> : <FaChevronRight className="text-white text-lg" />}
-                    </motion.button>
-                    </td>
-                </tr>
+  {sortedData.map(([key, values]) => {
+    // ✅ Génération de l'URL dynamique
+    const normalizedTitle = normalizeTitle(title);
+    const segmentKey = segmentKeyMap[normalizedTitle] || null;
+if (!segmentKey) {
+  console.error(`❌ Erreur : Clé de segmentation invalide 🛑 "${title}" → "${normalizedTitle}"`);
+  setLoadingSegments((prev) => ({ ...prev, [key]: false }));
+  return;
+}
+    const segmentUrl = segmentKey ? `/segmentation?${segmentKey}=${encodeURIComponent(key)}` : "#";
 
-                {/* 📌 Ligne de détails (visible si ouvert) */}
-                {expandedRows[key] && (
-                <tr className="bg-gray-100">
-                    <td colSpan={7} className="p-4">
-                    {loadingGraphs[key] ? (
-                        <p className="text-gray-500">📊 Chargement des données...</p>
-                    ) : salesStockData[key]?.length > 0 ? (
-                        <SegmentationSalesStockChart salesStockData={salesStockData[key]} />
-                    ) : (
-                        <p className="text-gray-500 text-center">Aucune donnée disponible.</p>
-                    )}
-                    </td>
-                </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
+    return (
+      <React.Fragment key={key}>
+        {/* 📌 Ligne principale */}
+        <tr className="border-b bg-gray-50 hover:bg-gray-200 transition">
+          <td className="p-4 font-medium">
+            <Link href={segmentUrl} passHref target="_blank" rel="noopener noreferrer">
+              <div className="text-lg font-semibold flex items-center gap-2 text-teal-600 hover:underline">
+                {key}
+              </div>
+            </Link>
+          </td>
+
+          {["revenue_current", "margin_current", "quantity_sold_current"].map((column) => {
+  const evolution = calculateEvolution(values[column], values[`${column.replace("_current", "_comparison")}`]);
+  const numericEvolution = parseFloat(evolution); // ✅ Convertit correctement la valeur en nombre
+
+  return (
+    <td key={column} className="p-4 text-right">
+      <div className="flex flex-col items-center justify-center">
+        <span className="font-semibold text-gray-900">
+          {formatLargeNumber(toNumber(values[column]))}
+        </span>
+        <span
+          className={`text-sm font-medium px-2 py-1 rounded-full ${
+            evolution !== "N/A" && numericEvolution < 0 ? "bg-red-400 text-white" : "bg-green-400 text-white"
+          }`}
+        >
+          {evolution}
+        </span>
+      </div>
+    </td>
+  );
+})}
+
+          {/* ✅ Bouton Détails */}
+          <td className="p-4 text-center">
+            <motion.button
+              animate={{ rotate: expandedRows[key] ? 90 : 0 }} 
+              transition={{ duration: 0.3 }}
+              onClick={() => toggleDetails(key)}
+              className="p-2 rounded-full bg-teal-600 flex items-center justify-center text-center"
+            >
+              {expandedRows[key] ? <FaChevronRight className="text-white text-lg" /> : <FaChevronRight className="text-white text-lg" />}
+            </motion.button>
+          </td>
+        </tr>
+
+        {/* 📌 Ligne de détails (visible si ouvert) */}
+        {expandedRows[key] && (
+  <tr className="bg-gray-100">
+    <td colSpan={7} className="p-4">
+      {loadingSegments[key] ? (
+        <p className="text-gray-500">📊 Chargement des données...</p>
+      ) : segmentData[key] ? (
+        <SegmentDetailTable
+          segmentName={key}
+          globalData={segmentData[key].global}
+          brandDetails={segmentData[key].brands}
+          selectedLab={filters.brands[0]}
+        />
+      ) : (
+        <p className="text-gray-500 text-center">Aucune donnée disponible.</p>
+      )}
+    </td>
+  </tr>
+)}
+      </React.Fragment>
+    );
+  })}
+</tbody>
         </table>
       </div>
     </motion.div>

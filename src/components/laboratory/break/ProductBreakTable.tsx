@@ -164,12 +164,16 @@ const ProductBreakTable: React.FC<{ products: ProductStockBreakData[] }> = ({ pr
               </tr>
             </thead>
 
-            <tbody>
+            <tbody className="text-sm">
               {filteredData.map((product, index) => (
                 <React.Fragment key={`${product.code_13_ref}-${index}`}>
                   <tr className="border-b bg-gray-50 hover:bg-gray-200 transition text-center">
                     <td className="p-3">{product.code_13_ref}</td>
-                    <td className="p-3">{product.product_name}</td>
+                    <td className="p-3">
+                      <div className="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={product.product_name}>
+                        {product.product_name}
+                      </div>
+                    </td>
                     <td className="p-3">
   {formatLargeNumber(parseFloat(product.total_products_ordered), false)}
   {product.previous?.total_products_ordered !== undefined && (
