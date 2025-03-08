@@ -1,20 +1,16 @@
-import { useFilterContext } from "@/contexts/FilterContext";
-import React, { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import SegmentationTable from "./SegmentationTable";
+import { useFilterContext } from "@/contexts/FilterContext";
 import dynamic from "next/dynamic";
-const TreemapChart = dynamic(() => import("@/components/laboratory/segmentation/TreemapChart"), { ssr: false });
+import SegmentationTable from "./SegmentationTable";
+import Loader from "@/components/ui/Loader";
 
+// Define the SegmentationComparisonData type
 interface SegmentationComparisonData {
-  segment: string;
-  universe: string;
-  category: string;
-  sub_category: string;
-  range_name: string;
-  family: string;
-  sub_family: string;
-  specificity: string;
+  universe?: string;
+  category?: string;
+  family?: string;
   revenue_current: number;
   margin_current: number;
   revenue_comparison: number;
@@ -29,14 +25,27 @@ interface SegmentationComparisonData {
   purchase_amount_comparison: number;
 }
 
+// Import dynamique pour éviter les problèmes de SSR avec Plotly
+const TreemapChart = dynamic(() => import("@/components/laboratory/segmentation/TreemapChart"), { 
+  ssr: false,
+  loading: () => <Loader message="Chargement du graphique..." />
+});
+
+// Types des segments disponibles
+const SEGMENT_TYPES = ["universe", "category", "family", "specificity"] as const;
+type SegmentType = typeof SEGMENT_TYPES[number];
+
 const SegmentationOverview: React.FC = () => {
+  // États
   const [segmentationData, setSegmentationData] = useState<SegmentationComparisonData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { filters } = useFilterContext();
   const [expandedTables, setExpandedTables] = useState<Record<string, boolean>>({});
-  const [selectedLevel, setSelectedLevel] = useState<"universe" | "category" | "sub_category" | "family" | "sub_family" | "specificity">("universe");
+  const [selectedLevel, setSelectedLevel] = useState<"universe" | "category" | "family">("universe");
+  
+  const { filters } = useFilterContext();
 
+  // Récupération des données de segmentation
   useEffect(() => {
     const fetchSegmentationData = async () => {
       setLoading(true);
@@ -52,9 +61,6 @@ const SegmentationOverview: React.FC = () => {
         if (!response.ok) throw new Error("Erreur lors de la récupération des données");
 
         const data = await response.json();
-
-        console.log('data', data);
-
         setSegmentationData(data.segmentationData);
       } catch (err) {
         setError("Impossible de récupérer les données.");
@@ -67,15 +73,8 @@ const SegmentationOverview: React.FC = () => {
     fetchSegmentationData();
   }, [filters]);
 
-  console.log('segmentationData', segmentationData);
-
-  if (loading) return <p className="text-gray-500 text-center">⏳ Chargement des données...</p>;
-  if (error) return <p className="text-red-500 text-center">{error}</p>;
-  if (!segmentationData || segmentationData.length === 0)
-    return <p className="text-gray-500 text-center">Aucune donnée disponible.</p>;
-
-  // 🏗️ Fonction d'agrégation des données par segmentation
-  const aggregateByKey = (key: keyof SegmentationComparisonData) => {
+  // Fonction pour agréger les données par clé de segmentation
+  const aggregateByKey = useCallback((key: keyof SegmentationComparisonData) => {
     return segmentationData.reduce((acc, data) => {
       const value = data[key] || "N/A";
 
@@ -96,6 +95,7 @@ const SegmentationOverview: React.FC = () => {
         };
       }
 
+      // Agrégation des valeurs numériques
       acc[value].revenue_current += data.revenue_current;
       acc[value].margin_current += data.margin_current;
       acc[value].revenue_comparison += data.revenue_comparison;
@@ -107,123 +107,156 @@ const SegmentationOverview: React.FC = () => {
       acc[value].purchase_amount_current += data.purchase_amount_current;
       acc[value].purchase_amount_comparison += data.purchase_amount_comparison;
 
-      acc[value].revenue_evolution =
-        ((acc[value].revenue_current - acc[value].revenue_comparison) / acc[value].revenue_comparison) * 100 || 0;
-      acc[value].margin_evolution =
-        ((acc[value].margin_current - acc[value].margin_comparison) / acc[value].margin_comparison) * 100 || 0;
+      // Calcul des évolutions
+      acc[value].revenue_evolution = calculateEvolution(
+        acc[value].revenue_current, 
+        acc[value].revenue_comparison
+      );
+      
+      acc[value].margin_evolution = calculateEvolution(
+        acc[value].margin_current, 
+        acc[value].margin_comparison
+      );
 
       return acc;
     }, {} as Record<string, SegmentationComparisonData>);
+  }, [segmentationData]);
+
+  // Calcul d'évolution en pourcentage avec gestion des cas particuliers
+  const calculateEvolution = (current: number, comparison: number): number => {
+    if (comparison === 0) return current > 0 ? 100 : 0;
+    return ((current - comparison) / Math.abs(comparison)) * 100;
   };
 
-  // 📊 Agrégation des données pour chaque segmentation
-  const revenueByUniverse = aggregateByKey("universe");
-  const revenueByCategory = aggregateByKey("category");
-  const revenueBySubCategory = aggregateByKey("sub_category");
-  const revenueByFamily = aggregateByKey("family");
-  const revenueBySubFamily = aggregateByKey("sub_family");
-  const revenueBySpecificity = aggregateByKey("specificity");
-
-  // 📌 Liste des segments à afficher
-  const segments = [
-    { title: "🌍 Chiffre d'affaires par Univers", data: revenueByUniverse },
-    { title: "📦 Chiffre d'affaires par Catégorie", data: revenueByCategory },
-    { title: "👨‍👩‍👧 Chiffre d'affaires par Famille", data: revenueByFamily },
-    { title: "🛠️ Chiffre d'affaires par Spécificité", data: revenueBySpecificity },
-  ];
-
-  const transformToTreemapData = (data: SegmentationComparisonData[], selectedLevel: string) => {
+  // Transformation des données pour le Treemap
+  const transformToTreemapData = useCallback((): TreemapDataProps => {
     const labels: string[] = [];
     const parents: string[] = [];
     const revenue: number[] = [];
     const margin: number[] = [];
     const quantity: number[] = [];
 
-    // 🔹 Stocker les valeurs agrégées par niveau
-    const aggregatedData = new Map<string, { revenue: number; margin: number; quantity: number; parent: string }>();
+    // Stocker les valeurs agrégées par niveau
+    const aggregatedData = new Map<string, { 
+      revenue: number; 
+      margin: number; 
+      quantity: number; 
+      parent: string 
+    }>();
 
-    // 🌳 Hiérarchie : univers > category > family
-    data.forEach((item) => {
-        const { universe, category, family, revenue_current, margin_current, quantity_sold_current } = item;
+    // Hiérarchie : univers > category > family
+    segmentationData.forEach((item) => {
+      const { universe, category, family, revenue_current, margin_current, quantity_sold_current } = item;
 
-        // ✅ Assurer que toutes les valeurs sont bien des nombres
-        const revenueNum = Number(revenue_current) || 0;
-        const marginNum = Number(margin_current) || 0;
-        const quantityNum = Number(quantity_sold_current) || 0;
+      // Assurer des valeurs numériques valides
+      const revenueNum = Number(revenue_current) || 0;
+      const marginNum = Number(margin_current) || 0;
+      const quantityNum = Number(quantity_sold_current) || 0;
 
-        // 🔹 Univers (Niveau 1 - Root)
-        if (universe) {
-            if (!aggregatedData.has(universe)) {
-                aggregatedData.set(universe, { revenue: 0, margin: 0, quantity: 0, parent: "" });
-            }
-            const entry = aggregatedData.get(universe)!;
-            entry.revenue += revenueNum;
-            entry.margin += marginNum;
-            entry.quantity += quantityNum;
+      // Univers (Niveau 1 - Root)
+      if (universe) {
+        if (!aggregatedData.has(universe)) {
+          aggregatedData.set(universe, { revenue: 0, margin: 0, quantity: 0, parent: "" });
         }
+        const entry = aggregatedData.get(universe)!;
+        entry.revenue += revenueNum;
+        entry.margin += marginNum;
+        entry.quantity += quantityNum;
+      }
 
-        // 🔹 Catégorie (Niveau 2 - Parent = Univers)
-        if (category) {
-            if (!aggregatedData.has(category)) {
-                aggregatedData.set(category, { revenue: 0, margin: 0, quantity: 0, parent: universe });
-            }
-            const entry = aggregatedData.get(category)!;
-            entry.revenue += revenueNum;
-            entry.margin += marginNum;
-            entry.quantity += quantityNum;
+      // Catégorie (Niveau 2 - Parent = Univers)
+      if (category) {
+        if (!aggregatedData.has(category)) {
+          aggregatedData.set(category, { revenue: 0, margin: 0, quantity: 0, parent: universe });
         }
+        const entry = aggregatedData.get(category)!;
+        entry.revenue += revenueNum;
+        entry.margin += marginNum;
+        entry.quantity += quantityNum;
+      }
 
-        // 🔹 Famille (Niveau 3 - Parent = Catégorie)
-        if (family) {
-            if (!aggregatedData.has(family)) {
-                aggregatedData.set(family, { revenue: 0, margin: 0, quantity: 0, parent: category });
-            }
-            const entry = aggregatedData.get(family)!;
-            entry.revenue += revenueNum;
-            entry.margin += marginNum;
-            entry.quantity += quantityNum;
+      // Famille (Niveau 3 - Parent = Catégorie)
+      if (family) {
+        if (!aggregatedData.has(family)) {
+          aggregatedData.set(family, { revenue: 0, margin: 0, quantity: 0, parent: category });
         }
+        const entry = aggregatedData.get(family)!;
+        entry.revenue += revenueNum;
+        entry.margin += marginNum;
+        entry.quantity += quantityNum;
+      }
     });
 
-    // 🚀 Convertir en format lisible par le treemap
+    // Convertir les données agrégées en format pour le treemap
     aggregatedData.forEach((value, key) => {
-        labels.push(key);
-        parents.push(value.parent);
-        revenue.push(value.revenue);
-        margin.push(value.margin);
-        quantity.push(value.quantity);
+      labels.push(key);
+      parents.push(value.parent);
+      revenue.push(value.revenue);
+      margin.push(value.margin);
+      quantity.push(value.quantity);
     });
 
     return { labels, parents, revenue, margin, quantity };
-};
+  }, [segmentationData]);
+
+  // Configuration des segments à afficher
+  const segmentConfigs = [
+    { type: "universe", title: "🌍 Chiffre d'affaires par Univers", emoji: "🌍" },
+    { type: "category", title: "📦 Chiffre d'affaires par Catégorie", emoji: "📦" },
+    { type: "family", title: "👨‍👩‍👧 Chiffre d'affaires par Famille", emoji: "👨‍👩‍👧" },
+    { type: "specificity", title: "🛠️ Chiffre d'affaires par Spécificité", emoji: "🛠️" },
+  ];
+
+  // Obtention des segments agrégés pour l'affichage
+  const segmentData = segmentConfigs.map(config => ({
+    title: config.title,
+    data: aggregateByKey(config.type as keyof SegmentationComparisonData)
+  }));
+
+  // Toggle pour afficher/masquer les détails d'un tableau
+  const toggleTableDetails = (title: string) => {
+    setExpandedTables(prev => ({ ...prev, [title]: !prev[title] }));
+  };
+
+  // Gestion des états de chargement et d'erreur
+  if (loading) return <Loader message="Chargement des données de segmentation..." />;
+  if (error) return <p className="text-red-500 text-center">{error}</p>;
+  if (!segmentationData || segmentationData.length === 0)
+    return <p className="text-gray-500 text-center">Aucune donnée disponible.</p>;
 
   return (
     <div className="rounded-xl p-8 relative">
-      {/* 📌 Titre principal */}
+      {/* Titre principal */}
       <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
         📊 <span>Segmentation des Ventes</span>
       </h2>
 
-      <div className="mb-4">
-        <TreemapChart {...transformToTreemapData(segmentationData, selectedLevel)} selectedLevel={selectedLevel} />
+      {/* Graphique Treemap */}
+      <div className="mb-8">
+        <TreemapChart 
+          {...transformToTreemapData()} 
+          selectedLevel={selectedLevel}
+          onLevelChange={setSelectedLevel}
+        />
       </div>
 
-      {/* 🔹 Affichage des tableaux de segmentation */}
-      <div className="space-y-4">
-        {segments.map(({ title, data }) => (
+      {/* Tableaux de segmentation */}
+      <div className="space-y-6">
+        {segmentData.map(({ title, data }) => (
           <div key={title} className="bg-gray-50 shadow-md rounded-lg p-4 relative border border-gray-200">
-            {/* 🔹 Bouton "Afficher/Masquer" spécifique à chaque tableau */}
+            {/* Bouton toggle */}
             <button
               className="absolute top-4 right-4 bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-teal-600 transition flex items-center gap-2"
-              onClick={() => setExpandedTables((prev) => ({ ...prev, [title]: !prev[title] }))}
+              onClick={() => toggleTableDetails(title)}
             >
-              {expandedTables[title] ? "Masquer" : "Afficher"} détails {expandedTables[title] ? <FaChevronUp /> : <FaChevronDown />}
+              {expandedTables[title] ? "Masquer" : "Afficher"} détails 
+              {expandedTables[title] ? <FaChevronUp /> : <FaChevronDown />}
             </button>
 
-            {/* 📌 Titre du tableau */}
+            {/* Titre du tableau */}
             <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
 
-            {/* 🔹 Contenu du tableau avec animation */}
+            {/* Contenu du tableau avec animation */}
             <AnimatePresence>
               {expandedTables[title] && (
                 <motion.div
