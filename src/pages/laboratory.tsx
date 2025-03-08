@@ -1,10 +1,11 @@
 import React, { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useFilterContext } from "@/contexts/FilterContext";
-import SelectedLabsList from "@/components/laboratory/SelectedLabsList";
-import LabDropdown from "@/components/laboratory/LabDropdown";
-import { tabItems } from "@/components/tabItems";
-import Tabs from "@/components/ui/Tabs";
+import { tabItems } from "@/components/common/layout/tabItems";
+import Tabs from "@/components/common/layout/Tabs";
+import LabDropdown from "@/components/features/laboratory/overview/LabDropdown";
+import SelectedLabsList from "@/components/features/laboratory/overview/SelectedLabsList";
+
 
 const LaboratoryPage: React.FC = () => {
   const router = useRouter();

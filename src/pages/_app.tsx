@@ -4,7 +4,7 @@ import { SegmentationProvider } from "@/contexts/segmentation/SegmentationContex
 import { FilterProvider } from "@/contexts/FilterContext";
 import { useEffect } from "react";
 import { PharmacyProvider } from "@/contexts/segmentation/PharmaciesContext";
-import Layout from "@/components/layout/Layout";
+import Layout from "@/components/common/layout/Layout";
 
 export default function MyApp({ Component, pageProps }: AppProps) {
 
