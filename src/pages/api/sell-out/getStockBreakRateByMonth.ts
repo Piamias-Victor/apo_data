@@ -24,17 +24,11 @@ export default async function handler(
   try {
     const { filters } = req.body;
 
-    if (
-      !filters ||
-      (!filters.pharmacies.length &&
-        !filters.distributors.length &&
-        !filters.brands.length &&
-        !filters.universes.length &&
-        !filters.categories.length &&
-        !filters.families.length &&
-        !filters.specificities.length)
-    ) {
-      return res.status(400).json({ error: "Filtres invalides" });
+    console.log("📌 API `getStockBreakDataByMonth` appelée !");
+    console.log("📌 Requête reçue :", JSON.stringify(filters, null, 2));
+
+    if (!filters || !filters.dateRange || !filters.comparisonDateRange) {
+      return res.status(400).json({ error: "Filtres ou périodes invalides" });
     }
 
     // Requête SQL optimisée
@@ -54,7 +48,8 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
-        AND ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre sur les codes 13
+        AND ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
 ),
 products_with_breaks AS (
     -- 🟠 Sélectionner toutes les commandes avec leurs quantités et ruptures
@@ -85,7 +80,7 @@ products_with_breaks AS (
     EXISTS (
         SELECT 1 FROM data_productorder dpo2 WHERE dpo2.order_id = dpo.order_id AND dpo2.qte_r > 0
     )
-    AND ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[])) -- 🏥 Ajout du filtre des pharmacies
+    AND ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[])) -- 🏥 Ajout du filtre des pharmacies
     GROUP BY month
 )
 
@@ -100,6 +95,11 @@ FROM products_with_breaks
 ORDER BY month ASC;
     `;
 
+    // ✅ Vérification que les EAN13 sont bien des chaînes de caractères
+    const ean13Products = filters.ean13Products.length > 0 ? filters.ean13Products.map(String) : null;
+
+    console.log("📌 Envoi des filtres SQL avec codes 13 :", ean13Products);
+
     // Exécution de la requête SQL avec les filtres
     const { rows } = await pool.query<StockBreakRateData>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
@@ -111,6 +111,7 @@ ORDER BY month ASC;
       filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
       filters.specificities.length > 0 ? filters.specificities : null,
+      ean13Products, // ✅ Ajout du filtre par code 13
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // ✅ Ajout du filtre des pharmacies
     ]);
 

@@ -34,7 +34,8 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.specificities.length)
+        !filters.specificities.length &&
+        !filters.ean13Products.length) // ✅ Ajout du filtre EAN13
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
@@ -44,31 +45,32 @@ WITH filtered_products AS (
     SELECT dgp.code_13_ref, dgp.tva_percentage
     FROM data_globalproduct dgp
     WHERE 
-        ($1::text[] IS NULL OR dgp.lab_distributor = ANY($1))  -- 🔹 Laboratoires
-        AND ($2::text[] IS NULL OR dgp.range_name = ANY($2))    -- 🔹 Gammes
-        AND ($3::text[] IS NULL OR dgp.universe = ANY($3))      -- 🔹 Univers (Segmentation)
-        AND ($4::text[] IS NULL OR dgp.category = ANY($4))      -- 🔹 Catégories (Segmentation)
-        AND ($5::text[] IS NULL OR dgp.sub_category = ANY($5))  -- 🔹 Sous-catégories (Segmentation)
-        AND ($6::text[] IS NULL OR dgp.brand_lab = ANY($6))     -- 🔹 Marques
-        AND ($7::text[] IS NULL OR dgp.family = ANY($7))        -- 🔹 Familles (Segmentation)
-        AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))    -- 🔹 Sous-familles (Segmentation)
-        AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))   -- 🔹 Spécificités (Segmentation)
+        ($1::text[] IS NULL OR dgp.lab_distributor = ANY($1))  
+        AND ($2::text[] IS NULL OR dgp.range_name = ANY($2))    
+        AND ($3::text[] IS NULL OR dgp.universe = ANY($3))      
+        AND ($4::text[] IS NULL OR dgp.category = ANY($4))      
+        AND ($5::text[] IS NULL OR dgp.sub_category = ANY($5))  
+        AND ($6::text[] IS NULL OR dgp.brand_lab = ANY($6))     
+        AND ($7::text[] IS NULL OR dgp.family = ANY($7))        
+        AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))    
+        AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))   
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10))  -- ✅ Ajout du filtre sur les codes EAN13
 ),
 
 purchase_data AS (
     SELECT 
         TO_CHAR(dor.sent_date, 'YYYY-MM') AS month,
-        SUM(dpo.qte + dpo.qte_ug) AS purchase_quantity,  -- ✅ Ajout des urgences
+        SUM(dpo.qte + dpo.qte_ug) AS purchase_quantity,  
         SUM((dpo.qte + dpo.qte_ug) * COALESCE(
             (SELECT AVG(dis.weighted_average_price) 
              FROM data_inventorysnapshot dis 
              WHERE dis.product_id = dip.id), 0
-        )) AS purchase_amount  -- ✅ Ajustement du montant d'achat
+        )) AS purchase_amount  
     FROM data_productorder dpo
     JOIN data_order dor ON dpo.order_id = dor.id
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
+    WHERE ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
     GROUP BY month
 )
 
@@ -95,12 +97,12 @@ FROM (
     JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
     GROUP BY month
 
     UNION ALL
 
-    -- 🔹 ACHATS (SELL-IN) - Utilisation de la sous-requête pour éviter les doublons
+    -- 🔹 ACHATS (SELL-IN)
     SELECT 
         month,
         0 AS total_quantity,
@@ -118,13 +120,14 @@ ORDER BY month ASC;
     const { rows } = await pool.query<SalesData>(query, [
       filters.distributors.length > 0 ? filters.distributors : null,
       filters.ranges.length > 0 ? filters.ranges : null,
-      filters.universes.length > 0 ? filters.universes : null, // ✅ Univers ajouté
-      filters.categories.length > 0 ? filters.categories : null, // ✅ Catégories ajoutées
+      filters.universes.length > 0 ? filters.universes : null,
+      filters.categories.length > 0 ? filters.categories : null,
       filters.subCategories.length > 0 ? filters.subCategories : null,
       filters.brands.length > 0 ? filters.brands : null,
-      filters.families.length > 0 ? filters.families : null, // ✅ Familles ajoutées
+      filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
-      filters.specificities.length > 0 ? filters.specificities : null, // ✅ Spécificités ajoutées
+      filters.specificities.length > 0 ? filters.specificities : null,
+      filters.ean13Products.length > 0 ? filters.ean13Products.map(String) : null, // ✅ Ajout du filtre Code 13
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null, // ✅ Correction: Assure un tableau d'UUID
     ]);
 

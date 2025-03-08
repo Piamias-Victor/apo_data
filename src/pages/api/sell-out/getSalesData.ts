@@ -30,7 +30,8 @@ export default async function handler(
         !filters.universes.length &&
         !filters.categories.length &&
         !filters.families.length &&
-        !filters.specificities.length)
+        !filters.specificities.length &&
+        !filters.ean13Products.length) // ✅ Ajout du filtre EAN13
     ) {
       return res.status(400).json({ error: "Filtres invalides" });
     }
@@ -55,6 +56,7 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10)) -- ✅ Ajout du filtre sur les codes EAN13
 ),
 
 sales_data AS (
@@ -72,8 +74,8 @@ sales_data AS (
     JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $11 AND $12 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $12 AND $13 
 
     UNION ALL
 
@@ -91,8 +93,8 @@ sales_data AS (
     JOIN data_inventorysnapshot dis ON ds.product_id = dis.id
     JOIN data_internalproduct dip ON dis.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dip.pharmacy_id = ANY($10::uuid[]))
-      AND ds.date BETWEEN $13 AND $14 
+    WHERE ($11::uuid[] IS NULL OR dip.pharmacy_id = ANY($11::uuid[]))
+      AND ds.date BETWEEN $14 AND $15 
 ),
 
 purchase_data AS (
@@ -111,8 +113,8 @@ purchase_data AS (
     JOIN data_order dor ON dpo.order_id = dor.id
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $11 AND $12 
+    WHERE ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+      AND dor.sent_date BETWEEN $12 AND $13 
 
     UNION ALL
 
@@ -131,8 +133,8 @@ purchase_data AS (
     JOIN data_order dor ON dpo.order_id = dor.id
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
-    WHERE ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-      AND dor.sent_date BETWEEN $13 AND $14 
+    WHERE ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+      AND dor.sent_date BETWEEN $14 AND $15 
 )
 
 SELECT 
@@ -161,6 +163,7 @@ ORDER BY type ASC;
       filters.families.length > 0 ? filters.families : null,
       filters.subFamilies.length > 0 ? filters.subFamilies : null,
       filters.specificities.length > 0 ? filters.specificities : null,
+      filters.ean13Products.length > 0 ? filters.ean13Products.map(String) : null, // ✅ Ajout du filtre Code 13
       filters.pharmacies.length > 0 ? filters.pharmacies.map(id => id) : null,
       filters.dateRange[0], filters.dateRange[1], // Période principale
       filters.comparisonDateRange[0], filters.comparisonDateRange[1], // Période de comparaison

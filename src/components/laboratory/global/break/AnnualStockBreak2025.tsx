@@ -1,141 +1,82 @@
-import React, { useEffect, useState } from "react";
+// AnnualStockBreak2025.tsx
+import React from "react";
 import DataBlock from "../DataBlock";
 import { useFilterContext } from "@/contexts/FilterContext";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { BreakMetrics } from "@/hooks/useStockBreakData";
+import PeriodSelector from "@/components/ui/PeriodSelector";
+import SummaryCard from "@/components/ui/SummaryCard";
 
-// Interface des données récupérées
-interface StockBreakRateData {
-  total_products_ordered: number;
-  stock_break_products: number;
-  stock_break_rate: number;
-  stock_break_amount: number;
-  type: "current" | "comparison";
+interface AnnualStockBreakProps {
+  currentPeriodData: BreakMetrics;
+  comparisonPeriodData: BreakMetrics;
 }
 
-const AnnualStockBreak2025: React.FC = () => {
+const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
+  currentPeriodData,
+  comparisonPeriodData
+}) => {
   const { filters } = useFilterContext();
   const { dateRange, comparisonDateRange } = filters;
 
-  // 🟢 Stocker les données API
-  const [stockBreakData, setStockBreakData] = useState<StockBreakRateData[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // 📌 Appel API pour récupérer les ruptures de stock
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch("/api/sell-out/getStockBreakRate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filters }),
-        });
-
-        if (!response.ok) throw new Error("Erreur API");
-
-        const result = await response.json();
-        setStockBreakData(result.stockBreakData || []);
-      } catch (err) {
-        setError("Impossible de récupérer les données.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [filters]); // ⏳ Rafraîchissement à chaque changement de filtre
-
-  // 🔵 Extraire les données des périodes
-  const currentPeriod = stockBreakData.find((data) => data.type === "current");
-  const comparisonPeriod = stockBreakData.find((data) => data.type === "comparison");
-
-  // 🔹 Formatage des dates
-  const formatDate = (date: Date | null) =>
-    date ? format(date, "dd/MM/yy", { locale: fr }) : "--/--/--";
-
   return (
     <div className="p-8 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-300 relative">
-      {/* 📊 Titre & Dates */}
+      {/* Titre & Dates */}
       <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-300 pb-5 mb-6 relative z-10">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           📊 Taux de Rupture
         </h2>
 
-        {/* 🔹 Bloc des périodes */}
-        <div className="flex justify-center md:justify-start gap-8 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-white shadow-sm relative z-10">
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold uppercase">Période</span>
-            <span className="text-sm font-medium">{formatDate(dateRange[0])} → {formatDate(dateRange[1])}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-semibold uppercase">Comparaison</span>
-            <span className="text-sm font-medium">{formatDate(comparisonDateRange[0])} → {formatDate(comparisonDateRange[1])}</span>
-          </div>
-        </div>
+        {/* Bloc des périodes */}
+        <PeriodSelector 
+          currentDateRange={dateRange} 
+          comparisonDateRange={comparisonDateRange} 
+          bgColor="bg-red-500"
+          hoverColor="hover:bg-red-600"
+        />
       </div>
 
-      {/* 🟢 Affichage du statut de chargement / erreur */}
-      {loading ? (
-        <p className="text-center text-gray-800 mt-6">⏳ Chargement des données...</p>
-      ) : error ? (
-        <p className="text-center text-red-500 mt-6">{error}</p>
-      ) : (
-        <div className="grid grid-cols-4 gap-6 mt-6 relative z-10">
-          {/* 🔴 Produits commandés */}
-          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-              📦 Produits Commandés
-            </h3>
-            <DataBlock 
-              title="Total" 
-              value={currentPeriod?.total_products_ordered || 0} 
-              previousValue={comparisonPeriod?.total_products_ordered || 0} 
-            />
-          </div>
+      {/* Contenu */}
+      <div className="grid grid-cols-4 gap-6 mt-6 relative z-10">
+        {/* Produits commandés */}
+        <SummaryCard title="📦 Produits Commandés" icon={null} iconColor="text-red-600">
+          <DataBlock 
+            title="Total" 
+            value={currentPeriodData.productOrder} 
+            previousValue={comparisonPeriodData.productOrder} 
+          />
+        </SummaryCard>
 
-          {/* 🚨 Produits en rupture */}
-          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-              ❌ Produits en Rupture
-            </h3>
-            <DataBlock 
-              title="Total" 
-              value={currentPeriod?.stock_break_products || 0} 
-              previousValue={comparisonPeriod?.stock_break_products || 0} 
-            />
-          </div>
+        {/* Produits en rupture */}
+        <SummaryCard title="❌ Produits en Rupture" icon={null} iconColor="text-red-600">
+          <DataBlock 
+            title="Total" 
+            value={currentPeriodData.breakProduct} 
+            previousValue={comparisonPeriodData.breakProduct} 
+          />
+        </SummaryCard>
 
-          {/* 📉 Taux de Rupture */}
-          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-              📊 Taux de Rupture
-            </h3>
-            <DataBlock 
-              title="Taux %" 
-              value={currentPeriod?.stock_break_rate || 0} 
-              previousValue={comparisonPeriod?.stock_break_rate || 0} 
-              isPercentage 
-            />
-          </div>
+        {/* Taux de Rupture */}
+        <SummaryCard title="📊 Taux de Rupture" icon={null} iconColor="text-red-600">
+          <DataBlock 
+            title="Taux %" 
+            value={currentPeriodData.breakRate} 
+            previousValue={comparisonPeriodData.breakRate} 
+            isPercentage 
+          />
+        </SummaryCard>
 
-          {/* 💰 Montant des Ruptures */}
-          <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-            <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-              💰 Montant Rupture (€)
-            </h3>
-            <DataBlock 
-              title="Montant" 
-              value={currentPeriod?.stock_break_amount || 0} 
-              previousValue={comparisonPeriod?.stock_break_amount || 0} 
-              isCurrency 
-            />
-          </div>
-        </div>
-      )}
+        {/* Montant des Ruptures */}
+        <SummaryCard title="💰 Montant Rupture (€)" icon={null} iconColor="text-red-600">
+          <DataBlock 
+            title="Montant" 
+            value={currentPeriodData.breakAmount} 
+            previousValue={comparisonPeriodData.breakAmount} 
+            isCurrency 
+          />
+        </SummaryCard>
+      </div>
     </div>
   );
 };

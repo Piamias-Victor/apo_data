@@ -53,6 +53,8 @@ const SegmentationOverview: React.FC = () => {
 
         const data = await response.json();
 
+        console.log('data', data);
+
         setSegmentationData(data.segmentationData);
       } catch (err) {
         setError("Impossible de récupérer les données.");
@@ -64,6 +66,8 @@ const SegmentationOverview: React.FC = () => {
 
     fetchSegmentationData();
   }, [filters]);
+
+  console.log('segmentationData', segmentationData);
 
   if (loading) return <p className="text-gray-500 text-center">⏳ Chargement des données...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;

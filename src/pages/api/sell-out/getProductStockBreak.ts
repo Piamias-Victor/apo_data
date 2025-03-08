@@ -44,6 +44,7 @@ WITH filtered_products AS (
         AND ($7::text[] IS NULL OR dgp.family = ANY($7))
         AND ($8::text[] IS NULL OR dgp.sub_family = ANY($8))
         AND ($9::text[] IS NULL OR dgp.specificity = ANY($9))
+        AND ($10::text[] IS NULL OR dgp.code_13_ref = ANY($10))
 ),
 
 stock_break_data AS (
@@ -78,8 +79,8 @@ stock_break_data AS (
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
     WHERE 
-        ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-        AND dor.sent_date BETWEEN $11 AND $12
+        ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+        AND dor.sent_date BETWEEN $12 AND $13
         AND dpo.qte_r > 0  -- ✅ NE GARDER QUE LES COMMANDES RÉCEPTIONNÉES
     GROUP BY dip.code_13_ref_id
 
@@ -116,8 +117,8 @@ stock_break_data AS (
     JOIN data_internalproduct dip ON dpo.product_id = dip.id
     JOIN filtered_products fp ON dip.code_13_ref_id = fp.code_13_ref
     WHERE 
-        ($10::uuid[] IS NULL OR dor.pharmacy_id = ANY($10::uuid[]))
-        AND dor.sent_date BETWEEN $13 AND $14
+        ($11::uuid[] IS NULL OR dor.pharmacy_id = ANY($11::uuid[]))
+        AND dor.sent_date BETWEEN $14 AND $15
         AND dpo.qte_r > 0  -- ✅ NE GARDER QUE LES COMMANDES RÉCEPTIONNÉES
     GROUP BY dip.code_13_ref_id
 )
@@ -148,6 +149,7 @@ ORDER BY sb.type ASC;
       filters.families.length ? filters.families : null,
       filters.subFamilies.length ? filters.subFamilies : null,
       filters.specificities.length ? filters.specificities : null,
+      filters.ean13Products.length ? filters.ean13Products.map(String) : null, // ✅ Ajout du filtre `code_13_ref`
       filters.pharmacies.length ? filters.pharmacies.map(id => id) : null,
       filters.dateRange[0], filters.dateRange[1],
       filters.comparisonDateRange[0], filters.comparisonDateRange[1],

@@ -37,32 +37,33 @@ const sections = [
 const HomePage: React.FC = () => {
   return (
     <div className="max-w-5xl mx-auto p-8">
-      {/* 🔹 Titre principal */}
-      <motion.h1
+      <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-4xl font-extrabold text-gray-800 text-center"
+        className="mb-10 text-center"
       >
-        📊 Tableau de Bord ApoData
-      </motion.h1>
+        <h1 className="text-4xl font-extrabold text-gray-800">
+          📊 Tableau de Bord ApoData
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Analysez les ventes, performances et tendances du marché pharmaceutique.
+        </p>
+      </motion.header>
 
-      <p className="text-center text-gray-600 mt-2">
-        Analysez les ventes, performances et tendances du marché pharmaceutique.
-      </p>
-
-      {/* 🔹 Grille des sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {sections.map((section, index) => (
           <motion.div
-            key={index}
+            key={section.name}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             className={`p-6 rounded-xl shadow-lg border border-gray-300 hover:shadow-xl transition-all cursor-pointer ${section.bg}`}
           >
             <Link href={section.link} className="flex items-center space-x-4">
-              {section.icon}
+              <div className="flex-shrink-0">
+                {section.icon}
+              </div>
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">{section.name}</h2>
                 <p className="text-sm text-gray-600">{section.description}</p>
