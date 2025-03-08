@@ -6,54 +6,62 @@ import { tabItems } from "@/components/common/layout/tabItems";
 import LabDropdown from "@/components/features/laboratory/overview/LabDropdown";
 import SelectedLabsList from "@/components/features/laboratory/overview/SelectedLabsList";
 
-// Transitions et animations
+// Transitions et animations améliorées avec des courbes d'accélération plus douces
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
     opacity: 1,
     transition: {
       when: "beforeChildren",
-      staggerChildren: 0.1
+      staggerChildren: 0.08,
+      ease: "easeOut",
+      duration: 0.7
     }
   },
   exit: { 
     opacity: 0,
-    transition: { duration: 0.2 }
+    transition: { 
+      duration: 0.3,
+      ease: "easeInOut" 
+    }
   }
 };
 
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: { y: 15, opacity: 0 },
   visible: { 
     y: 0, 
     opacity: 1,
     transition: { 
       type: "spring", 
-      stiffness: 100 
+      stiffness: 80,
+      damping: 12
     }
   }
 };
 
-// Composant pour l'onglet actif avec l'indication
+// Composant pour l'onglet actif avec une animation plus fluide
 const TabButton = ({ isActive, onClick, label }) => (
-  <button
+  <motion.button
     onClick={onClick}
-    className={`px-5 py-3 relative transition-all rounded-lg text-sm font-medium ${
+    className={`px-5 py-3 relative transition-all rounded-xl text-sm font-medium ${
       isActive 
-        ? "text-teal-700 bg-teal-50" 
-        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+        ? "text-teal-700 bg-gradient-to-r from-teal-50/80 to-teal-50/50 backdrop-blur-sm" 
+        : "text-gray-500 hover:text-gray-800 hover:bg-gray-50/50"
     }`}
+    whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+    whileTap={{ scale: 0.97, transition: { duration: 0.1 } }}
   >
-    {label}
+    <span className="relative z-10">{label}</span>
     {isActive && (
       <motion.div
         layoutId="activeTab"
-        className="absolute bottom-0 left-0 right-0 h-0.5 bg-teal-500"
+        className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-50/80 to-teal-50/50 backdrop-blur-sm"
         initial={false}
-        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
       />
     )}
-  </button>
+  </motion.button>
 );
 
 const LaboratoryPage: React.FC = () => {
@@ -63,11 +71,11 @@ const LaboratoryPage: React.FC = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Afficher temporairement un effet de chargement pour améliorer l'UX
+  // Animation de chargement
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 500);
+    }, 600);
     return () => clearTimeout(timer);
   }, []);
 
@@ -84,18 +92,23 @@ const LaboratoryPage: React.FC = () => {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="min-h-screen bg-gray-50 pt-8 pb-12 px-6"
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-8 pb-12 px-6"
     >
       <div className="max-w-7xl mx-auto">
         <motion.div
           variants={itemVariants}
-          className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-6"
+          className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200/60 p-8 mb-6"
         >
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          <motion.h1 
+            className="text-2xl font-bold mb-6"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
             <span className="bg-gradient-to-r from-teal-600 to-blue-500 bg-clip-text text-transparent">
               Tableau de bord laboratoire
             </span>
-          </h1>
+          </motion.h1>
           
           <div className="mb-8 max-w-3xl">
             <LabDropdown />
@@ -110,8 +123,19 @@ const LaboratoryPage: React.FC = () => {
                 className="flex justify-center py-12"
               >
                 <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 border-4 border-teal-500 border-solid rounded-full animate-spin border-t-transparent"></div>
-                  <p className="mt-4 text-sm text-gray-500">Chargement des données...</p>
+                  <motion.div 
+                    className="w-10 h-10 rounded-full border-3 border-teal-500 border-t-transparent"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  />
+                  <motion.p 
+                    className="mt-4 text-sm text-gray-500"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: [0, 1, 0.5, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    Chargement des données...
+                  </motion.p>
                 </div>
               </motion.div>
             ) : (
@@ -119,6 +143,7 @@ const LaboratoryPage: React.FC = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
               >
                 <SelectedLabsList />
               </motion.div>
@@ -127,9 +152,9 @@ const LaboratoryPage: React.FC = () => {
         </motion.div>
 
         <motion.div variants={itemVariants} className="mt-10">
-          {/* Tabs with animation */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="flex space-x-1 border-b border-gray-200 px-4 bg-gray-50/70">
+          {/* Tabs with improved animation */}
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200/60 overflow-hidden">
+            <div className="flex space-x-1 border-b border-gray-200/70 px-4 py-1 bg-gray-50/50">
               {tabItems.map((tab, index) => (
                 <TabButton
                   key={index}
@@ -143,10 +168,10 @@ const LaboratoryPage: React.FC = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTabIndex}
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
                 className="p-4"
               >
                 {tabItems[activeTabIndex].content}
