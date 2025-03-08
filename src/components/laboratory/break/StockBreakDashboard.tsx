@@ -1,29 +1,35 @@
+// components/laboratory/break/StockBreakDashboard.tsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useFilterContext } from "@/contexts/FilterContext";
-import TopStockBreakProducts from "./TopStockBreakProducts";
 import ProductBreakTable from "./ProductBreakTable";
 import StockBreakDataByPharmacy from "../global/pharmacies/StockBreakDataByPharmacy";
+import SectionTitle from "@/components/ui/SectionTitle";
+import Separator from "@/components/ui/Separator";
+import Loader from "@/components/ui/Loader";
+import TopStockBreakProducts from "./TopStockBreakProducts";
 
 interface ProductStockBreakData {
   code_13_ref: string;
   product_name: string;
-  stock_break_quantity: number;
-  stock_break_amount: number;
+  stock_break_products: number; // ❌ Quantité en Rupture
+  stock_break_amount: number;   // 💰 Montant des Ruptures (€)
   type: "current" | "comparison";
   previous?: {
-    stock_break_quantity: number;
+    stock_break_products: number;
     stock_break_amount: number;
   };
 }
 
+/**
+ * Dashboard principal pour l'analyse des ruptures de stock
+ */
 const StockBreakDashboard: React.FC = () => {
   const { filters } = useFilterContext();
   const [products, setProducts] = useState<ProductStockBreakData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 📌 Fetch des données
   useEffect(() => {
     const fetchStockBreaks = async () => {
       setLoading(true);
@@ -41,10 +47,15 @@ const StockBreakDashboard: React.FC = () => {
         const data = await response.json();
 
         // Regroupement des données actuelles et comparatives
-        const mergedProducts = data.stockBreakData.reduce((acc: ProductStockBreakData[], product) => {
+        const mergedProducts = data.stockBreakData.reduce((acc: ProductStockBreakData[], product: any) => {
           if (product.type === "current") {
-            const comparison = data.stockBreakData.find(p => p.code_13_ref === product.code_13_ref && p.type === "comparison");
-            acc.push({ ...product, previous: comparison });
+            const comparison = data.stockBreakData.find(
+              (p: any) => p.code_13_ref === product.code_13_ref && p.type === "comparison"
+            );
+            acc.push({ 
+              ...product, 
+              previous: comparison || undefined 
+            });
           }
           return acc;
         }, []);
@@ -60,60 +71,40 @@ const StockBreakDashboard: React.FC = () => {
     fetchStockBreaks();
   }, [filters]);
 
+  // États de chargement et d'erreur
+  if (loading) return <Loader message="Chargement des données de rupture..." />;
+  if (error) return <p className="text-red-500 text-center">{error}</p>;
+
   return (
     <div className="max-w-8xl mx-auto p-8 space-y-16">
-      {/* 📊 Titre principal */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-center"
-      >
-        <h2 className="text-4xl font-extrabold text-red-600 tracking-wide flex items-center justify-center gap-3">
-          <span className="text-yellow-500">🚨</span> Suivi des Ruptures
-        </h2>
-        <p className="text-gray-600 mt-2 text-lg">
-          Analyse des ruptures et produits impactés 🔍
-        </p>
-      </motion.div>
+      {/* Titre principal */}
+      <SectionTitle 
+        title="Suivi des Ruptures"
+        description="Analyse des ruptures et produits impactés 🔍"
+        emoji="🚨"
+        color="text-red-600"
+      />
 
-      {/* 🔹 Loader & Erreur */}
-      {loading && <p className="text-gray-500 text-center">⏳ Chargement des données...</p>}
-      {error && <p className="text-red-500 text-center">{error}</p>}
+      {/* Top Produits en Rupture */}
+      <TopStockBreakProducts products={products} />
 
-      {!loading && !error && (
-        <>
-          {/* 🚨 Top Produits en Rupture */}
-          <TopStockBreakProducts products={products} />
+      {/* Séparateur */}
+      <Separator from="red-400" via="orange-400" to="yellow-400" />
 
-          {/* 🎨 Séparateur stylisé */}
-          <motion.div
-            className="mt-12 border-t-4 border-gradient-to-r from-red-400 via-orange-400 to-yellow-400 mx-auto w-3/4"
-            initial={{ width: 0 }}
-            animate={{ width: "75%" }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          ></motion.div>
+      {/* Titre secondaire */}
+      <SectionTitle 
+        title="Détail des Produits en Rupture"
+        description="Vue détaillée des stocks en rupture 📊"
+        emoji="📋"
+        color="text-red-600"
+        emojiColor="text-blue-500"
+      />
 
-          {/* 📊 Tableau détaillé des Produits en Rupture */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-center"
-          >
-            <h2 className="text-3xl font-extrabold text-red-600 tracking-wide flex items-center justify-center gap-3">
-              <span className="text-blue-500">📋</span> Détail des Produits en Rupture
-            </h2>
-            <p className="text-gray-600 mt-2 text-lg">
-              Vue détaillée des stocks en rupture 📊
-            </p>
-          </motion.div>
+      {/* Tableau détaillé */}
+      <ProductBreakTable products={products} />
 
-          <ProductBreakTable products={products} />
-
-          <StockBreakDataByPharmacy />
-        </>
-      )}
+      {/* Analyse par pharmacie */}
+      <StockBreakDataByPharmacy />
     </div>
   );
 };
