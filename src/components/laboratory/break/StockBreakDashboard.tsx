@@ -104,7 +104,7 @@ const StockBreakDashboard: React.FC = () => {
       <ProductBreakTable products={products} />
 
       {/* Analyse par pharmacie */}
-      <StockBreakDataByPharmacy />
+      {/* <StockBreakDataByPharmacy /> */}
     </div>
   );
 };

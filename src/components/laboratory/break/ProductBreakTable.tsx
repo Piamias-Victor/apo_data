@@ -7,6 +7,7 @@ import ProductBreakTableRow from "./ProductBreakTableRow";
 import SortableTableHeader from "@/components/ui/SortableTableHeader";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import ProductBreakChart from "./ProductBreakChart";
+import { useFilterContext } from "@/contexts/FilterContext";
 
 interface ProductStockBreakData {
   code_13_ref: string;
@@ -32,12 +33,13 @@ interface ProductBreakTableProps {
  */
 const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
   // États locaux
+  const { filters } = useFilterContext();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortColumn, setSortColumn] = useState<keyof ProductStockBreakData>("stock_break_amount");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [productBreakData, setProductBreakData] = useState<Record<string, any>>({});
-  const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
+  const [salesStockData, setSalesStockData] = useState<Record<string, any>>({});
+  const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
 
   // Colonnes du tableau
   const columns = [
@@ -97,36 +99,40 @@ const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
       });
   }, [normalizedProducts, searchQuery, sortColumn, sortOrder]);
 
-  // Fonction pour charger les détails d'un produit
-  const toggleDetails = async (code_13_ref: string) => {
+  // Fonction pour charger les détails d'un produit - utilisant la même API que pour les ventes/stocks
+  const fetchProductDetails = async (code_13_ref: string) => {
+    if (salesStockData[code_13_ref] || loadingStockData[code_13_ref]) return;
+    
+    setLoadingStockData(prev => ({ ...prev, [code_13_ref]: true }));
+    
+    try {
+      const response = await fetch("/api/sell-out/getProductSalesAndStock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code_13_ref, pharmacies: filters.pharmacies }),
+      });
+    
+      if (!response.ok) throw new Error("Erreur lors de la récupération des données de ventes/stocks.");
+    
+      const data = await response.json();
+      setSalesStockData(prev => ({ ...prev, [code_13_ref]: data.salesStockData }));
+    } catch (error) {
+      console.error("❌ Erreur API :", error);
+    } finally {
+      setLoadingStockData(prev => ({ ...prev, [code_13_ref]: false }));
+    }
+  };
+
+  // Fonction pour basculer l'affichage des détails
+  const toggleDetails = (code_13_ref: string) => {
     if (expandedProduct === code_13_ref) {
       setExpandedProduct(null);
       return;
     }
     
     setExpandedProduct(code_13_ref);
-    
-    // Si les données sont déjà chargées, ne pas refaire la requête
-    if (productBreakData[code_13_ref]) return;
-    
-    setLoadingDetails(prev => ({ ...prev, [code_13_ref]: true }));
-    
-    try {
-      const response = await fetch("/api/sell-out/getProductBreakDetails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code_13_ref }),
-      });
-      
-      if (!response.ok) throw new Error("Erreur de récupération des détails");
-      
-      const data = await response.json();
-      setProductBreakData(prev => ({ ...prev, [code_13_ref]: data.breakDetails }));
-    } catch (err) {
-      console.error("Erreur lors de la récupération des détails:", err);
-    } finally {
-      setLoadingDetails(prev => ({ ...prev, [code_13_ref]: false }));
-    }
+    // Charger les données si nécessaire
+    fetchProductDetails(code_13_ref);
   };
 
   return (
@@ -150,14 +156,35 @@ const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
       {filteredProducts.length > 0 ? (
         <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
           <table className="w-full border-collapse rounded-lg table-auto">
-            <SortableTableHeader
-              columns={columns.slice(0, -1)}
-              sortColumn={sortColumn}
-              sortOrder={sortOrder}
-              onSort={handleSort}
-              headerBgColor="bg-red-500"
-              headerHoverColor="hover:bg-red-600"
-            />
+            {/* En-tête du tableau avec la colonne Détails */}
+            <thead>
+              <tr className="bg-red-500 text-white text-md">
+                {columns.slice(0, -1).map(column => (
+                  <th
+                    key={column.key}
+                    className="p-4 cursor-pointer transition hover:bg-red-600"
+                    onClick={() => handleSort(column.key)}
+                  >
+                    <div className="flex justify-center items-center gap-2">
+                      {column.label}
+                      {sortColumn === column.key ? (
+                        sortOrder === "asc" ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        )
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 8-6 6-6-6"/><path d="m18 16-6-6-6 6"/></svg>
+                      )}
+                    </div>
+                  </th>
+                ))}
+                {/* Ajout explicite de la colonne Détails */}
+                <th className="p-4 text-center">
+                  Détails
+                </th>
+              </tr>
+            </thead>
             
             <tbody className="text-sm">
               {filteredProducts.map((product) => (
@@ -173,11 +200,11 @@ const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
                   {expandedProduct === product.code_13_ref && (
                     <tr>
                       <td colSpan={columns.length} className="p-4 bg-red-50 text-center">
-                        {loadingDetails[product.code_13_ref] ? (
+                        {loadingStockData[product.code_13_ref] ? (
                           <p className="text-gray-500">Chargement des détails...</p>
-                        ) : productBreakData[product.code_13_ref] ? (
+                        ) : salesStockData[product.code_13_ref] ? (
                           <div className="mt-4">
-                            <ProductBreakChart breakData={productBreakData[product.code_13_ref]} />
+                            <ProductBreakChart breakData={salesStockData[product.code_13_ref]} />
                           </div>
                         ) : (
                           <p className="text-gray-500">Aucune donnée détaillée disponible</p>
