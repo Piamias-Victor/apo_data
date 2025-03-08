@@ -1,129 +1,83 @@
-import React from "react";
-import { FaPercentage, FaPlus, FaMinus } from "react-icons/fa";
-import { motion } from "framer-motion";
+import PercentageControl from "@/components/ui/PercentageControl";
+import SummaryCard from "@/components/ui/SummaryCard";
 import DataBlock from "../DataBlock";
 
+// Séparation de l'interface en sous-interfaces plus précises
+interface BreakValues {
+  productOrder: number;
+  breakProduct: number;
+  breakRate: number;
+  breakAmount: number;
+}
+
 interface ForecastStockBreakProps {
-  forecastBreakProduct: number;
-  forecastBreakRate: number;
-  forecastBreakAmount: number;
-  forecastProductOrder: number;
+  forecastValues: BreakValues;
+  previousYearValues: BreakValues;
   forecastPercentage: number;
   setForecastPercentage: (value: number) => void;
-  globalBreakProduct2024: number;
-  globalBreakRate2024: number;
-  globalBreakAmount2024: number;
-  globalProductOrder2024: number;
 }
 
 const ForecastStockBreak2025: React.FC<ForecastStockBreakProps> = ({
-  forecastBreakProduct,
-  forecastBreakRate,
-  forecastBreakAmount,
-  forecastProductOrder,
+  forecastValues,
+  previousYearValues,
   forecastPercentage,
   setForecastPercentage,
-  globalBreakProduct2024,
-  globalBreakRate2024,
-  globalBreakAmount2024,
-  globalProductOrder2024,
 }) => {
   return (
     <div className="p-8 bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-gray-300 relative">
-      {/* 📊 Titre & Évolution */}
+      {/* Titre & Contrôle du pourcentage */}
       <div className="flex flex-col md:flex-row justify-between items-center border-b border-gray-300 pb-5 mb-6 relative z-10">
         <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           🔮 Prévisions Ruptures 2025
         </h2>
 
-        {/* 🔹 Input du pourcentage de prévision */}
-        <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="relative flex items-center bg-gray-100 rounded-lg px-4 py-2 shadow-md border border-gray-300"
-        >
-          {/* ➖ Bouton de diminution */}
-          <button
-            className="bg-gray-200 hover:bg-gray-300 transition rounded-full p-2"
-            onClick={() => setForecastPercentage(prev => Math.max(prev - 1, -100))}
-          >
-            <FaMinus className="text-gray-600 text-xs" />
-          </button>
-
-          {/* 📊 Input */}
-          <div className="flex items-center mx-3">
-            <input
-              type="number"
-              className="w-14 text-center text-gray-800 bg-transparent outline-none appearance-none no-spinner font-bold"
-              placeholder="0"
-              value={forecastPercentage}
-              onChange={(e) => setForecastPercentage(parseFloat(e.target.value) || 0)}
-            />
-            <FaPercentage className="text-red-600 text-sm" />
-          </div>
-
-          {/* ➕ Bouton d'augmentation */}
-          <button
-            className="bg-gray-200 hover:bg-gray-300 transition rounded-full p-2"
-            onClick={() => setForecastPercentage(prev => Math.min(prev + 1, 100))}
-          >
-            <FaPlus className="text-gray-600 text-xs" />
-          </button>
-        </motion.div>
+        <PercentageControl 
+          value={forecastPercentage}
+          onChange={setForecastPercentage}
+          min={-100}
+          max={100}
+        />
       </div>
 
-      {/* 📦 Section des prévisions */}
+      {/* Section des prévisions */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mt-6 relative z-10">
-        {/* 🔴 Produits commandés */}
-        <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-          <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-            📦 Produits Commandés
-          </h3>
+        {/* Produits commandés */}
+        <SummaryCard title="📦 Produits Commandés" icon={null} iconColor="text-red-600">
           <DataBlock
             title="Total"
-            value={forecastProductOrder}
-            previousValue={globalProductOrder2024}
+            value={forecastValues.productOrder}
+            previousValue={previousYearValues.productOrder}
           />
-        </div>
+        </SummaryCard>
 
-        {/* 🚨 Produits en rupture */}
-        <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-          <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-            ❌ Produits en Rupture
-          </h3>
+        {/* Produits en rupture */}
+        <SummaryCard title="❌ Produits en Rupture" icon={null} iconColor="text-red-600">
           <DataBlock
             title="Total"
-            value={forecastBreakProduct}
-            previousValue={globalBreakProduct2024}
+            value={forecastValues.breakProduct}
+            previousValue={previousYearValues.breakProduct}
           />
-        </div>
+        </SummaryCard>
 
-        {/* 📉 Taux de Rupture */}
-        <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-          <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-            📊 Taux de Rupture
-          </h3>
+        {/* Taux de Rupture */}
+        <SummaryCard title="📊 Taux de Rupture" icon={null} iconColor="text-red-600">
           <DataBlock
             title="Taux %"
-            value={forecastBreakRate}
-            previousValue={globalBreakRate2024}
+            value={forecastValues.breakRate}
+            previousValue={previousYearValues.breakRate}
             isPercentage
           />
-        </div>
+        </SummaryCard>
 
-        {/* 💰 Montant des Ruptures */}
-        <div className="p-6 bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md border border-gray-300">
-          <h3 className="text-md font-semibold mb-4 flex items-center border-b border-gray-300 pb-2 text-red-600">
-            💰 Montant Rupture (€)
-          </h3>
+        {/* Montant des Ruptures */}
+        <SummaryCard title="💰 Montant Rupture (€)" icon={null} iconColor="text-red-600">
           <DataBlock
             title="Montant"
-            value={forecastBreakAmount}
-            previousValue={globalBreakAmount2024}
+            value={forecastValues.breakAmount}
+            previousValue={previousYearValues.breakAmount}
             isCurrency
           />
-        </div>
+        </SummaryCard>
       </div>
     </div>
   );

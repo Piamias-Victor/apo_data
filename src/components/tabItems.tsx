@@ -1,6 +1,6 @@
 // src/config/tabItems.ts
 
-import LaboratoryDashboardGlobal from "@/components/laboratory/global/Dashboard";
+import LaboratoryDashboardGlobal from "@/components/laboratory/global/LaboratoryDashboardGlobal";
 import ProductsDashboard from "./laboratory/product/ProductsDashboard";
 import StockBreakDashboard from "./laboratory/break/StockBreakDashboard";
 import SegmentationOverview from "./laboratory/segmentation/SegmentationOverview";

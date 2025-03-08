@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useFilterContext } from "@/contexts/FilterContext";
 import TopStockBreakProducts from "./TopStockBreakProducts";
 import ProductBreakTable from "./ProductBreakTable";
+import StockBreakDataByPharmacy from "../global/pharmacies/StockBreakDataByPharmacy";
 
 interface ProductStockBreakData {
   code_13_ref: string;
@@ -109,6 +110,8 @@ const StockBreakDashboard: React.FC = () => {
           </motion.div>
 
           <ProductBreakTable products={products} />
+
+          <StockBreakDataByPharmacy />
         </>
       )}
     </div>
