@@ -4,6 +4,7 @@ import ProductTable from "./ProductTable";
 import TopProductsCard from "./TopProductsCard";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Separator from "@/components/ui/Separator";
+import SalesPharmaciesComponent from "../global/pharmacies/SalesPharmaciesComponent";
 
 
 const ProductsDashboard: React.FC = () => {
@@ -51,6 +52,8 @@ const ProductsDashboard: React.FC = () => {
 
       {/* Tableau des produits */}
       <ProductTable products={products} />
+
+      <SalesPharmaciesComponent/>
     </div>
   );
 };

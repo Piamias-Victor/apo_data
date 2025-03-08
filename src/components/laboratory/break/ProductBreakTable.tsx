@@ -1,17 +1,21 @@
-import React, { useState, useEffect } from "react";
-import { FaSort, FaSortUp, FaSortDown, FaChevronRight } from "react-icons/fa";
+// components/laboratory/break/ProductBreakTable.tsx
+import React, { useState, useMemo } from "react";
 import { formatLargeNumber } from "@/libs/utils/formatUtils";
-import SearchInput from "@/components/ui/inputs/SearchInput";
 import { motion } from "framer-motion";
-import ProductSalesStockChart from "../product/ProductSalesStockChart";
+import SearchInput from "@/components/ui/inputs/SearchInput";
+import ProductBreakTableRow from "./ProductBreakTableRow";
+import SortableTableHeader from "@/components/ui/SortableTableHeader";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
+import ProductBreakChart from "./ProductBreakChart";
+import { useFilterContext } from "@/contexts/FilterContext";
 
 interface ProductStockBreakData {
   code_13_ref: string;
   product_name: string;
-  total_products_ordered: number;  // 📦 Produits commandés
-  stock_break_products: number;    // ❌ Produits en rupture
-  stock_break_rate: number;        // 📊 Taux de rupture (%)
-  stock_break_amount: number;      // 💰 Montant des ruptures (€)
+  total_products_ordered: number;
+  stock_break_products: number;
+  stock_break_rate: number;
+  stock_break_amount: number;
   previous?: {
     total_products_ordered: number;
     stock_break_products: number;
@@ -20,216 +24,190 @@ interface ProductStockBreakData {
   };
 }
 
-interface ProductSalesStockData {
-  month: string;
-  total_quantity_sold: number;
-  avg_stock_quantity: number;
-  stock_break_quantity: number;
+interface ProductBreakTableProps {
+  products: ProductStockBreakData[];
 }
 
-const calculateEvolution = (oldValue: number | string | undefined, newValue: number | string): JSX.Element => {
-    const oldNum = oldValue !== undefined ? parseFloat(oldValue as string) : undefined;
-    const newNum = parseFloat(newValue as string);
-  
-    if (oldNum === undefined || isNaN(oldNum)) return <span className="text-gray-500">N/A</span>;
-    if (oldNum === 0) return newNum > 0 ? <span className="text-green-500">+100%</span> : <span className="text-gray-500">0%</span>;
-    if (!Number.isFinite(oldNum) || !Number.isFinite(newNum)) return <span className="text-gray-500">N/A</span>;
-  
-    const change = ((newNum - oldNum) / Math.abs(oldNum)) * 100;
-    const isPositive = change >= 0;
-  
-    return (
-      <span className={isPositive ? "text-green-400" : "text-red-400"}>
-        {isPositive ? "+" : ""}
-        {change.toFixed(1)}%
-      </span>
-    );
-  };
-
-const ProductBreakTable: React.FC<{ products: ProductStockBreakData[] }> = ({ products }) => {
-  const [sortColumn, setSortColumn] = useState<keyof ProductStockBreakData | null>(null);
+/**
+ * Tableau détaillé des produits en rupture
+ */
+const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
+  // États locaux
+  const { filters } = useFilterContext();
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortColumn, setSortColumn] = useState<keyof ProductStockBreakData>("stock_break_amount");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [searchQuery, setSearchQuery] = useState<string>(""); // 🔍 Recherche
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [sortedData, setSortedData] = useState<ProductStockBreakData[]>([]);
-  const [salesStockData, setSalesStockData] = useState<Record<string, ProductSalesStockData[]>>({});
+  const [salesStockData, setSalesStockData] = useState<Record<string, any>>({});
   const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
 
-  // 📌 Fetch des données de stock et de rupture
-  const toggleDetails = async (code_13_ref: string) => {
-    setExpandedProduct((prev) => (prev === code_13_ref ? null : code_13_ref));
+  // Colonnes du tableau
+  const columns = [
+    { key: "code_13_ref" as const, label: "Code EAN" },
+    { key: "product_name" as const, label: "Produit" },
+    { key: "total_products_ordered" as const, label: "Qté Commandée" },
+    { key: "stock_break_products" as const, label: "Qté Rupture" },
+    { key: "stock_break_rate" as const, label: "Taux Rupture (%)" },
+    { key: "stock_break_amount" as const, label: "Montant Rupture (€)" },
+    { key: "details" as const, label: "Détails" },
+  ];
 
-    // 📌 Si les données sont déjà chargées, ne pas refaire un appel API
+  // Normalisation des données
+  const normalizedProducts = useMemo(() => {
+    return products.map(product => ({
+      ...product,
+      total_products_ordered: Number(product.total_products_ordered) || 0,
+      stock_break_products: Number(product.stock_break_products) || 0,
+      stock_break_rate: Number(product.stock_break_rate) || 0,
+      stock_break_amount: Number(product.stock_break_amount) || 0,
+      previous: product.previous ? {
+        total_products_ordered: Number(product.previous.total_products_ordered) || 0,
+        stock_break_products: Number(product.previous.stock_break_products) || 0,
+        stock_break_rate: Number(product.previous.stock_break_rate) || 0,
+        stock_break_amount: Number(product.previous.stock_break_amount) || 0
+      } : undefined
+    }));
+  }, [products]);
+
+  // Gestion du tri
+  const handleSort = (column: keyof ProductStockBreakData) => {
+    setSortOrder(prev => (sortColumn === column ? (prev === "asc" ? "desc" : "asc") : "desc"));
+    setSortColumn(column);
+  };
+
+  // Filtrage et tri des produits
+  const filteredProducts = useMemo(() => {
+    return normalizedProducts
+      .filter(product => 
+        product.code_13_ref.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => {
+        let valueA = a[sortColumn];
+        let valueB = b[sortColumn];
+        
+        if (typeof valueA === 'string' && typeof valueB === 'string') {
+          return sortOrder === 'asc' 
+            ? valueA.localeCompare(valueB) 
+            : valueB.localeCompare(valueA);
+        }
+        
+        // Pour les valeurs numériques
+        return sortOrder === 'asc' 
+          ? (valueA as number) - (valueB as number) 
+          : (valueB as number) - (valueA as number);
+      });
+  }, [normalizedProducts, searchQuery, sortColumn, sortOrder]);
+
+  // Fonction pour charger les détails d'un produit - utilisant la même API que pour les ventes/stocks
+  const fetchProductDetails = async (code_13_ref: string) => {
     if (salesStockData[code_13_ref] || loadingStockData[code_13_ref]) return;
-
-    setLoadingStockData((prev) => ({ ...prev, [code_13_ref]: true }));
-
+    
+    setLoadingStockData(prev => ({ ...prev, [code_13_ref]: true }));
+    
     try {
       const response = await fetch("/api/sell-out/getProductSalesAndStock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code_13_ref }),
+        body: JSON.stringify({ code_13_ref, pharmacies: filters.pharmacies }),
       });
-
-      if (!response.ok) throw new Error("Erreur lors de la récupération des données.");
-
+    
+      if (!response.ok) throw new Error("Erreur lors de la récupération des données de ventes/stocks.");
+    
       const data = await response.json();
-      setSalesStockData((prev) => ({ ...prev, [code_13_ref]: data.salesStockData }));
+      setSalesStockData(prev => ({ ...prev, [code_13_ref]: data.salesStockData }));
     } catch (error) {
       console.error("❌ Erreur API :", error);
     } finally {
-      setLoadingStockData((prev) => ({ ...prev, [code_13_ref]: false }));
+      setLoadingStockData(prev => ({ ...prev, [code_13_ref]: false }));
     }
   };
 
-  // 📌 Tri des produits
-  useEffect(() => {
-    if (!sortColumn) {
-      setSortedData(products);
+  // Fonction pour basculer l'affichage des détails
+  const toggleDetails = (code_13_ref: string) => {
+    if (expandedProduct === code_13_ref) {
+      setExpandedProduct(null);
       return;
     }
-
-    setSortedData([...products].sort((a, b) => {
-      let valA = a[sortColumn];
-      let valB = b[sortColumn];
-
-      if (valA == null) valA = -Infinity;
-      if (valB == null) valB = -Infinity;
-
-      return sortOrder === "asc" ? Number(valA) - Number(valB) : Number(valB) - Number(valA);
-    }));
-  }, [sortColumn, sortOrder, products]);
-
-  // 📌 Filtrage des produits (recherche)
-  const filteredData = sortedData.filter((product) =>
-    product.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.code_13_ref.includes(searchQuery)
-  );
-
-  // 📌 Fonction pour trier les colonnes
-  const toggleSort = (column: keyof ProductStockBreakData) => {
-    setSortOrder(prev => (sortColumn === column ? (prev === "asc" ? "desc" : "asc") : "asc"));
-    setSortColumn(column);
+    
+    setExpandedProduct(code_13_ref);
+    // Charger les données si nécessaire
+    fetchProductDetails(code_13_ref);
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-8 border border-red-300 relative">
-      {/* 📌 Titre */}
-      <h2 className="text-2xl font-bold text-red-600 mb-6 flex items-center gap-2">
-        🚨 Suivi des Produits en Rupture
-      </h2>
-
-      {/* 🔍 Barre de recherche */}
-      <div className="mb-6 w-full md:w-2/3">
+    <CollapsibleSection 
+      title="Produits en Rupture de Stock" 
+      icon="🚨"
+      buttonColorClass="bg-red-500 hover:bg-red-600"
+      defaultCollapsed={false}
+    >
+      {/* Barre de recherche */}
+      <div className="mb-6">
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Rechercher par Code 13 ou Nom..."
+          placeholder="Rechercher par Code EAN ou Nom du produit..."
+          accentColor="red"
         />
       </div>
 
-      {/* 📌 Tableau des produits en rupture */}
-      {filteredData.length > 0 && (
-        <div className="overflow-hidden border border-red-300 shadow-lg rounded-lg">
+      {/* Tableau principal */}
+      {filteredProducts.length > 0 ? (
+        <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
           <table className="w-full border-collapse rounded-lg table-auto">
+            {/* En-tête du tableau avec la colonne Détails */}
             <thead>
-              <tr className="bg-red-500 text-white text-md rounded-lg">
-                {[
-                  { key: "code_13_ref", label: "Code 13", width: "10%" },
-                  { key: "product_name", label: "Produit", width: "25%" },
-                  { key: "total_products_ordered", label: "Commandé", width: "10%" },
-                  { key: "stock_break_products", label: "Qte Rupture", width: "10%" },
-                  { key: "stock_break_rate", label: "Taux Rupture (%)", width: "10%" },
-                  { key: "stock_break_amount", label: "Montant Rupture (€)", width: "10%" },
-                ].map(({ key, label, width }) => (
+              <tr className="bg-red-500 text-white text-md">
+                {columns.slice(0, -1).map(column => (
                   <th
-                    key={key}
+                    key={column.key}
                     className="p-4 cursor-pointer transition hover:bg-red-600"
-                    style={{ width }}
-                    onClick={() => toggleSort(key as keyof ProductStockBreakData)}
+                    onClick={() => handleSort(column.key)}
                   >
                     <div className="flex justify-center items-center gap-2">
-                      {label}
-                      {sortColumn === key ? (
-                        sortOrder === "asc" ? <FaSortUp /> : <FaSortDown />
+                      {column.label}
+                      {sortColumn === column.key ? (
+                        sortOrder === "asc" ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        )
                       ) : (
-                        <FaSort />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 8-6 6-6-6"/><path d="m18 16-6-6-6 6"/></svg>
                       )}
                     </div>
                   </th>
                 ))}
-
-                {/* ✅ Colonne "Détails" */}
-                <th className="p-4 text-center">Détails</th>
+                {/* Ajout explicite de la colonne Détails */}
+                <th className="p-4 text-center">
+                  Détails
+                </th>
               </tr>
             </thead>
-
+            
             <tbody className="text-sm">
-              {filteredData.map((product, index) => (
-                <React.Fragment key={`${product.code_13_ref}-${index}`}>
-                  <tr className="border-b bg-gray-50 hover:bg-gray-200 transition text-center">
-                    <td className="p-3">{product.code_13_ref}</td>
-                    <td className="p-3">
-                      <div className="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap" title={product.product_name}>
-                        {product.product_name}
-                      </div>
-                    </td>
-                    <td className="p-3">
-  {formatLargeNumber(parseFloat(product.total_products_ordered), false)}
-  {product.previous?.total_products_ordered !== undefined && (
-    <span className="block text-xs text-gray-500">
-      {calculateEvolution(parseFloat(product.previous.total_products_ordered), parseFloat(product.total_products_ordered))}
-    </span>
-  )}
-</td>
-                    <td className="p-3">
-  {formatLargeNumber(parseFloat(product.stock_break_products), false)}
-  {product.previous?.stock_break_products !== undefined && (
-    <span className="block text-xs text-gray-500">
-      {calculateEvolution(parseFloat(product.previous.stock_break_products), parseFloat(product.stock_break_products))}
-    </span>
-  )}
-</td>
+              {filteredProducts.map((product) => (
+                <React.Fragment key={product.code_13_ref}>
+                  {/* Ligne du produit */}
+                  <ProductBreakTableRow
+                    product={product}
+                    isExpanded={expandedProduct === product.code_13_ref}
+                    onToggleExpand={() => toggleDetails(product.code_13_ref)}
+                  />
 
-<td className="p-3">
-  {formatLargeNumber(parseFloat(product.stock_break_rate))}%
-  {product.previous?.stock_break_rate !== undefined && (
-    <span className="block text-xs text-gray-500">
-      {calculateEvolution(parseFloat(product.previous.stock_break_rate), parseFloat(product.stock_break_rate))}
-    </span>
-  )}
-</td>
-
-<td className="p-3">
-  {formatLargeNumber(parseFloat(product.stock_break_amount))}
-  {product.previous?.stock_break_amount !== undefined && (
-    <span className="block text-xs text-gray-500">
-      {calculateEvolution(parseFloat(product.previous.stock_break_amount), parseFloat(product.stock_break_amount))}
-    </span>
-  )}
-</td>
-
-                    {/* ✅ Colonne "Détails" */}
-                    <td className="p-3 text-center">
-                      <motion.button
-                        animate={{ rotate: expandedProduct === product.code_13_ref ? 90 : 0 }}
-                        transition={{ duration: 0.3 }}
-                        onClick={() => toggleDetails(product.code_13_ref)}
-                        className="p-2 rounded-full bg-red-600 flex items-center justify-center text-center"
-                      >
-                        <FaChevronRight className="text-white text-lg w-full" />
-                      </motion.button>
-                    </td>
-                  </tr>
-
-                  {/* ✅ Détails du produit */}
+                  {/* Détails du produit */}
                   {expandedProduct === product.code_13_ref && (
                     <tr>
-                      <td colSpan={7} className="p-4 bg-red-100 text-center text-red-900">
-                        {loadingStockData[product.code_13_ref] && <p className="text-gray-500">Chargement des données...</p>}
-
-                        {salesStockData[product.code_13_ref] && (
-                          <ProductSalesStockChart salesStockData={salesStockData[product.code_13_ref]} />
+                      <td colSpan={columns.length} className="p-4 bg-red-50 text-center">
+                        {loadingStockData[product.code_13_ref] ? (
+                          <p className="text-gray-500">Chargement des détails...</p>
+                        ) : salesStockData[product.code_13_ref] ? (
+                          <div className="mt-4">
+                            <ProductBreakChart breakData={salesStockData[product.code_13_ref]} />
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">Aucune donnée détaillée disponible</p>
                         )}
                       </td>
                     </tr>
@@ -239,8 +217,10 @@ const ProductBreakTable: React.FC<{ products: ProductStockBreakData[] }> = ({ pr
             </tbody>
           </table>
         </div>
+      ) : (
+        <p className="text-center text-gray-500 my-8">Aucun produit en rupture ne correspond à votre recherche.</p>
       )}
-    </div>
+    </CollapsibleSection>
   );
 };
 
