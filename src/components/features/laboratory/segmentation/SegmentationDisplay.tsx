@@ -4,7 +4,8 @@ import SegmentationFilter from "./SegmentationFilter";
 import Loader from "@/components/common/feedback/Loader";
 import SearchInput from "@/components/common/inputs/SearchInput";
 import { useFilterContext, FilterState } from "@/contexts/FilterContext";
-import ActionButtons from "src2/components/ui/buttons/ActionButtons";
+import ActionButton from "@/components/common/buttons/ActionButton";
+import { FaTimes, FaCheck } from "react-icons/fa";
 
 
 interface Segmentation {
@@ -15,6 +16,8 @@ interface Segmentation {
   sub_family: string;
   specificity: string;
   ranges: string[];
+  lab_distributor: string; // Ajouté pour le groupedSegmentation
+  brand_lab: string; // Ajouté pour le groupedSegmentation
 }
 
 const SegmentationDisplay: React.FC = () => {
@@ -128,34 +131,51 @@ const SegmentationDisplay: React.FC = () => {
 
   return (
     <div className="mt-4 w-full">
-  {loading && <Loader />}
-  {error && <p className="text-red-500 text-center">{error}</p>}
+      {loading && <Loader />}
+      {error && <p className="text-red-500 text-center">{error}</p>}
 
-  {!loading && !error && segmentation.length > 0 && (
-    <>
-      <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un élément de segmentation..." />
+      {!loading && !error && segmentation.length > 0 && (
+        <>
+          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Rechercher un élément de segmentation..." />
 
-      {Object.entries(groupedSegmentation).map(([labBrand, segments]) => (
-        <div key={labBrand} className="mb-6 p-4 border rounded-lg shadow-sm">
-          <h2 className="text-lg font-bold">{labBrand}</h2>
+          {Object.entries(groupedSegmentation).map(([labBrand, segments]) => (
+            <div key={labBrand} className="mb-6 p-4 border rounded-lg shadow-sm">
+              <h2 className="text-lg font-bold">{labBrand}</h2>
 
-          {segmentationFilters.map(({ key, dataKey, label }) => (
-            <SegmentationFilter
-              key={key}
-              label={label}
-              values={getFilteredValues(dataKey as keyof Segmentation)}
-              filterKey={key as keyof FilterState}
-              selectedFilters={selectedFilters}
-              toggleFilter={toggleFilter}
-            />
+              {segmentationFilters.map(({ key, dataKey, label }) => (
+                <SegmentationFilter
+                  key={key}
+                  label={label}
+                  values={getFilteredValues(dataKey as keyof Segmentation)}
+                  filterKey={key as keyof FilterState}
+                  selectedFilters={selectedFilters}
+                  toggleFilter={toggleFilter}
+                />
+              ))}
+            </div>
           ))}
-        </div>
-      ))}
 
-      <ActionButtons onApply={applyFilters} onReset={resetFilters} isApplied={isApplied} />
-    </>
-  )}
-</div>
+          {/* Remplacer ActionButtons par des boutons individuels */}
+          <div className="flex justify-between items-center gap-3 py-3 my-2 border-t border-gray-200 w-full">
+            <ActionButton
+              onClick={resetFilters}
+              icon={<FaTimes />}
+              variant="danger"
+            >
+              Effacer
+            </ActionButton>
+            
+            <ActionButton
+              onClick={applyFilters}
+              icon={<FaCheck />}
+              variant="success"
+            >
+              {isApplied ? "Filtres appliqués !" : "Appliquer"}
+            </ActionButton>
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
