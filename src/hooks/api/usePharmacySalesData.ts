@@ -55,7 +55,7 @@ export function usePharmacySalesData() {
       setError(null);
       
       try {
-        const response = await fetch("/api/sell-out/getSalesByPharmacy", {
+        const response = await fetch("/api/sale/getSalesByPharmacy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

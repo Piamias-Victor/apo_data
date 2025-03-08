@@ -55,7 +55,7 @@ export function useSalesData() {
       setError(null);
       
       try {
-        const response = await fetch("/api/sell-out/getSalesByMonth", {
+        const response = await fetch("/api/sale/getSalesByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

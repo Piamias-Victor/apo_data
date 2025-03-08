@@ -23,7 +23,7 @@ export function usePeriodSalesData() {
       setError(null);
 
       try {
-        const response = await fetch("/api/sell-out/getSalesData", {
+        const response = await fetch("/api/sale/getSalesData", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

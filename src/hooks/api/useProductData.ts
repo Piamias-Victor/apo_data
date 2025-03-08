@@ -116,7 +116,7 @@ export function useProductData({ filters }: UseProductDataProps) {
     setLoadingStockData(prev => ({ ...prev, [code_13_ref]: true }));
     
     try {
-      const response = await fetch("/api/sell-out/getProductSalesAndStock", {
+      const response = await fetch("/api/sale/getProductSalesAndStock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code_13_ref, pharmacies: filters.pharmacies }),

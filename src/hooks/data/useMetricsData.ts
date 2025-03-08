@@ -75,7 +75,7 @@ export function useMetricsData() {
       setError(null);
       
       try {
-        const response = await fetch("/api/getMetricsByMonth", {
+        const response = await fetch("/api/metric/getMetricsByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

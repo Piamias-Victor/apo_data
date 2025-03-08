@@ -47,7 +47,7 @@ const StockBreakDataByPharmacy: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch("/api/stock-break/getStockBreakByPharmacy", {
+        const response = await fetch("/api/stock/getStockBreakByPharmacy", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

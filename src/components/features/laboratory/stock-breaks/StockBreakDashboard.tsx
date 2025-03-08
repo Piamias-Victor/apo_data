@@ -35,7 +35,7 @@ const StockBreakDashboard: React.FC = () => {
       setError(null);
 
       try {
-        const response = await fetch("/api/sell-out/getProductStockBreak", {
+        const response = await fetch("/api/stock/getProductStockBreak", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),

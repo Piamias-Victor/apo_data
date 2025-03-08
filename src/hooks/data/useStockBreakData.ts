@@ -72,7 +72,7 @@ export function useStockBreakData() {
       setError(null);
       
       try {
-        const response = await fetch("/api/sell-out/getStockBreakRateByMonth", {
+        const response = await fetch("/api/stock/getStockBreakRateByMonth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filters }),
