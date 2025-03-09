@@ -149,7 +149,7 @@ const LaboratoryDashboardGlobal: React.FC = () => {
           description="Analyse des prix moyens, marges et références vendues 💡"
           color="text-purple-600"
         />
-        {/* <MetricsDataComponent /> */}
+        <MetricsDataComponent />
       </motion.div>
 
       <Separator from="purple-400" via="pink-400" to="rose-400" />

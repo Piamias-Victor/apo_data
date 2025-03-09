@@ -4,12 +4,12 @@ import { useState, useEffect } from "react";
 
 export interface MetricsData {
   month: string;
-  avg_sale_price: number;
-  avg_purchase_price: number;
-  avg_margin: number;
-  avg_margin_percentage: number;
-  unique_products_sold: number;
-  unique_selling_pharmacies: number;
+  avg_sale_price: string | number;
+  avg_purchase_price: string | number;
+  avg_margin: string | number;
+  avg_margin_percentage: string | number;
+  unique_products_sold: string | number;
+  unique_selling_pharmacies: string | number;
 }
 
 export interface MetricsValues {
@@ -57,6 +57,13 @@ export function useMetricsData() {
     uniqueSellingPharmacies: 0
   });
 
+  // Fonction utilitaire pour convertir en nombre
+  const toNumber = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   // Vérifier si des filtres sont sélectionnés
   const hasSelectedData = 
     filters.distributors.length > 0 ||
@@ -67,8 +74,64 @@ export function useMetricsData() {
     filters.specificities.length > 0 || 
     filters.ean13Products.length > 0;
 
+  // Fonction de calcul des métriques agrégées
+  const calculateAggregatedMetrics = (data: MetricsData[]): MetricsValues => {
+    if (data.length === 0) {
+      return {
+        avgSalePrice: 0,
+        avgPurchasePrice: 0,
+        avgMargin: 0,
+        avgMarginPercentage: 0,
+        uniqueProductsSold: 0,
+        uniqueSellingPharmacies: 0
+      };
+    }
+
+    // Conversion explicite des valeurs
+    const processedData = data.map(item => ({
+      ...item,
+      avg_sale_price: toNumber(item.avg_sale_price),
+      avg_purchase_price: toNumber(item.avg_purchase_price),
+      avg_margin: toNumber(item.avg_margin),
+      avg_margin_percentage: toNumber(item.avg_margin_percentage),
+      unique_products_sold: toNumber(item.unique_products_sold),
+      unique_selling_pharmacies: toNumber(item.unique_selling_pharmacies)
+    }));
+
+    // Calcul des moyennes simples
+    return {
+      avgSalePrice: Number((
+        processedData.reduce((sum, item) => sum + item.avg_sale_price, 0) / 
+        processedData.length
+      ).toFixed(2)),
+      avgPurchasePrice: Number((
+        processedData.reduce((sum, item) => sum + item.avg_purchase_price, 0) / 
+        processedData.length
+      ).toFixed(2)),
+      avgMargin: Number((
+        processedData.reduce((sum, item) => sum + item.avg_margin, 0) / 
+        processedData.length
+      ).toFixed(2)),
+      avgMarginPercentage: Number((
+        processedData.reduce((sum, item) => sum + item.avg_margin_percentage, 0) / 
+        processedData.length
+      ).toFixed(2)),
+      uniqueProductsSold: Math.round(
+        processedData.reduce((sum, item) => sum + item.unique_products_sold, 0) / 
+        processedData.length
+      ),
+      uniqueSellingPharmacies: Math.round(
+        processedData.reduce((sum, item) => sum + item.unique_selling_pharmacies, 0) / 
+        processedData.length
+      )
+    };
+  };
+
   useEffect(() => {
-    if (!hasSelectedData) return;
+    if (!hasSelectedData) {
+      setLoading(false);
+      return;
+    }
     
     const fetchMetrics = async () => {
       setLoading(true);
@@ -81,10 +144,18 @@ export function useMetricsData() {
           body: JSON.stringify({ filters }),
         });
 
-        if (!response.ok) throw new Error("Erreur API");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const result = await response.json();
-        const data = result.priceMarginData || [];
+        
+        // Vérification explicite des données
+        if (!result || !result.priceMarginData || !Array.isArray(result.priceMarginData)) {
+          throw new Error("Données de métriques invalides ou manquantes");
+        }
+
+        const data = result.priceMarginData;
         setMetricsData(data);
 
         // Récupérer l'année actuelle et l'année précédente
@@ -93,73 +164,56 @@ export function useMetricsData() {
         const currentMonth = new Date().getMonth() + 1;
 
         // Filtrer les données par année
-        const metrics2025Data = data.filter((d: MetricsData) => d.month.startsWith(`${currentYear}-`));
-        const metrics2024Data = data.filter((d: MetricsData) => d.month.startsWith(`${previousYear}-`));
-        
+        const currentYearData = data.filter(d => d.month.startsWith(`${currentYear}-`));
+        const previousYearData = data.filter(d => d.month.startsWith(`${previousYear}-`));
+
         // Calcul des métriques pour 2025
-        if (metrics2025Data.length > 0) {
-          const latestMetrics = metrics2025Data[metrics2025Data.length - 1];
-          setMetrics2025({
-            avgSalePrice: latestMetrics.avg_sale_price,
-            avgPurchasePrice: latestMetrics.avg_purchase_price,
-            avgMargin: latestMetrics.avg_margin,
-            avgMarginPercentage: latestMetrics.avg_margin_percentage,
-            uniqueProductsSold: latestMetrics.unique_products_sold,
-            uniqueSellingPharmacies: latestMetrics.unique_selling_pharmacies
-          });
-        }
+        setMetrics2025(calculateAggregatedMetrics(currentYearData));
         
         // Calcul des métriques globales pour 2024
-        if (metrics2024Data.length > 0) {
-          const count = metrics2024Data.length;
-          
-          const totalAvgSalePrice = metrics2024Data.reduce((acc, cur) => acc + (cur.avg_sale_price || 0), 0);
-          const totalAvgPurchasePrice = metrics2024Data.reduce((acc, cur) => acc + (cur.avg_purchase_price || 0), 0);
-          const totalAvgMargin = metrics2024Data.reduce((acc, cur) => acc + (cur.avg_margin || 0), 0);
-          const totalAvgMarginPercentage = metrics2024Data.reduce((acc, cur) => acc + (cur.avg_margin_percentage || 0), 0);
-          const totalUniqueProductsSold = metrics2024Data.reduce((acc, cur) => acc + (cur.unique_products_sold || 0), 0);
-          const totalUniqueSellingPharmacies = metrics2024Data.reduce((acc, cur) => acc + (cur.unique_selling_pharmacies || 0), 0);
-          
-          setGlobalMetrics2024({
-            avgSalePrice: totalAvgSalePrice / count,
-            avgPurchasePrice: totalAvgPurchasePrice / count,
-            avgMargin: totalAvgMargin / count,
-            avgMarginPercentage: totalAvgMarginPercentage / count,
-            uniqueProductsSold: totalUniqueProductsSold / count,
-            uniqueSellingPharmacies: totalUniqueSellingPharmacies / count
-          });
-          
-          // Filtrer les données de 2024 jusqu'au mois courant pour les métriques ajustées
-          const monthsUpToCurrent = Array.from({ length: currentMonth }, (_, i) => 
-            (i + 1).toString().padStart(2, "0"));
-            
-          const adjustedMetrics2024Data = metrics2024Data.filter((d: MetricsData) => {
-            const month = d.month.split("-")[1];
-            return monthsUpToCurrent.includes(month);
-          });
-          
-          if (adjustedMetrics2024Data.length > 0) {
-            const adjustedCount = adjustedMetrics2024Data.length;
-            
-            const adjustedTotalAvgSalePrice = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.avg_sale_price || 0), 0);
-            const adjustedTotalAvgPurchasePrice = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.avg_purchase_price || 0), 0);
-            const adjustedTotalAvgMargin = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.avg_margin || 0), 0);
-            const adjustedTotalAvgMarginPercentage = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.avg_margin_percentage || 0), 0);
-            const adjustedTotalUniqueProductsSold = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.unique_products_sold || 0), 0);
-            const adjustedTotalUniqueSellingPharmacies = adjustedMetrics2024Data.reduce((acc, cur) => acc + (cur.unique_selling_pharmacies || 0), 0);
-            
-            setAdjustedMetrics2024({
-              avgSalePrice: adjustedTotalAvgSalePrice / adjustedCount,
-              avgPurchasePrice: adjustedTotalAvgPurchasePrice / adjustedCount,
-              avgMargin: adjustedTotalAvgMargin / adjustedCount,
-              avgMarginPercentage: adjustedTotalAvgMarginPercentage / adjustedCount,
-              uniqueProductsSold: adjustedTotalUniqueProductsSold / adjustedCount,
-              uniqueSellingPharmacies: adjustedTotalUniqueSellingPharmacies / adjustedCount
-            });
-          }
-        }
+        setGlobalMetrics2024(calculateAggregatedMetrics(previousYearData));
+        
+        // Filtrer les données de 2024 jusqu'au mois courant
+        const monthsUpToCurrent = Array.from({ length: currentMonth }, (_, i) => 
+          (i + 1).toString().padStart(2, "0"));
+        
+        const adjustedPreviousYearData = previousYearData.filter(d => {
+          const month = d.month.split("-")[1];
+          return monthsUpToCurrent.includes(month);
+        });
+        
+        // Calcul des métriques ajustées pour 2024
+        setAdjustedMetrics2024(calculateAggregatedMetrics(adjustedPreviousYearData));
+
       } catch (err) {
-        setError("Impossible de récupérer les données");
+        console.error("Erreur lors de la récupération des données de métriques:", err);
+        setError(err instanceof Error ? err.message : "Impossible de récupérer les données");
+        
+        // Réinitialiser toutes les métriques
+        setMetrics2025({
+          avgSalePrice: 0,
+          avgPurchasePrice: 0,
+          avgMargin: 0,
+          avgMarginPercentage: 0,
+          uniqueProductsSold: 0,
+          uniqueSellingPharmacies: 0
+        });
+        setAdjustedMetrics2024({
+          avgSalePrice: 0,
+          avgPurchasePrice: 0,
+          avgMargin: 0,
+          avgMarginPercentage: 0,
+          uniqueProductsSold: 0,
+          uniqueSellingPharmacies: 0
+        });
+        setGlobalMetrics2024({
+          avgSalePrice: 0,
+          avgPurchasePrice: 0,
+          avgMargin: 0,
+          avgMarginPercentage: 0,
+          uniqueProductsSold: 0,
+          uniqueSellingPharmacies: 0
+        });
       } finally {
         setLoading(false);
       }

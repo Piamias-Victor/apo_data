@@ -1,15 +1,14 @@
 // src/hooks/data/useSalesData.ts
 import { useFilterContext } from "@/contexts/FilterContext";
 import { useState, useEffect } from "react";
-import { format, subMonths } from "date-fns";
 
 export interface SalesData {
   month: string;
-  total_quantity: number;
-  revenue: number;
-  margin: number;
-  purchase_quantity: number;
-  purchase_amount: number;
+  total_quantity: string | number;
+  revenue: string | number;
+  margin: string | number;
+  purchase_quantity: string | number;
+  purchase_amount: string | number;
 }
 
 export interface SalesMetrics {
@@ -19,48 +18,6 @@ export interface SalesMetrics {
   sellIn: number;
   purchaseAmount: number;
 }
-
-// Données de démonstration pour palier à l'absence d'API
-const generateDemoData = (): SalesData[] => {
-  // Générer les 12 derniers mois à partir de la date actuelle
-  const currentDate = new Date();
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const date = subMonths(currentDate, i);
-    return format(date, 'yyyy-MM');
-  }).reverse(); // Pour avoir les mois dans l'ordre chronologique
-  
-  return months.map(month => {
-    // Générer des valeurs aléatoires mais cohérentes pour la démonstration
-    const baseValue = Math.floor(Math.random() * 10000) + 5000;
-    const total_quantity = Math.floor(Math.random() * 500) + 100;
-    const revenue = baseValue;
-    const margin = Math.floor(revenue * (Math.random() * 0.2 + 0.3)); // 30-50% de marge
-    const purchase_quantity = Math.floor(total_quantity * (Math.random() * 0.3 + 0.8)); // 80-110% de la quantité vendue
-    const purchase_amount = Math.floor(revenue * (Math.random() * 0.2 + 0.5)); // 50-70% du CA
-    
-    return {
-      month,
-      total_quantity,
-      revenue,
-      margin,
-      purchase_quantity,
-      purchase_amount
-    };
-  });
-};
-
-// Métriques de démonstration
-const generateDemoMetrics = (): SalesMetrics => {
-  const baseValue = Math.floor(Math.random() * 100000) + 50000;
-  
-  return {
-    sellOut: Math.floor(Math.random() * 5000) + 1000,
-    revenue: baseValue,
-    margin: Math.floor(baseValue * 0.4),
-    sellIn: Math.floor(Math.random() * 4000) + 800,
-    purchaseAmount: Math.floor(baseValue * 0.6)
-  };
-};
 
 export function useSalesData() {
   const { filters } = useFilterContext();
@@ -80,6 +37,13 @@ export function useSalesData() {
     sellOut: 0, revenue: 0, margin: 0, sellIn: 0, purchaseAmount: 0
   });
 
+  // Fonction utilitaire pour convertir en nombre
+  const toNumber = (value: string | number): number => {
+    if (typeof value === 'number') return value;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   // Vérifier si des filtres sont sélectionnés
   const hasSelectedData = 
     filters.distributors.length > 0 ||
@@ -90,58 +54,109 @@ export function useSalesData() {
     filters.specificities.length > 0 || 
     filters.ean13Products.length > 0;
 
+  // Fonction de calcul des métriques agrégées
+  const calculateMetrics = (data: SalesData[]): SalesMetrics => {
+    if (data.length === 0) {
+      return {
+        sellOut: 0,
+        revenue: 0,
+        margin: 0,
+        sellIn: 0,
+        purchaseAmount: 0
+      };
+    }
+
+    return {
+      sellOut: Number(data.reduce((sum, item) => sum + toNumber(item.total_quantity), 0).toFixed(2)),
+      revenue: Number(data.reduce((sum, item) => sum + toNumber(item.revenue), 0).toFixed(2)),
+      margin: Number(data.reduce((sum, item) => sum + toNumber(item.margin), 0).toFixed(2)),
+      sellIn: Number(data.reduce((sum, item) => sum + toNumber(item.purchase_quantity), 0).toFixed(2)),
+      purchaseAmount: Number(data.reduce((sum, item) => sum + toNumber(item.purchase_amount), 0).toFixed(2))
+    };
+  };
+
   useEffect(() => {
+    if (!hasSelectedData) {
+      setLoading(false);
+      return;
+    }
+    
     const fetchData = async () => {
-      if (!hasSelectedData) return;
-      
       setLoading(true);
       setError(null);
       
       try {
-        // Tentative de fetch des données depuis l'API
-        try {
-          const response = await fetch("/api/sale/getSalesByMonth", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filters }),
-          });
+        const response = await fetch("/api/sales/getSalesByMonth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filters }),
+        });
 
-          if (response.ok) {
-            const result = await response.json();
-            setSalesData(result.salesData || []);
-            
-            // Continuer avec le traitement des données réelles...
-            return;
-          }
-        } catch (apiError) {
-          console.log("API unavailable, using demo data");
-          // Silencieusement échouer et continuer avec les données de démo
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const result = await response.json();
         
-        // Utiliser des données de démonstration si l'API échoue
-        console.log("Generating demo data for demonstration");
+        // Vérification explicite des données
+        if (!result || !result.salesData || !Array.isArray(result.salesData)) {
+          throw new Error("Données de ventes invalides ou manquantes");
+        }
+
+        const data = result.salesData;
         
-        // Délai artificiel pour simuler le chargement
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Convertir toutes les valeurs numériques en nombres
+        const processedData = data.map(item => ({
+          ...item,
+          total_quantity: toNumber(item.total_quantity),
+          revenue: toNumber(item.revenue),
+          margin: toNumber(item.margin),
+          purchase_quantity: toNumber(item.purchase_quantity),
+          purchase_amount: toNumber(item.purchase_amount)
+        }));
+
+        setSalesData(processedData);
+
+        // Récupérer l'année actuelle et l'année précédente
+        const currentYear = new Date().getFullYear();
+        const previousYear = currentYear - 1;
+        const currentMonth = new Date().getMonth() + 1;
+
+        // Filtrer les données par année
+        const currentYearData = processedData.filter(d => d.month.startsWith(`${currentYear}-`));
+        const previousYearData = processedData.filter(d => d.month.startsWith(`${previousYear}-`));
+
+        // Calculer les métriques globales
+        setMetrics2025(calculateMetrics(currentYearData));
+        setGlobalMetrics2024(calculateMetrics(previousYearData));
+
+        // Filtrer les données de l'année précédente jusqu'au mois courant
+        const monthsUpToCurrent = Array.from({ length: currentMonth }, (_, i) => 
+          (i + 1).toString().padStart(2, "0"));
         
-        // Générer des données de démonstration
-        const demoData = generateDemoData();
-        setSalesData(demoData);
-        
-        // Générer des métriques de démonstration
-        setMetrics2025(generateDemoMetrics());
-        setAdjustedMetrics2024(generateDemoMetrics());
-        setGlobalMetrics2024(generateDemoMetrics());
-        
+        const adjustedPreviousYearData = previousYearData.filter(d => {
+          const month = d.month.split("-")[1];
+          return monthsUpToCurrent.includes(month);
+        });
+
+        // Calculer les métriques ajustées
+        setAdjustedMetrics2024(calculateMetrics(adjustedPreviousYearData));
+
       } catch (err) {
-        console.error("Error in useSalesData:", err);
-        setError("Impossible de récupérer les données. Utilisation des données de démonstration.");
+        console.error("Erreur lors de la récupération des données de ventes:", err);
+        setError(err instanceof Error ? err.message : "Impossible de récupérer les données");
         
-        // En cas d'erreur, toujours fournir des données de démo
-        setSalesData(generateDemoData());
-        setMetrics2025(generateDemoMetrics());
-        setAdjustedMetrics2024(generateDemoMetrics());
-        setGlobalMetrics2024(generateDemoMetrics());
+        // Réinitialiser toutes les données
+        setSalesData([]);
+        setMetrics2025({
+          sellOut: 0, revenue: 0, margin: 0, sellIn: 0, purchaseAmount: 0
+        });
+        setAdjustedMetrics2024({
+          sellOut: 0, revenue: 0, margin: 0, sellIn: 0, purchaseAmount: 0
+        });
+        setGlobalMetrics2024({
+          sellOut: 0, revenue: 0, margin: 0, sellIn: 0, purchaseAmount: 0
+        });
       } finally {
         setLoading(false);
       }

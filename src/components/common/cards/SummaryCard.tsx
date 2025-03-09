@@ -54,6 +54,16 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       bar: "bg-teal-500/20",
       text: "text-teal-600"
     },
+    violet: {
+      light: "bg-violet-50 text-violet-600 border-violet-200",
+      medium: "bg-violet-100 text-violet-700 border-violet-300",
+      dark: "bg-violet-600 text-white border-violet-700",
+      gradient: "from-violet-500 to-violet-400",
+      increase: "bg-violet-50 text-violet-600",
+      badge: "bg-violet-100 text-violet-700",
+      bar: "bg-violet-500/20",
+      text: "text-violet-600"
+    },
     blue: {
       light: "bg-blue-50 text-blue-600 border-blue-200",
       medium: "bg-blue-100 text-blue-700 border-blue-300",

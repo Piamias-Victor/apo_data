@@ -42,6 +42,17 @@ const DataBlock: React.FC<DataBlockProps> = ({
       code: "text-teal-500",
       shadow: "shadow-teal-100"
     },
+    violet: {
+      light: "bg-violet-50 text-violet-700 border-violet-200",
+      medium: "bg-violet-100 text-violet-800",
+      badge: {
+        increase: "bg-violet-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-violet-500",
+      shadow: "shadow-violet-100"
+    },
     blue: {
       light: "bg-blue-50 text-blue-700 border-blue-200",
       medium: "bg-blue-100 text-blue-800",
