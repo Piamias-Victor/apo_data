@@ -136,7 +136,7 @@ const LaboratoryDashboardGlobal: React.FC = () => {
           📢 Attention : Les données de stock ne sont pas disponibles avant 2025 pour les pharmacies LGPI.
         </motion.p>
         
-        {/* <StockDataComponent /> */}
+        <StockDataComponent />
       </motion.div>
 
       <Separator from="indigo-400" via="purple-400" to="violet-400" />
