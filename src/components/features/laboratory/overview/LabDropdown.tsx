@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSegmentationContext } from "@/contexts/segmentation/SegmentationContext";
 import { useFilterContext } from "@/contexts/FilterContext";
-import { FaChevronDown, FaSearch, FaCheck, FaTimes, FaLayerGroup } from "react-icons/fa";
+import { 
+  HiChevronDown, 
+  HiMagnifyingGlass, 
+  HiXMark, 
+  HiCheck, 
+  HiBeaker, 
+  HiArchiveBox
+} from "react-icons/hi2";
 import Loader from "@/components/common/feedback/Loader";
 
 const LabDropdown: React.FC = () => {
@@ -65,7 +72,17 @@ const LabDropdown: React.FC = () => {
       distributors: [], 
       brands: [],
       // Preserve other filter properties
-      ranges: filters.ranges || [] 
+      ranges: filters.ranges || [],
+      universes: filters.universes || [],
+      categories: filters.categories || [],
+      subCategories: filters.subCategories || [],
+      families: filters.families || [],
+      subFamilies: filters.subFamilies || [],
+      specificities: filters.specificities || [],
+      dateRange: filters.dateRange || [null, null],
+      comparisonDateRange: filters.comparisonDateRange || [null, null],
+      ean13Products: filters.ean13Products || [],
+      type: filters.type || null,
     });
     setSearchTerm("");
   };
@@ -100,44 +117,105 @@ const LabDropdown: React.FC = () => {
 
   // Animation variants
   const dropdownVariants = {
-    hidden: { opacity: 0, y: -10 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
-    exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
+    hidden: { opacity: 0, y: -10, scale: 0.97 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { 
+        type: "spring",
+        stiffness: 400,
+        damping: 25,
+        duration: 0.25, 
+        ease: [0.22, 1, 0.36, 1] 
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -10, 
+      scale: 0.97,
+      transition: { 
+        duration: 0.2, 
+        ease: [0.22, 1, 0.36, 1] 
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -10 },
+    visible: (index: number) => ({
+      opacity: 1, 
+      x: 0,
+      transition: { 
+        delay: 0.03 * index,
+        duration: 0.25, 
+        ease: [0.22, 1, 0.36, 1]
+      }
+    })
+  };
+
+  const tabVariants = {
+    inactive: { 
+      color: "#6B7280", 
+      background: "transparent",
+      borderColor: "transparent"
+    },
+    active: { 
+      color: "#0F766E", 
+      background: "rgba(240, 253, 250, 0.75)",
+      borderColor: "#0F766E" 
+    },
+    hover: { 
+      scale: 1.02,
+      y: -1
+    }
   };
 
   return (
-    <div className="relative w-full max-w-lg mx-auto" ref={dropdownRef}>
+    <div className="relative w-full max-w-2xl mx-auto" ref={dropdownRef}>
       {/* Show loader when loading */}
       {loading && <Loader message="Chargement des laboratoires..." />}
 
       {/* Show error message if there's an error */}
       {!loading && error && (
-        <div className="p-4 bg-red-50 rounded-lg border border-red-200 text-red-700 mb-4">
-          <div className="flex items-center">
-            <FaTimes className="mr-2 flex-shrink-0" />
-            <p>Une erreur s'est produite lors du chargement des données: {error}</p>
-          </div>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 bg-rose-50 rounded-xl border border-rose-200 text-rose-700 mb-6 flex items-center shadow-sm"
+        >
+          <HiXMark className="mr-2 flex-shrink-0 text-lg" />
+          <p className="text-sm">Une erreur s'est produite lors du chargement des données: {error}</p>
+        </motion.div>
       )}
 
       {/* Main dropdown UI */}
       {!loading && !error && (
         <>
           {/* Dropdown button */}
-          <button
+          <motion.button
             onClick={() => setIsDropdownOpen((prev) => !prev)}
-            className="flex items-center justify-between w-full bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm hover:bg-gray-50 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent"
+            whileHover={{ scale: 1.01, y: -1 }}
+            whileTap={{ scale: 0.99 }}
+            className="flex items-center justify-between w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 shadow-sm hover:shadow-md hover:border-teal-300 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent group"
             aria-haspopup="true"
             aria-expanded={isDropdownOpen}
           >
-            <div className="flex items-center text-gray-700">
-              <FaLayerGroup className="text-teal-500 mr-2" />
-              <span className="text-sm truncate">
+            <div className="flex items-center text-gray-700 group-hover:text-teal-700 transition-colors">
+              <span className="w-9 h-9 mr-3 bg-gradient-to-br from-teal-50 to-teal-100 rounded-full flex items-center justify-center text-teal-600 shadow-sm border border-teal-200/50 group-hover:from-teal-100 group-hover:to-teal-200 transition-all">
+                <HiBeaker className="w-5 h-5" />
+              </span>
+              <span className="text-sm font-medium">
                 {getPlaceholderText()}
               </span>
             </div>
-            <FaChevronDown className={`text-gray-400 transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-          </button>
+            <motion.div 
+              animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-gray-400 group-hover:text-teal-500 transition-colors"
+            >
+              <HiChevronDown />
+            </motion.div>
+          </motion.button>
 
           {/* Dropdown menu */}
           <AnimatePresence>
@@ -147,42 +225,61 @@ const LabDropdown: React.FC = () => {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="absolute left-0 right-0 bg-white border border-gray-200 shadow-lg rounded-lg mt-2 z-50 overflow-hidden"
+                className="absolute left-0 right-0 bg-white/90 backdrop-blur-sm border border-gray-200 shadow-xl rounded-xl mt-2 z-50 overflow-hidden"
               >
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200">
-                  <button
-                    className={`flex-1 py-3 font-medium text-sm ${
-                      activeTab === "labs" 
-                        ? "text-teal-600 border-b-2 border-teal-500" 
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
+                <div className="flex border-b border-gray-200 bg-gray-50/80">
+                  <motion.button
+                    variants={tabVariants}
+                    initial={activeTab === "labs" ? "active" : "inactive"}
+                    animate={activeTab === "labs" ? "active" : "inactive"}
+                    whileHover="hover"
+                    className="flex-1 py-3.5 font-medium text-sm relative border-b-2 transition-all duration-300"
                     onClick={() => setActiveTab("labs")}
                   >
-                    Laboratoires
-                  </button>
-                  <button
-                    className={`flex-1 py-3 font-medium text-sm ${
-                      activeTab === "brands" 
-                        ? "text-teal-600 border-b-2 border-teal-500" 
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
+                    <div className="flex items-center justify-center gap-2">
+                      <HiBeaker className={activeTab === "labs" ? "opacity-100" : "opacity-50"} />
+                      Laboratoires
+                    </div>
+                    {activeTab === "labs" && (
+                      <motion.div
+                        layoutId="activeTabIndicator"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-teal-500"
+                      />
+                    )}
+                  </motion.button>
+                  <motion.button
+                    variants={tabVariants}
+                    initial={activeTab === "brands" ? "active" : "inactive"}
+                    animate={activeTab === "brands" ? "active" : "inactive"}
+                    whileHover="hover"
+                    className="flex-1 py-3.5 font-medium text-sm relative border-b-2 transition-all duration-300"
                     onClick={() => setActiveTab("brands")}
                   >
-                    Marques
-                  </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <HiArchiveBox className={activeTab === "brands" ? "opacity-100" : "opacity-50"} />
+                      Marques
+                    </div>
+                    {activeTab === "brands" && (
+                      <motion.div
+                        layoutId="activeTabIndicator"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-teal-400 to-teal-500"
+                      />
+                    )}
+                  </motion.button>
                 </div>
 
                 {/* Search bar */}
-                <div className="p-3 border-b border-gray-200 flex items-center bg-gray-50">
-                  <div className="relative flex-1">
+                <div className="p-3 border-b border-gray-200/80 bg-gray-50/30">
+                  <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaSearch className="text-gray-400" />
+                      <HiMagnifyingGlass className="text-gray-400" />
                     </div>
                     <input
                       type="text"
                       placeholder={`Rechercher un ${activeTab === "labs" ? "laboratoire" : "marque"}...`}
-                      className="bg-white w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent text-sm"
+                      className="bg-white w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm transition-all 
+                      focus:border-teal-300 focus:ring-2 focus:ring-teal-300/30 focus:outline-none shadow-sm"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -191,62 +288,91 @@ const LabDropdown: React.FC = () => {
                         className="absolute inset-y-0 right-0 pr-3 flex items-center"
                         onClick={() => setSearchTerm("")}
                       >
-                        <FaTimes className="text-gray-400 hover:text-gray-600" />
+                        <HiXMark className="text-gray-400 hover:text-gray-600" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Selected count */}
+                  <div className="flex items-center justify-between mt-3 px-1">
+                    <p className="text-xs text-gray-500">
+                      {selectedLabs.length + selectedBrands.length} élément(s) sélectionné(s)
+                    </p>
+                    
+                    {(selectedLabs.length > 0 || selectedBrands.length > 0) && (
+                      <button 
+                        onClick={handleClearSelection}
+                        className="text-xs text-rose-600 hover:text-rose-700 font-medium"
+                      >
+                        Tout effacer
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Items list */}
-                <div className="max-h-64 overflow-y-auto">
+                <div className="max-h-64 overflow-y-auto py-2 px-2">
                   {filteredItems.length === 0 ? (
-                    <div className="py-4 px-3 text-center text-gray-500 bg-gray-50 italic text-sm">
+                    <div className="py-6 px-3 text-center text-gray-500 bg-gray-50/50 rounded-lg italic text-sm">
                       Aucun résultat trouvé
                     </div>
                   ) : (
-                    <div className="py-1">
+                    <div className="space-y-1.5">
                       {filteredItems.map((item, index) => (
-                        <div
+                        <motion.div
                           key={`${item.type}-${item.name}-${index}`}
-                          className={`px-4 py-2 hover:bg-gray-50 cursor-pointer transition-colors duration-150 ${
-                            isItemSelected(item.name, item.type) ? "bg-teal-50" : ""
-                          }`}
-                          onClick={() => handleSelectItem(item)}
+                          custom={index}
+                          variants={itemVariants}
+                          initial="hidden"
+                          animate="visible"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                              {activeTab === "labs" && "brandCount" in item && (
-                                <p className="text-xs text-gray-500">{item.brandCount} marques</p>
-                              )}
-                              {activeTab === "brands" && "parent" in item && (
-                                <p className="text-xs text-gray-500">Lab: {item.parent}</p>
+                          <motion.button
+                            onClick={() => handleSelectItem(item)}
+                            whileHover={{ scale: 1.01, backgroundColor: isItemSelected(item.name, item.type) ? "#e6f7f5" : "#f3f4f6" }}
+                            whileTap={{ scale: 0.99 }}
+                            className={`w-full flex items-center p-3 rounded-lg text-left transition-all duration-200 ${
+                              isItemSelected(item.name, item.type)
+                                ? "bg-teal-50 border-teal-200 border shadow-sm"
+                                : "bg-white hover:bg-gray-50 border border-transparent"
+                            }`}
+                          >
+                            <div className={`mr-3 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                              isItemSelected(item.name, item.type)
+                                ? "bg-teal-500 text-white"
+                                : "bg-gray-100 text-gray-500"
+                            }`}>
+                              {isItemSelected(item.name, item.type) ? (
+                                <HiCheck className="w-5 h-5" />
+                              ) : (
+                                item.type === "lab" ? <HiBeaker className="w-5 h-5" /> : <HiArchiveBox className="w-5 h-5" />
                               )}
                             </div>
-                            {isItemSelected(item.name, item.type) && (
-                              <div className="w-5 h-5 bg-teal-500 rounded-full flex items-center justify-center">
-                                <FaCheck className="text-white text-xs" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${
+                                isItemSelected(item.name, item.type) ? "text-teal-700" : "text-gray-800"
+                              }`}>
+                                {item.name}
+                              </p>
+                              
+                              {"brandCount" in item ? (
+                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                                    {item.brandCount} marque{item.brandCount > 1 ? "s" : ""}
+                                  </span>
+                                </p>
+                              ) : "parent" in item ? (
+                                <p className="text-xs text-gray-500">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">
+                                    {item.parent}
+                                  </span>
+                                </p>
+                              ) : null}
+                            </div>
+                          </motion.button>
+                        </motion.div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {/* Selected count & clear button */}
-                <div className="border-t border-gray-200 p-3 bg-gray-50 flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
-                    {selectedLabs.length + selectedBrands.length} élément(s) sélectionné(s)
-                  </div>
-                  {(selectedLabs.length > 0 || selectedBrands.length > 0) && (
-                    <button
-                      onClick={handleClearSelection}
-                      className="text-sm text-red-600 hover:text-red-800 font-medium flex items-center"
-                    >
-                      <FaTimes className="mr-1" /> Effacer tout
-                    </button>
                   )}
                 </div>
               </motion.div>
@@ -255,42 +381,58 @@ const LabDropdown: React.FC = () => {
 
           {/* Selected items display when dropdown is closed */}
           {!isDropdownOpen && (selectedLabs.length > 0 || selectedBrands.length > 0) && (
-            <div className="mt-3 flex flex-wrap gap-2">
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mt-3 flex flex-wrap gap-2"
+            >
               {selectedLabs.map((lab) => (
-                <div 
-                  key={`selected-lab-${lab}`} 
-                  className="bg-teal-50 text-teal-700 text-xs px-3 py-1 rounded-full flex items-center border border-teal-200"
+                <motion.div 
+                  key={`selected-lab-${lab}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  className="bg-teal-50 text-teal-700 text-xs px-3 py-1.5 rounded-full flex items-center border border-teal-200 shadow-sm"
                 >
-                  <span className="font-medium">Lab: {lab}</span>
+                  <HiBeaker className="mr-1.5 text-teal-500" />
+                  <span className="font-medium">{lab}</span>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSelectItem({ name: lab, type: "lab" });
                     }}
-                    className="ml-2 text-teal-500 hover:text-teal-700"
+                    className="ml-2 text-teal-500 hover:text-teal-700 p-0.5 hover:bg-teal-100 rounded-full transition-colors"
                   >
-                    <FaTimes size={10} />
+                    <HiXMark size={14} />
                   </button>
-                </div>
+                </motion.div>
               ))}
               {selectedBrands.map((brand) => (
-                <div 
-                  key={`selected-brand-${brand}`} 
-                  className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full flex items-center border border-blue-200"
+                <motion.div 
+                  key={`selected-brand-${brand}`}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  className="bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-full flex items-center border border-blue-200 shadow-sm"
                 >
-                  <span className="font-medium">Marque: {brand}</span>
+                  <HiArchiveBox className="mr-1.5 text-blue-500" />
+                  <span className="font-medium">{brand}</span>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSelectItem({ name: brand, type: "brand" });
                     }}
-                    className="ml-2 text-blue-500 hover:text-blue-700"
+                    className="ml-2 text-blue-500 hover:text-blue-700 p-0.5 hover:bg-blue-100 rounded-full transition-colors"
                   >
-                    <FaTimes size={10} />
+                    <HiXMark size={14} />
                   </button>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
         </>
       )}

@@ -1,17 +1,106 @@
 import React, { useState, useMemo } from "react";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSegmentationContext } from "@/contexts/segmentation/SegmentationContext";
 import SegmentationDisplay from "../segmentation/SegmentationDisplay";
 import { useFilterContext } from "@/contexts/FilterContext";
+import { 
+  HiChevronDown, 
+  HiChevronUp, 
+  HiBeaker, 
+  HiArchiveBox,
+  HiOutlinePresentationChartBar,
+  HiSparkles
+} from "react-icons/hi2";
 
-// Couleurs pour les différents labs (cycliques)
+// Animation variants
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (custom: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: custom * 0.1,
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] // Apple-like ease curve
+    }
+  }),
+  hover: {
+    y: -5,
+    boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 20
+    }
+  },
+  tap: {
+    y: -2,
+    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 20
+    }
+  }
+};
+
+const contentVariants = {
+  hidden: { opacity: 0, height: 0 },
+  visible: { 
+    opacity: 1, 
+    height: "auto",
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1]
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    height: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.22, 1, 0.36, 1]
+    }
+  }
+};
+
+// Couleurs pour les différents labs (cycliques avec gradients)
 const COLORS = [
-  "border-teal-500",
-  "border-blue-500",
-  "border-purple-500", 
-  "border-green-500",
-  "border-red-500"
+  {
+    border: "border-teal-400",
+    bg: "from-teal-400/10 to-teal-500/5",
+    text: "text-teal-700",
+    hover: "hover:bg-teal-50",
+    icon: "text-teal-500"
+  },
+  {
+    border: "border-blue-400",
+    bg: "from-blue-400/10 to-blue-500/5",
+    text: "text-blue-700",
+    hover: "hover:bg-blue-50",
+    icon: "text-blue-500"
+  },
+  {
+    border: "border-purple-400",
+    bg: "from-purple-400/10 to-purple-500/5",
+    text: "text-purple-700",
+    hover: "hover:bg-purple-50",
+    icon: "text-purple-500"
+  },
+  {
+    border: "border-emerald-400",
+    bg: "from-emerald-400/10 to-emerald-500/5",
+    text: "text-emerald-700",
+    hover: "hover:bg-emerald-50",
+    icon: "text-emerald-500"
+  },
+  {
+    border: "border-rose-400",
+    bg: "from-rose-400/10 to-rose-500/5",
+    text: "text-rose-700",
+    hover: "hover:bg-rose-50",
+    icon: "text-rose-500"
+  }
 ];
 
 const SelectedLabsList: React.FC = () => {
@@ -21,6 +110,7 @@ const SelectedLabsList: React.FC = () => {
   
   // Local state
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [expandedLabCards, setExpandedLabCards] = useState<Record<string, boolean>>({});
 
   // Create a map of selected labs with their brands
   const selectedLabsMap = useMemo(() => {
@@ -60,67 +150,140 @@ const SelectedLabsList: React.FC = () => {
   // Convert map to array for rendering
   const selectedLabsArray = Array.from(selectedLabsMap.entries());
 
+  // Toggle lab card expansion
+  const toggleLabCard = (lab: string) => {
+    setExpandedLabCards(prev => ({
+      ...prev,
+      [lab]: !prev[lab]
+    }));
+  };
+
   // Don't render anything if no labs or brands are selected
   if (selectedLabsArray.length === 0) {
     return null;
   }
 
   return (
-    <div className="mt-6">
+    <div className="mt-8">
       {/* Header with title and toggle button */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">
+      <div className="flex justify-between items-center mb-5">
+        <motion.h2 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="text-xl font-bold text-gray-800 flex items-center gap-2"
+        >
+          <span className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-100 to-blue-100 flex items-center justify-center shadow-sm border border-teal-200/50">
+            <HiOutlinePresentationChartBar className="text-teal-600" />
+          </span>
           Laboratoires sélectionnés
-        </h2>
-        <button
+        </motion.h2>
+        
+        <motion.button
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           onClick={() => setIsCollapsed((prev) => !prev)}
-          className="text-teal-600 hover:text-teal-800 transition flex items-center gap-2"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-teal-600 bg-teal-50 hover:bg-teal-100 transition-colors shadow-sm border border-teal-200/50"
           aria-expanded={!isCollapsed}
           aria-controls="labs-content"
+          whileHover={{ scale: 1.02, y: -1 }}
+          whileTap={{ scale: 0.98 }}
         >
           {isCollapsed ? "Afficher les détails" : "Masquer les détails"}
-          {isCollapsed ? <FaChevronDown /> : <FaChevronUp />}
-        </button>
+          {isCollapsed ? <HiChevronDown /> : <HiChevronUp />}
+        </motion.button>
       </div>
 
       {/* Grid of lab cards */}
-      <div id="labs-content" className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <motion.div 
+        id="labs-content"
+        className="grid md:grid-cols-2 lg:grid-cols-3 gap-4"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: {
+              staggerChildren: 0.1
+            }
+          }
+        }}
+      >
         {selectedLabsArray.map(([lab, brands], index) => (
-          <div
+          <motion.div
             key={lab}
-            className={`bg-white p-4 rounded-lg shadow-md border-l-4 ${COLORS[index % COLORS.length]}`}
+            variants={cardVariants}
+            custom={index}
+            whileHover="hover"
+            whileTap="tap"
+            className={`bg-gradient-to-br ${COLORS[index % COLORS.length].bg} rounded-xl shadow-sm border-l-4 ${COLORS[index % COLORS.length].border} overflow-hidden`}
           >
-            {/* Lab name */}
-            <p className="font-semibold text-gray-900">{lab}</p>
-
-            {/* Brands list if any */}
+            {/* Lab header with toggle */}
+            <div 
+              className={`p-4 flex items-center justify-between cursor-pointer ${COLORS[index % COLORS.length].hover} transition-colors`}
+              onClick={() => toggleLabCard(lab)}
+            >
+              <div className="flex items-center">
+                <span className={`w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-gray-100 ${COLORS[index % COLORS.length].icon}`}>
+                  <HiBeaker className="w-5 h-5" />
+                </span>
+                <div className="ml-3">
+                  <h3 className={`font-semibold ${COLORS[index % COLORS.length].text}`}>{lab}</h3>
+                  {brands.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {brands.length} marque{brands.length > 1 ? 's' : ''} associée{brands.length > 1 ? 's' : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              <motion.div
+                animate={{ rotate: expandedLabCards[lab] ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-gray-100 text-gray-500"
+              >
+                <HiChevronDown />
+              </motion.div>
+            </div>
+            
+            {/* Brands list */}
             {brands.length > 0 && (
-              <ul className="mt-2 text-sm text-gray-600">
-                {brands.map((brand) => (
-                  <li key={brand} className="bg-gray-100 px-2 py-1 rounded-md inline-block mr-2 mt-1">
-                    {brand}
-                  </li>
-                ))}
-              </ul>
+              <div className="px-4 pb-3">
+                <ul className="flex flex-wrap gap-2">
+                  {brands.map((brand) => (
+                    <li key={brand} className="inline-flex items-center px-3 py-1 bg-white/70 backdrop-blur-sm rounded-full shadow-sm text-xs font-medium text-blue-700 border border-blue-100">
+                      <HiArchiveBox className="mr-1.5 text-blue-500" />
+                      {brand}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
             {/* Segmentation details (animated on expand/collapse) */}
             <AnimatePresence>
-              {!isCollapsed && (
+              {!isCollapsed && expandedLabCards[lab] && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="mt-4"
+                  variants={contentVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="border-t border-gray-200/60 bg-white/80 backdrop-blur-sm"
                 >
-                  <SegmentationDisplay lab={lab} />
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+                      <HiSparkles className="text-yellow-500" />
+                      Détails de segmentation
+                    </div>
+                    <SegmentationDisplay lab={lab} />
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 };
