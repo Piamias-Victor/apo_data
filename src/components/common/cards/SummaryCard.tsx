@@ -133,6 +133,16 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
       badge: "bg-gray-100 text-gray-700",
       bar: "bg-gray-500/20",
       text: "text-gray-600"
+    },
+    red: {
+      light: "bg-red-50 text-red-600 border-red-200",
+      medium: "bg-red-100 text-red-700 border-red-300",
+      dark: "bg-red-600 text-white border-red-700",
+      gradient: "from-red-500 to-red-400",
+      increase: "bg-red-50 text-red-600",
+      badge: "bg-red-100 text-red-700",
+      bar: "bg-red-500/20",
+      text: "text-red-600"
     }
   };
   

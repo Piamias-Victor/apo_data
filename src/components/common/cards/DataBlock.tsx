@@ -10,7 +10,7 @@ export interface DataBlockProps {
   isPercentage?: boolean;
   isDecimal?: boolean;
   isRatio?: boolean; // Nouveau: pour indiquer si c'est un ratio achats/ventes
-  accentColor?: "teal" | "blue" | "indigo" | "purple" | "rose" | "orange" | "gray" | "amber" | "emerald";
+  accentColor?: "teal" | "blue" | "indigo" | "purple" | "rose" | "orange" | "gray" | "amber" | "emerald" | "red";
   size?: "sm" | "md" | "lg";
   animationDelay?: number;
   variant?: "default" | "outlined" | "glassmorphic" | "minimal" | "gradient";
@@ -118,6 +118,17 @@ const DataBlock: React.FC<DataBlockProps> = ({
       },
       code: "text-emerald-500",
       shadow: "shadow-emerald-100"
+    },
+    red: {
+      light: "bg-red-50 text-red-700 border-red-200",
+      medium: "bg-red-100 text-red-800",
+      badge: {
+        increase: "bg-red-500 text-white",
+        decrease: "bg-red-600 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-red-500",
+      shadow: "shadow-red-100"
     },
     gray: {
       light: "bg-gray-50 text-gray-700 border-gray-200",

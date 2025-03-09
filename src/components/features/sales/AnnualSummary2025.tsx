@@ -147,7 +147,7 @@ const AnnualSummary2025: React.FC<AnnualSummaryProps> = ({
             title="Ventes (Sell-Out)" 
             icon={<HiShoppingCart className="w-5 h-5" />}
             iconColor="text-teal-500"
-            variant="glass"
+            variant="glassmorphic"
             noPadding={false}
             animationDelay={0.1}
             accentColor="teal"
@@ -201,7 +201,7 @@ const AnnualSummary2025: React.FC<AnnualSummaryProps> = ({
             title="Achats (Sell-In)" 
             icon={<HiCube className="w-5 h-5" />}
             iconColor="text-blue-500"
-            variant="glass"
+            variant="glassmorphic"
             noPadding={false}
             animationDelay={0.2}
             accentColor="blue"

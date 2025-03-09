@@ -113,7 +113,7 @@ const LaboratoryDashboardGlobal: React.FC = () => {
           description="Impact des ruptures sur les ventes et la rentabilité 🚨"
           color="text-red-600"
         />
-        {/* <StockBreakDataComponent /> */}
+        <StockBreakDataComponent />
       </motion.div>
 
       <Separator from="teal-400" via="yellow-400" to="red-400" />
