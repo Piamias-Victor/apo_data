@@ -4,7 +4,7 @@ import PeriodSelector from "@/components/common/sections/PeriodSelector";
 import { useFilterContext } from "@/contexts/FilterContext";
 import { motion } from "framer-motion";
 import React from "react";
-import { HiCalendarDays, HiExclamationTriangle, HiCurrencyDollar, HiShoppingBag } from "react-icons/hi2";
+import { HiCalendarDays, HiExclamationTriangle, HiCurrencyDollar, HiShoppingBag, HiTrendingUp } from "react-icons/hi2";
 
 interface AnnualStockBreakProps {
   currentPeriodData: {
@@ -34,16 +34,6 @@ const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
     typeof currentPeriodData.productOrder === 'number' && 
     !isNaN(currentPeriodData.productOrder);
     
-  // Calcul du ratio de rupture sur commandes
-  const breakRatio = hasData && currentPeriodData.productOrder > 0 
-    ? (currentPeriodData.breakProduct / currentPeriodData.productOrder) * 100 
-    : 0;
-    
-  // Calcul du ratio de rupture pour la période précédente
-  const prevBreakRatio = comparisonPeriodData && comparisonPeriodData.productOrder > 0
-    ? (comparisonPeriodData.breakProduct / comparisonPeriodData.productOrder) * 100
-    : 0;
-    
   // Calcul du coût moyen par rupture
   const breakCostPerUnit = hasData && currentPeriodData.breakProduct > 0 
     ? currentPeriodData.breakAmount / currentPeriodData.breakProduct
@@ -52,6 +42,12 @@ const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
   const prevBreakCostPerUnit = comparisonPeriodData && comparisonPeriodData.breakProduct > 0
     ? comparisonPeriodData.breakAmount / comparisonPeriodData.breakProduct
     : 0;
+    
+  // Calcul du pourcentage d'impact sur le CA estimé
+  // Estimation que chaque rupture représente une perte de vente potentielle
+  // On estime le CA potentiel perdu à cause des ruptures
+  const revenueImpact = hasData ? (breakCostPerUnit * currentPeriodData.breakProduct) : 0;
+  const prevRevenueImpact = comparisonPeriodData ? (prevBreakCostPerUnit * comparisonPeriodData.breakProduct) : 0;
     
   // Variables d'animation
   const containerVariants = {
@@ -225,10 +221,10 @@ const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
 
         {/* Section supplémentaire de métriques calculées */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-          {/* Ratio de rupture sur commandes */}
+          {/* Métriques d'impact financier */}
           <SummaryCard 
-            title="Statistiques Avancées" 
-            icon={<HiExclamationTriangle className="w-5 h-5" />}
+            title="Impact Économique" 
+            icon={<HiCurrencyDollar className="w-5 h-5" />}
             iconColor="text-red-500"
             variant="glass"
             noPadding={false}
@@ -237,18 +233,18 @@ const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <DataBlock 
-                title="Ratio Rupture/Commandes" 
-                value={breakRatio} 
-                previousValue={prevBreakRatio}
-                isPercentage
+                title="Coût Moyen par Rupture" 
+                value={breakCostPerUnit} 
+                previousValue={prevBreakCostPerUnit}
+                isCurrency
                 accentColor="red"
                 animationDelay={0.6}
                 variant="minimal"
               />
               <DataBlock 
-                title="Coût Moyen par Rupture" 
-                value={breakCostPerUnit} 
-                previousValue={prevBreakCostPerUnit}
+                title="Impact CA Potentiel" 
+                value={revenueImpact} 
+                previousValue={prevRevenueImpact}
                 isCurrency
                 accentColor="red"
                 animationDelay={0.7}
@@ -269,7 +265,7 @@ const AnnualStockBreak2025: React.FC<AnnualStockBreakProps> = ({
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Impact des ruptures</h3>
               <p className="text-sm text-gray-600">
                 Les ruptures de stock entraînent une perte de chiffre d'affaires directe, mais aussi indirecte par une dégradation de la satisfaction client. 
-                Une analyse régulière permet d'optimiser votre approvisionnement.
+                Le <span className="font-medium">Coût Moyen par Rupture</span> quantifie la perte financière moyenne par produit indisponible, vous aidant à prioriser vos actions d'approvisionnement.
               </p>
             </div>
           </motion.div>

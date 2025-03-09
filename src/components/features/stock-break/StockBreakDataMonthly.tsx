@@ -227,9 +227,9 @@ const StockBreakDataMonthly: React.FC<StockBreakDataMonthlyProps> = ({ stockBrea
             <tbody>
               {sortedData.map((data, index) => {
                 // Déterminer si ce mois est le pire en termes de ruptures
-                const isWorstRate = data.stock_break_rate === metrics.worst.rate;
-                const isWorstAmount = data.stock_break_amount === metrics.worst.amount;
-                const isWorstProducts = data.stock_break_products === metrics.worst.products;
+                const isWorstRate = Math.abs(data.stock_break_rate - metrics.worst.rate) < 0.01; // Utilisation d'une comparaison approximative pour éviter les problèmes de précision
+                const isWorstAmount = Math.abs(data.stock_break_amount - metrics.worst.amount) < 0.01;
+                const isWorstProducts = Math.abs(data.stock_break_products - metrics.worst.products) < 0.01;
                 const isHighlighted = highlightWorstMonth && (isWorstRate || isWorstAmount || isWorstProducts);
                 
                 // Formater le nom du mois pour affichage

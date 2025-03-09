@@ -54,15 +54,6 @@ const ForecastStockBreak2025: React.FC<ForecastStockBreakProps> = ({
       }
     }
   };
-  
-  // Calcul du ratio de rupture
-  const breakRatio = forecastValues.productOrder > 0 
-    ? (forecastValues.breakProduct / forecastValues.productOrder) * 100 
-    : 0;
-  
-  const prevBreakRatio = previousYearValues.productOrder > 0
-    ? (previousYearValues.breakProduct / previousYearValues.productOrder) * 100
-    : 0;
 
   // Calcul du coût moyen par rupture
   const breakCostPerUnit = forecastValues.breakProduct > 0 
@@ -72,6 +63,10 @@ const ForecastStockBreak2025: React.FC<ForecastStockBreakProps> = ({
   const prevBreakCostPerUnit = previousYearValues.breakProduct > 0
     ? previousYearValues.breakAmount / previousYearValues.breakProduct
     : 0;
+    
+  // Calcul du chiffre d'affaires potentiel perdu à cause des ruptures
+  const lostRevenuePotential = forecastValues.breakProduct * breakCostPerUnit * 1.4; // Facteur 1.4 pour estimer la marge perdue
+  const prevLostRevenuePotential = previousYearValues.breakProduct * prevBreakCostPerUnit * 1.4;
 
   return (
     <motion.div
@@ -226,8 +221,8 @@ const ForecastStockBreak2025: React.FC<ForecastStockBreakProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
           {/* Métriques dérivées */}
           <SummaryCard 
-            title="Métriques Prévisionnelles" 
-            icon={<HiSparkles className="w-5 h-5" />}
+            title="Impact Financier Prévisionnel" 
+            icon={<HiCurrencyDollar className="w-5 h-5" />}
             iconColor="text-rose-500"
             variant="glassmorphic"
             accentColor="rose"
@@ -235,18 +230,18 @@ const ForecastStockBreak2025: React.FC<ForecastStockBreakProps> = ({
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <DataBlock 
-                title="Ratio Rupture/Commandes" 
-                value={breakRatio} 
-                previousValue={prevBreakRatio}
-                isPercentage
+                title="Coût Moyen par Rupture" 
+                value={breakCostPerUnit} 
+                previousValue={prevBreakCostPerUnit}
+                isCurrency
                 accentColor="rose"
                 animationDelay={0.6}
                 variant="minimal"
               />
               <DataBlock 
-                title="Coût Moyen par Rupture" 
-                value={breakCostPerUnit} 
-                previousValue={prevBreakCostPerUnit}
+                title="CA Potentiel Perdu" 
+                value={lostRevenuePotential} 
+                previousValue={prevLostRevenuePotential}
                 isCurrency
                 accentColor="rose"
                 animationDelay={0.7}
