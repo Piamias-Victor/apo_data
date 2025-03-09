@@ -1,5 +1,5 @@
 // src/global/sales/utils/salesCalculations.ts
-import { SalesData, SalesMetrics } from "../hooks/useSalesData";
+import { SalesData, SalesMetrics } from "../hooks/data/useSalesData";
 
 /**
  * Calcule les métriques de vente à partir d'un tableau de données
