@@ -1,5 +1,7 @@
 import { formatLargeNumber } from '@/libs/formatUtils';
 import React from 'react';
+import { motion } from 'framer-motion';
+import { FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
 interface ValueWithEvolutionProps {
   currentValue: number;
@@ -17,39 +19,102 @@ const ValueWithEvolution: React.FC<ValueWithEvolutionProps> = ({
   formatAsPrice = true,
   className = '',
 }) => {
-  // Fonction pour calculer l'évolution
-  const getEvolution = (current: number, previous?: number) => {
+  // Calculer l'évolution en pourcentage
+  const calculateEvolution = (current: number, previous?: number) => {
     if (previous === undefined || previous === null) {
-      return <span className="text-gray-500">N/A</span>;
+      return { value: null, isPositive: false };
     }
     
     if (previous === 0) {
-      return current > 0 
-        ? <span className="text-green-500">+100%</span> 
-        : <span className="text-gray-500">0%</span>;
+      return { 
+        value: current > 0 ? 100 : 0, 
+        isPositive: current > 0 
+      };
     }
   
     const percentage = ((current - previous) / previous) * 100;
     const isPositive = percentage >= 0;
   
-    return (
-      <span className={isPositive ? "text-green-500" : "text-red-500"}>
-        {isNaN(percentage) || !isFinite(percentage) 
-          ? "0%" 
-          : (isPositive ? "+" : "") + percentage.toFixed(1) + "%"}
-      </span>
-    );
+    // Vérifier si le pourcentage est valide
+    if (isNaN(percentage) || !isFinite(percentage)) {
+      return { value: 0, isPositive: false };
+    }
+    
+    return { value: percentage, isPositive };
+  };
+
+  const evolution = calculateEvolution(currentValue, previousValue);
+
+  // Animations pour l'apparition des valeurs
+  const valueVariants = {
+    hidden: { opacity: 0, y: -5 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+    }
+  };
+
+  const evolutionVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { delay: 0.1, duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+    }
   };
 
   return (
     <div className={`flex flex-col ${className}`}>
-      <div className="text-sm font-medium">
+      {/* Valeur actuelle formatée */}
+      <motion.div 
+        className="text-base font-medium text-gray-800"
+        variants={valueVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {formatLargeNumber(currentValue, formatAsPrice)}
-      </div>
-      {previousValue !== undefined && (
-        <div className="text-xs mt-1">
-          {getEvolution(currentValue, previousValue)}
-        </div>
+      </motion.div>
+      
+      {/* Indicateur d'évolution */}
+      {evolution.value !== null && (
+        <motion.div 
+          className="flex justify-center mt-1.5"
+          variants={evolutionVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div 
+            className={`
+              flex items-center justify-center px-2 py-1 text-xs font-medium rounded-full
+              ${
+                evolution.value === 0
+                  ? "bg-gray-100 text-gray-600"
+                  : evolution.isPositive
+                    ? "bg-green-50 text-green-600 shadow-sm shadow-green-100"
+                    : "bg-red-50 text-red-600 shadow-sm shadow-red-100"
+              }
+            `}
+          >
+            {evolution.value === 0 ? (
+              "0%"
+            ) : (
+              <>
+                {evolution.isPositive ? "+" : ""}
+                {evolution.value.toFixed(1)}%
+                {evolution.value !== 0 && (
+                  <span className="ml-1">
+                    {evolution.isPositive ? (
+                      <FaArrowUp className="w-2.5 h-2.5" />
+                    ) : (
+                      <FaArrowDown className="w-2.5 h-2.5" />
+                    )}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+        </motion.div>
       )}
     </div>
   );
