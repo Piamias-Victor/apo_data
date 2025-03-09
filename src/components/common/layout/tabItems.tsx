@@ -2,9 +2,9 @@
 
 
 import StockBreakDashboard from "../../features/laboratory/stock-breaks/StockBreakDashboard";
-import SegmentationOverview from "../../features/laboratory/segmentation/SegmentationOverview";
 import LaboratoryDashboardGlobal from "@/components/features/laboratory/overview/LaboratoryDashboardGlobal";
 import ProductsDashboard from "@/components/features/laboratory/products/ProductsDashboard";
+import SegmentationTreeMapPage from "../../features/laboratory/segmentation/SegmentationOverview";
 
 export const tabItems = [
   {
@@ -21,6 +21,6 @@ export const tabItems = [
   },
   {
     label: "🔍 Segmentation",
-    content: <SegmentationOverview/>,
+    content: <SegmentationTreeMapPage/>,
   },
 ];

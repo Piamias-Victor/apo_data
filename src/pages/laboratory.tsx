@@ -5,8 +5,9 @@ import { useFilterContext } from "@/contexts/FilterContext";
 import { tabItems } from "@/components/common/layout/tabItems";
 import LabDropdown from "@/components/features/laboratory/overview/LabDropdown";
 import SelectedLabsList from "@/components/features/laboratory/overview/SelectedLabsList";
+import SegmentationDropdown from "@/components/features/laboratory/overview/LabDropdown";
 
-// Transitions et animations améliorées avec des courbes d'accélération plus douces
+// Transitions et animations inchangées
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { 
@@ -40,7 +41,7 @@ const itemVariants = {
   }
 };
 
-// Composant pour l'onglet actif avec une animation plus fluide
+// Composant TabButton inchangé
 const TabButton = ({ isActive, onClick, label }) => (
   <motion.button
     onClick={onClick}
@@ -95,9 +96,10 @@ const LaboratoryPage: React.FC = () => {
       className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-8 pb-12 px-6"
     >
       <div className="max-w-7xl mx-auto">
+        {/* Carte principale avec dropdown et sélection */}
         <motion.div
           variants={itemVariants}
-          className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200/60 p-8 mb-6"
+          className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200/60 p-8 mb-6 relative z-10"
         >
           <motion.h1 
             className="text-2xl font-bold mb-6"
@@ -110,8 +112,11 @@ const LaboratoryPage: React.FC = () => {
             </span>
           </motion.h1>
           
-          <div className="mb-8 max-w-3xl">
-            <LabDropdown />
+          {/* Conteneur avec position relative pour le dropdown */}
+          <div className="mb-8 max-w-3xl mx-auto relative">
+            <div className="relative z-50">
+              <SegmentationDropdown />
+            </div>
           </div>
           
           <AnimatePresence mode="wait">
@@ -144,6 +149,7 @@ const LaboratoryPage: React.FC = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
+                className="relative z-0" // z-index inférieur pour que le dropdown passe au-dessus
               >
                 <SelectedLabsList />
               </motion.div>
@@ -151,8 +157,9 @@ const LaboratoryPage: React.FC = () => {
           </AnimatePresence>
         </motion.div>
 
-        <motion.div variants={itemVariants} className="mt-10">
-          {/* Tabs with improved animation */}
+        {/* Section des onglets */}
+        <motion.div variants={itemVariants} className="mt-10 relative z-0">
+          {/* z-index réduit pour les onglets */}
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-sm border border-gray-200/60 overflow-hidden">
             <div className="flex space-x-1 border-b border-gray-200/70 px-4 py-1 bg-gray-50/50">
               {tabItems.map((tab, index) => (
