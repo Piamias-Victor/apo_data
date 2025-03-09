@@ -226,8 +226,10 @@ const StockDataMonthly: React.FC<StockDataMonthlyProps> = ({ stockData, loading,
             <tbody>
               {sortedData.map((data, index) => {
                 // Déterminer si ce mois est le meilleur en termes de stock
-                const isBestStockValue = data.total_stock_value === metrics.best.stockValue;
-                const isBestStockAvg = data.total_avg_stock === metrics.best.stockAvg;
+                // Utilisation d'une marge d'erreur pour les comparaisons de nombres flottants
+                const EPSILON = 0.01; // Marge d'erreur pour les comparaisons
+                const isBestStockValue = Math.abs(data.total_stock_value - metrics.best.stockValue) < EPSILON;
+                const isBestStockAvg = Math.abs(data.total_avg_stock - metrics.best.stockAvg) < EPSILON;
                 const isHighlighted = highlightBestMonth && (isBestStockValue || isBestStockAvg);
                 
                 // Formater le nom du mois pour affichage

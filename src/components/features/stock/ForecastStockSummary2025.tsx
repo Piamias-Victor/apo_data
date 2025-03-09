@@ -64,9 +64,10 @@ const ForecastStockSummary2025: React.FC<ForecastStockSummaryProps> = ({
     ? previousYearValues.stockValue / previousYearValues.avgStock
     : 0;
 
-  // Calcul du capital immobilisé estimé (basé sur la valeur du stock)
-  const immobilizedCapital = forecastValues.stockValue;
-  const prevImmobilizedCapital = previousYearValues.stockValue;
+  // Calcul du coût d'opportunité (rendement potentiel si l'argent était investi ailleurs)
+  const annualInterestRate = 0.05; // 5% de rendement annuel
+  const opportunityCost = forecastValues.stockValue * annualInterestRate;
+  const prevOpportunityCost = previousYearValues.stockValue * annualInterestRate;
 
   return (
     <motion.div
@@ -212,12 +213,12 @@ const ForecastStockSummary2025: React.FC<ForecastStockSummaryProps> = ({
               />
             </div>
             
-            {/* Bloc supplémentaire pour l'impact financier */}
+            {/* Bloc supplémentaire pour le coût d'opportunité (remplace le capital immobilisé) */}
             <div className="mt-4 pt-3 border-t border-blue-50">
               <DataBlock 
-                title="Capital Immobilisé Estimé"
-                value={immobilizedCapital}
-                previousValue={prevImmobilizedCapital}
+                title="Coût d'Opportunité (5%/an)"
+                value={opportunityCost}
+                previousValue={prevOpportunityCost}
                 isCurrency
                 accentColor="blue"
                 animationDelay={0.5}
