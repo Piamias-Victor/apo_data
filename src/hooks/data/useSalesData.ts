@@ -1,6 +1,7 @@
-// src/global/sales/hooks/useSalesData.ts
+// src/hooks/data/useSalesData.ts
 import { useFilterContext } from "@/contexts/FilterContext";
 import { useState, useEffect } from "react";
+import { format, subMonths } from "date-fns";
 
 export interface SalesData {
   month: string;
@@ -21,10 +22,12 @@ export interface SalesMetrics {
 
 // Données de démonstration pour palier à l'absence d'API
 const generateDemoData = (): SalesData[] => {
-  const months = [
-    "2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06",
-    "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"
-  ];
+  // Générer les 12 derniers mois à partir de la date actuelle
+  const currentDate = new Date();
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const date = subMonths(currentDate, i);
+    return format(date, 'yyyy-MM');
+  }).reverse(); // Pour avoir les mois dans l'ordre chronologique
   
   return months.map(month => {
     // Générer des valeurs aléatoires mais cohérentes pour la démonstration

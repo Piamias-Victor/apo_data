@@ -2,6 +2,8 @@ import CollapsibleSection from "@/components/common/sections/CollapsibleSection"
 import SortableTableHeader from "@/components/common/tables/SortableTableHeader";
 import { formatLargeNumber } from "@/libs/formatUtils";
 import { motion, AnimatePresence } from "framer-motion";
+import { format, parse } from "date-fns";
+import { fr } from "date-fns/locale";
 import React, { useState, useMemo } from "react";
 import { 
   HiCalendarDays, 
@@ -47,6 +49,18 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
     { key: "purchase_amount" as keyof SalesData, label: "Montant Achats (€)" },
   ];
 
+  // Formater les noms de mois
+  const formatMonthDisplay = (monthStr: string): string => {
+    try {
+      // Transformer "2025-03" en date puis en "Mars 2025"
+      const date = parse(monthStr, 'yyyy-MM', new Date());
+      return format(date, 'MMMM yyyy', { locale: fr });
+    } catch (error) {
+      // Fallback si la date ne peut pas être parsée
+      return monthStr;
+    }
+  };
+
   // Gestion du tri des colonnes
   const toggleSort = (column: keyof SalesData) => {
     if (sortColumn === column) {
@@ -60,7 +74,7 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
   // Recherche par mois
   const filteredData = useMemo(() => {
     return salesData.filter(data => 
-      data.month.toLowerCase().includes(searchTerm.toLowerCase())
+      formatMonthDisplay(data.month).toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [salesData, searchTerm]);
 
@@ -150,6 +164,22 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
         {/* Options de filtre et d'affichage */}
         <div className="bg-white p-4 mb-5 rounded-xl shadow-sm border border-gray-200/70 flex flex-col md:flex-row gap-4 justify-between">
           
+          {/* Recherche */}
+          <div className="w-full md:w-1/2">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <HiMagnifyingGlass className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                placeholder="Rechercher un mois..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
           {/* Toggles d'affichage */}
           <div className="flex flex-wrap gap-3 justify-end">
             <motion.button
@@ -201,6 +231,11 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
                 const isBestMargin = data.margin === metrics.best.margin;
                 const isHighlighted = highlightBestMonth && (isBestRevenue || isBestMargin);
                 
+                // Formater le nom du mois pour affichage
+                const formattedMonth = formatMonthDisplay(data.month);
+                const [monthName, yearNumber] = formattedMonth.split(' ');
+                const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+                
                 return (
                   <tr 
                     key={index} 
@@ -212,7 +247,7 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
                     <td className="py-4 px-6 font-medium">
                       <div className="flex items-center">
                         <HiCalendarDays className={`mr-2 ${isHighlighted ? "text-blue-500" : "text-gray-400"}`} />
-                        {data.month}
+                        <span className="whitespace-nowrap">{capitalizedMonth} {yearNumber}</span>
                         {isHighlighted && (
                           <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">
                             {isBestRevenue ? "Meilleur CA" : "Meilleure marge"}
