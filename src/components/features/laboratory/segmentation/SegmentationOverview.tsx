@@ -1,13 +1,15 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { HiChartBar, HiCalendarDays, HiMagnifyingGlass, HiChevronDown, HiChevronUp, HiSparkles } from "react-icons/hi2";
+import dynamic from "next/dynamic";
 import Loader from "@/components/common/feedback/Loader";
 import { useFilterContext } from "@/contexts/FilterContext";
-import { AnimatePresence, motion } from "framer-motion";
-import dynamic from "next/dynamic";
-import { useState, useEffect, useCallback } from "react";
-import { FaChevronUp, FaChevronDown } from "react-icons/fa";
+import SectionTitle from "@/components/common/sections/SectionTitle";
+import Separator from "@/components/common/sections/Separator";
 import SegmentationTable from "./SegmentationTable";
+import CollapsibleSection from "@/components/common/sections/CollapsibleSection";
 
-
-// Define the SegmentationComparisonData type
+// Interface pour les données de segmentation
 interface SegmentationComparisonData {
   universe?: string;
   category?: string;
@@ -29,13 +31,16 @@ interface SegmentationComparisonData {
 // Import dynamique pour éviter les problèmes de SSR avec Plotly
 const TreemapChart = dynamic(() => import("@/components/common/charts/TreemapChart"), { 
   ssr: false,
-  loading: () => <Loader message="Chargement du graphique..." />
+  loading: () => <Loader message="Préparation du graphique..." color="teal" type="pulse" size="lg" />
 });
 
 // Types des segments disponibles
 const SEGMENT_TYPES = ["universe", "category", "family", "specificity"] as const;
 type SegmentType = typeof SEGMENT_TYPES[number];
 
+/**
+ * Composant principal de la vue Segmentation avec visualisation avancée des données
+ */
 const SegmentationOverview: React.FC = () => {
   // États
   const [segmentationData, setSegmentationData] = useState<SegmentationComparisonData[]>([]);
@@ -45,6 +50,31 @@ const SegmentationOverview: React.FC = () => {
   const [selectedLevel, setSelectedLevel] = useState<"universe" | "category" | "family">("universe");
   
   const { filters } = useFilterContext();
+
+  // Variantes d'animation pour le conteneur
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.15,
+        duration: 0.6
+      }
+    }
+  };
+
+  // Variantes d'animation pour les éléments
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1] // Courbe d'accélération Apple
+      }
+    }
+  };
 
   // Récupération des données de segmentation
   useEffect(() => {
@@ -130,7 +160,7 @@ const SegmentationOverview: React.FC = () => {
   };
 
   // Transformation des données pour le Treemap
-  const transformToTreemapData = useCallback((): TreemapDataProps => {
+  const transformToTreemapData = useCallback(() => {
     const labels: string[] = [];
     const parents: string[] = [];
     const revenue: number[] = [];
@@ -202,15 +232,16 @@ const SegmentationOverview: React.FC = () => {
 
   // Configuration des segments à afficher
   const segmentConfigs = [
-    { type: "universe", title: "🌍 Chiffre d'affaires par Univers", emoji: "🌍" },
-    { type: "category", title: "📦 Chiffre d'affaires par Catégorie", emoji: "📦" },
-    { type: "family", title: "👨‍👩‍👧 Chiffre d'affaires par Famille", emoji: "👨‍👩‍👧" },
-    { type: "specificity", title: "🛠️ Chiffre d'affaires par Spécificité", emoji: "🛠️" },
+    { type: "universe", title: "Segmentation par Univers", emoji: "🌍" },
+    { type: "category", title: "Segmentation par Catégorie", emoji: "📦" },
+    { type: "family", title: "Segmentation par Famille", emoji: "👨‍👩‍👧" },
+    { type: "specificity", title: "Segmentation par Spécificité", emoji: "🛠️" },
   ];
 
   // Obtention des segments agrégés pour l'affichage
   const segmentData = segmentConfigs.map(config => ({
     title: config.title,
+    emoji: config.emoji,
     data: aggregateByKey(config.type as keyof SegmentationComparisonData)
   }));
 
@@ -220,61 +251,134 @@ const SegmentationOverview: React.FC = () => {
   };
 
   // Gestion des états de chargement et d'erreur
-  if (loading) return <Loader message="Chargement des données de segmentation..." />;
-  if (error) return <p className="text-red-500 text-center">{error}</p>;
-  if (!segmentationData || segmentationData.length === 0)
-    return <p className="text-gray-500 text-center">Aucune donnée disponible.</p>;
+  if (loading) {
+    return <Loader type="pulse" message="Analyse des données de segmentation en cours..." color="teal" size="lg" />;
+  }
+
+  if (error) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-8 bg-red-50/90 backdrop-blur-sm rounded-xl border border-red-200 text-center shadow-sm"
+      >
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-red-700 mb-2">Erreur de chargement</h3>
+        <p className="text-red-600">{error}</p>
+      </motion.div>
+    );
+  }
+
+  if (!segmentationData || segmentationData.length === 0) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-8 bg-amber-50/90 backdrop-blur-sm rounded-xl border border-amber-200 text-center shadow-sm"
+      >
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-amber-700 mb-2">Aucune donnée disponible</h3>
+        <p className="text-amber-600">Nous n'avons pas trouvé de données de segmentation pour les critères sélectionnés.</p>
+      </motion.div>
+    );
+  }
 
   return (
-    <div className="rounded-xl p-8 relative">
-      {/* Titre principal */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        📊 <span>Segmentation des Ventes</span>
-      </h2>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-8xl mx-auto space-y-10"
+    >
+      {/* Titre de la section */}
+      <motion.div variants={itemVariants}>
+        <SectionTitle 
+          emoji="🔍" 
+          title="Analyse de Segmentation" 
+          description="Visualisation détaillée des performances selon différents segments commerciaux"
+          color="text-teal-600"
+          emojiColor="text-yellow-400"
+          withLine={true}
+          align="center"
+        />
+      </motion.div>
 
       {/* Graphique Treemap */}
-      <div className="mb-8">
-        <TreemapChart 
-          {...transformToTreemapData()} 
-          selectedLevel={selectedLevel}
-          onLevelChange={setSelectedLevel}
-        />
-      </div>
+      <motion.div 
+        variants={itemVariants}
+        className="w-full rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100"
+      >
+        <div className="p-6 md:p-8 relative bg-gradient-to-br from-teal-50 to-blue-50 border-b border-teal-100/50">
+          {/* Accent décoratif */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 to-blue-500 shadow-sm"></div>
+          
+          {/* Éléments de design de fond */}
+          <div className="absolute top-10 right-10 w-32 h-32 bg-teal-500/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-5 left-20 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl"></div>
+          
+          <div className="flex items-center relative z-10">
+            <motion.div 
+              className="w-12 h-12 flex items-center justify-center rounded-full bg-teal-100/80 text-teal-600 shadow-sm border border-teal-200/50 mr-4"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+            >
+              <HiChartBar className="w-6 h-6" />
+            </motion.div>
+            <div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
+                Visualisation des Segments
+              </h2>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+                className="text-gray-500 text-sm mt-1"
+              >
+                Explorer visuellement la répartition des ventes par segment
+              </motion.p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 md:p-8 bg-white">
+          <TreemapChart 
+            {...transformToTreemapData()} 
+            selectedLevel={selectedLevel}
+            onLevelChange={setSelectedLevel}
+          />
+        </div>
+      </motion.div>
+
+      <Separator from="teal-400" via="blue-400" to="teal-500" />
 
       {/* Tableaux de segmentation */}
-      <div className="space-y-6">
-        {segmentData.map(({ title, data }) => (
-          <div key={title} className="bg-gray-50 shadow-md rounded-lg p-4 relative border border-gray-200">
-            {/* Bouton toggle */}
-            <button
-              className="absolute top-4 right-4 bg-teal-500 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:bg-teal-600 transition flex items-center gap-2"
-              onClick={() => toggleTableDetails(title)}
-            >
-              {expandedTables[title] ? "Masquer" : "Afficher"} détails 
-              {expandedTables[title] ? <FaChevronUp /> : <FaChevronDown />}
-            </button>
-
-            {/* Titre du tableau */}
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-
-            {/* Contenu du tableau avec animation */}
-            <AnimatePresence>
-              {expandedTables[title] && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <SegmentationTable title={title} data={data} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+      <motion.div variants={itemVariants} className="space-y-8">
+        {segmentData.map(({ title, emoji, data }) => (
+          <CollapsibleSection 
+            key={title}
+            title={`${emoji} ${title}`}
+            icon={<HiMagnifyingGlass className="w-5 h-5" />}
+            buttonColorClass="bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600"
+            rounded="xl"
+            shadowDepth="lg"
+            transparentBackground={true}
+            titleSize="lg"
+            defaultCollapsed={true}
+          >
+            <SegmentationTable title={title} data={data} />
+          </CollapsibleSection>
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
