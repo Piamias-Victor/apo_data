@@ -1,6 +1,5 @@
 import React, { useState, ReactNode } from "react";
-import { FaChevronDown, FaChevronUp } from "react-icons/fa";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -26,7 +25,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   transparentBackground = true,
   rounded = "xl",
   titleSize = "lg",
-  borderColor = "border-gray-200",
+  borderColor = "border-gray-200/70",
   onToggle
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
@@ -78,7 +77,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       height: 0,
       transition: {
         duration: 0.3,
-        ease: "easeInOut"
+        ease: [0.22, 1, 0.36, 1] // Courbe d'accélération type Apple
       }
     },
     visible: { 
@@ -86,7 +85,7 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
       height: "auto",
       transition: {
         duration: 0.5,
-        ease: "easeInOut"
+        ease: [0.22, 1, 0.36, 1]
       }
     }
   };
@@ -97,33 +96,35 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
     >
       {/* Bouton de toggle avec animation */}
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
         onClick={handleToggle}
-        className={`absolute top-4 right-4 ${buttonColorClass} text-white px-4 py-2 ${roundedClasses.lg} text-sm font-medium shadow-md transition flex items-center gap-2 z-10`}
+        className={`absolute top-4 right-4 ${buttonColorClass} text-white px-5 py-2 rounded-full text-sm font-medium shadow-md transition-all duration-300 flex items-center gap-2 z-10`}
       >
         {isCollapsed ? "Afficher détails" : "Masquer détails"} 
         <motion.div
           animate={{ rotate: isCollapsed ? 0 : 180 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         >
-          <FaChevronDown />
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
         </motion.div>
       </motion.button>
 
       {/* Titre */}
       <div className="flex items-start pr-32 mb-4">
-        <h2 className={`${titleClasses[titleSize]} font-bold text-gray-900 flex items-center gap-2 transition-colors duration-200`}>
+        <h2 className={`${titleClasses[titleSize]} font-semibold text-gray-900 flex items-center gap-2 transition-colors duration-200`}>
           {icon} <span>{title}</span>
         </h2>
       </div>
 
       {/* Ligne de séparation */}
       <motion.div 
-        className="border-b border-gray-200 w-full mb-4"
+        className="border-b border-gray-200/70 w-full mb-6"
         initial={{ width: 0 }}
         animate={{ width: "100%" }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       />
 
       {/* Contenu animé */}
