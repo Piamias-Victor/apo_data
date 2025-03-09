@@ -162,7 +162,7 @@ const LaboratoryDashboardGlobal: React.FC = () => {
           description="Analyse des ventes et marges des pharmacies partenaires 💊"
           color="text-pink-600"
         />
-        {/* <SalesPharmaciesComponent /> */}
+        <SalesPharmaciesComponent />
       </motion.div>
     </motion.div>
   );
