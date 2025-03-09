@@ -2,65 +2,9 @@ import React from "react";
 import { motion } from "framer-motion";
 import { usePharmacySalesData } from "@/hooks/api/usePharmacySalesData";
 import Loader from "@/components/common/feedback/Loader";
-import SalesPharmaciesSummaryCard from "./SalesSummaryCard";
 import SalesDataByPharmacy from "./SalesDataByPharmacy";
-
-// Variantes d'animation pour les conteneurs
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2
-    }
-  }
-};
-
-// Variantes d'animation pour les éléments individuels
-const itemVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      type: "spring",
-      stiffness: 80,
-      damping: 15
-    }
-  }
-};
-
-// Composant pour les titres de section avec animation
-const SectionTitle = ({ emoji, title, description, color, emojiColor = "text-yellow-400" }) => (
-  <motion.div
-    variants={itemVariants}
-    className="text-center mb-8"
-  >
-    <h2 className={`text-3xl md:text-4xl font-extrabold ${color} tracking-wide flex items-center justify-center gap-3`}>
-      <motion.span 
-        className={emojiColor}
-        animate={{ 
-          rotate: [0, -5, 5, -3, 3, 0],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ 
-          duration: 2, 
-          ease: "easeInOut", 
-          times: [0, 0.2, 0.4, 0.6, 0.8, 1],
-          repeat: Infinity,
-          repeatDelay: 5
-        }}
-      >
-        {emoji}
-      </motion.span>
-      {title}
-    </h2>
-    <p className="text-gray-600 mt-2 text-lg">
-      {description}
-    </p>
-  </motion.div>
-);
+import SectionTitle from "@/components/common/sections/SectionTitle";
+import TopPharmaciesCard from "./SalesSummaryCard";
 
 const SalesPharmaciesComponent: React.FC = () => {
   // Récupération des données de ventes par pharmacie
@@ -72,7 +16,33 @@ const SalesPharmaciesComponent: React.FC = () => {
     topPharmacies 
   } = usePharmacySalesData();
 
-  // État de chargement ou erreur
+  // Variantes d'animation pour le conteneur
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  // Variantes d'animation pour les éléments
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 80,
+        damping: 15
+      }
+    }
+  };
+
+  // États de chargement et d'erreur
   if (!hasSelectedData) {
     return (
       <motion.div 
@@ -144,16 +114,16 @@ const SalesPharmaciesComponent: React.FC = () => {
       {/* Titre de la section */}
       <motion.div variants={itemVariants}>
         <SectionTitle 
-          emoji="🏥" 
           title="Performance des Pharmacies" 
           description="Analyse détaillée des ventes et marges des pharmacies partenaires 💊"
+          emoji="🏥"
           color="text-pink-600"
         />
       </motion.div>
 
       {/* Carte des meilleures pharmacies */}
       <motion.div variants={itemVariants}>
-        <SalesPharmaciesSummaryCard 
+        <TopPharmaciesCard 
           topRevenue={topPharmacies.topRevenue}
           topMargin={topPharmacies.topMargin}
           topGrowth={topPharmacies.topGrowth}

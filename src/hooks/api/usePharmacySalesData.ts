@@ -1,4 +1,3 @@
-// hooks/usePharmacySalesData.ts
 import { useState, useEffect } from "react";
 import { useFilterContext } from "@/contexts/FilterContext";
 
@@ -14,6 +13,7 @@ export interface PharmacySalesData {
 }
 
 export interface PharmacySalesWithEvolution extends PharmacySalesData {
+  previous?: PharmacySalesData;
   evolution: {
     total_quantity: number;
     revenue: number;
@@ -22,47 +22,6 @@ export interface PharmacySalesWithEvolution extends PharmacySalesData {
     purchase_amount: number;
   };
 }
-
-// Données de démonstration pour palier à l'absence d'API
-const generateDemoPharmacyData = (): PharmacySalesWithEvolution[] => {
-  const pharmacyNames = [
-    "Pharmacie Centrale", "Pharmacie du Parc", "Pharmacie des Halles",
-    "Pharmacie de la Gare", "Grande Pharmacie", "Pharmacie du Marché",
-    "Pharmacie Principale", "Pharmacie de la Place", "Pharmacie Saint-Michel"
-  ];
-  
-  return pharmacyNames.map((name, index) => {
-    const baseRevenue = Math.floor(Math.random() * 50000) + 30000;
-    const baseQuantity = Math.floor(Math.random() * 2000) + 500;
-    
-    // Calculer des valeurs cohérentes
-    const revenue = baseRevenue;
-    const margin = Math.floor(revenue * (Math.random() * 0.15 + 0.25)); // 25-40% marge
-    const purchase_quantity = Math.floor(baseQuantity * (Math.random() * 0.2 + 0.9)); // 90-110%
-    const purchase_amount = Math.floor(revenue * (Math.random() * 0.1 + 0.6)); // 60-70%
-    
-    // Générer des évolutions aléatoires
-    const getEvolution = () => (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 15 + 2);
-    
-    return {
-      pharmacy_id: `PHARM-${index + 1000}`,
-      pharmacy_name: name,
-      total_quantity: baseQuantity,
-      revenue,
-      margin,
-      purchase_quantity,
-      purchase_amount,
-      type: "current",
-      evolution: {
-        total_quantity: getEvolution(),
-        revenue: getEvolution(),
-        margin: getEvolution(),
-        purchase_quantity: getEvolution(),
-        purchase_amount: getEvolution()
-      }
-    };
-  });
-};
 
 export function usePharmacySalesData() {
   const { filters } = useFilterContext();
@@ -89,43 +48,58 @@ export function usePharmacySalesData() {
   };
 
   useEffect(() => {
-    if (!hasSelectedData) return;
+    if (!hasSelectedData) {
+      setLoading(false);
+      return;
+    }
     
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        // Tentative de fetch des données réelles
-        try {
-          const response = await fetch("/api/sale/getSalesByPharmacy", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filters }),
-          });
+        const response = await fetch("/api/sales/getSalesByPharmacy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filters }),
+        });
 
-          if (response.ok) {
-            const result = await response.json();
-            // Traitement des données réelles...
-            return;
-          }
-        } catch (apiError) {
-          console.log("API unavailable, using demo data");
-          // Silencieusement échouer et utiliser les données de démo
+        if (!response.ok) {
+          throw new Error(`Erreur de requête: ${response.status}`);
         }
 
-        // Simuler un délai de chargement
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const result = await response.json();
         
-        // Générer des données de démonstration
-        const demoData = generateDemoPharmacyData();
-        setSalesData(demoData);
+        // Grouper les données par pharmacie et type
+        const groupedData: Record<string, { current?: PharmacySalesData, comparison?: PharmacySalesData }> = {};
+        
+        result.salesData.forEach((item: PharmacySalesData) => {
+          if (!groupedData[item.pharmacy_id]) {
+            groupedData[item.pharmacy_id] = {};
+          }
+          groupedData[item.pharmacy_id][item.type] = item;
+        });
+
+        // Transformer les données pour inclure l'évolution
+        const processedData: PharmacySalesWithEvolution[] = Object.entries(groupedData).map(
+          ([pharmacy_id, { current, comparison }]) => ({
+            ...(current || comparison)!,
+            previous: comparison,
+            evolution: {
+              total_quantity: calculateEvolution(comparison?.total_quantity, current?.total_quantity),
+              revenue: calculateEvolution(comparison?.revenue, current?.revenue),
+              margin: calculateEvolution(comparison?.margin, current?.margin),
+              purchase_quantity: calculateEvolution(comparison?.purchase_quantity, current?.purchase_quantity),
+              purchase_amount: calculateEvolution(comparison?.purchase_amount, current?.purchase_amount)
+            }
+          })
+        );
+
+        setSalesData(processedData);
       } catch (err) {
-        console.error("Fetch Error:", err);
-        setError("Impossible de récupérer les données. Utilisation de données de démonstration.");
-        
-        // Fournir des données de démo même en cas d'erreur
-        setSalesData(generateDemoPharmacyData());
+        console.error("Erreur lors de la récupération des données :", err);
+        setError(err instanceof Error ? err.message : "Impossible de récupérer les données");
+        setSalesData([]);
       } finally {
         setLoading(false);
       }
@@ -148,7 +122,7 @@ export function usePharmacySalesData() {
     const topMargin = [...salesData].sort((a, b) => b.margin - a.margin).slice(0, 3);
     const topGrowth = [...salesData]
       .filter(pharmacy => pharmacy.evolution?.revenue !== undefined)
-      .sort((a, b) => (b.evolution?.revenue || 0) - (a.evolution?.revenue || 0))
+      .sort((a, b) => (b.evolution.revenue || 0) - (a.evolution.revenue || 0))
       .slice(0, 3);
     
     return {
