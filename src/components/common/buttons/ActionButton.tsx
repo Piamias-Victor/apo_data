@@ -34,60 +34,67 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   withShadow = true,
   withRing = true
 }) => {
-  // Configuration des variantes de style
+  // Configuration des variantes de style avec dégradés améliorés
   const variantClasses = {
     primary: {
-      bg: "bg-gradient-to-r from-blue-500 to-teal-500",
-      hover: "hover:from-blue-600 hover:to-teal-600",
+      bg: "bg-gradient-to-r from-blue-500 via-blue-550 to-teal-500",
+      hover: "hover:from-blue-600 hover:via-blue-650 hover:to-teal-600",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-blue-300"
+      ring: "focus:ring-blue-300/50",
+      shadow: "shadow-blue-500/20"
     },
     secondary: {
-      bg: "bg-gray-100",
-      hover: "hover:bg-gray-200",
+      bg: "bg-gradient-to-r from-gray-100 to-gray-50",
+      hover: "hover:from-gray-200 hover:to-gray-100",
       text: "text-gray-800",
-      border: "border-gray-300",
-      ring: "focus:ring-gray-200"
+      border: "border-gray-200",
+      ring: "focus:ring-gray-200/50",
+      shadow: "shadow-gray-200/30"
     },
     danger: {
-      bg: "bg-gradient-to-r from-red-500 to-rose-500",
-      hover: "hover:from-red-600 hover:to-rose-600",
+      bg: "bg-gradient-to-r from-red-500 via-red-550 to-rose-500",
+      hover: "hover:from-red-600 hover:via-red-650 hover:to-rose-600",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-red-300"
+      ring: "focus:ring-red-300/50",
+      shadow: "shadow-red-500/20"
     },
     success: {
-      bg: "bg-gradient-to-r from-emerald-500 to-green-500",
-      hover: "hover:from-emerald-600 hover:to-green-600",
+      bg: "bg-gradient-to-r from-emerald-500 via-emerald-550 to-green-500",
+      hover: "hover:from-emerald-600 hover:via-emerald-650 hover:to-green-600",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-green-300"
+      ring: "focus:ring-green-300/50",
+      shadow: "shadow-green-500/20"
     },
     warning: {
-      bg: "bg-gradient-to-r from-amber-500 to-orange-500",
-      hover: "hover:from-amber-600 hover:to-orange-600",
+      bg: "bg-gradient-to-r from-amber-500 via-amber-550 to-orange-500",
+      hover: "hover:from-amber-600 hover:via-amber-650 hover:to-orange-600",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-amber-300"
+      ring: "focus:ring-amber-300/50",
+      shadow: "shadow-amber-500/20"
     },
     info: {
-      bg: "bg-gradient-to-r from-sky-500 to-indigo-500",
-      hover: "hover:from-sky-600 hover:to-indigo-600",
+      bg: "bg-gradient-to-r from-sky-500 via-sky-550 to-indigo-500",
+      hover: "hover:from-sky-600 hover:via-sky-650 hover:to-indigo-600",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-sky-300"
+      ring: "focus:ring-sky-300/50",
+      shadow: "shadow-sky-500/20"
     },
     dark: {
-      bg: "bg-gray-800",
-      hover: "hover:bg-gray-900",
+      bg: "bg-gradient-to-r from-gray-800 to-gray-900",
+      hover: "hover:from-gray-900 hover:to-black",
       text: "text-white",
       border: "border-transparent",
-      ring: "focus:ring-gray-500"
+      ring: "focus:ring-gray-500/50",
+      shadow: "shadow-gray-800/30"
     }
   };
 
-  // Configuration des tailles
+  // Configuration améliorée des tailles avec padding équilibré
   const sizeClasses = {
     xs: "px-2 py-1 text-xs",
     sm: "px-3 py-1.5 text-sm",
@@ -113,20 +120,31 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     ${sizeClasses[size]}
     ${roundedClasses[rounded]}
     ${fullWidth ? "w-full" : ""}
-    ${withShadow ? "shadow-md hover:shadow-lg" : ""}
+    ${withShadow ? `shadow-md hover:shadow-lg ${variantClasses[variant].shadow}` : ""}
     ${withRing ? `focus:outline-none focus:ring-2 ${variantClasses[variant].ring}` : ""}
-    ${disabled ? "opacity-60 cursor-not-allowed" : ""}
-    transition-all duration-200 ease-in-out
+    ${disabled ? "opacity-60 cursor-not-allowed saturate-50" : ""}
+    transition-all duration-300 ease-out
     font-medium
     border ${variantClasses[variant].border}
-    flex items-center justify-center gap-2
+    flex items-center justify-center gap-2.5
+    transform hover:-translate-y-0.5 active:translate-y-0
+    backdrop-blur-sm
     ${className}
   `;
 
-  // Animation du bouton
+  // Animation du bouton améliorée
   const buttonVariants = {
-    hover: { scale: disabled ? 1 : 1.03 },
-    tap: { scale: disabled ? 1 : 0.98 }
+    hover: { 
+      scale: disabled ? 1 : 1.02,
+      boxShadow: withShadow ? "0 8px 20px rgba(0, 0, 0, 0.1)" : "none",
+    },
+    tap: { 
+      scale: disabled ? 1 : 0.98,
+      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+    },
+    initial: {
+      boxShadow: withShadow ? "0 4px 10px rgba(0, 0, 0, 0.08)" : "none",
+    }
   };
 
   // Contenu du bouton avec spinner pour l'état de chargement
@@ -138,9 +156,9 @@ const ActionButton: React.FC<ActionButtonProps> = ({
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
       )}
-      {leftIcon && icon && !loading && <span>{icon}</span>}
-      <span>{children}</span>
-      {!leftIcon && icon && !loading && <span>{icon}</span>}
+      {leftIcon && icon && !loading && <span className="transition-transform group-hover:scale-110">{icon}</span>}
+      <span className="tracking-wide">{children}</span>
+      {!leftIcon && icon && !loading && <span className="transition-transform group-hover:scale-110">{icon}</span>}
     </>
   );
 
@@ -148,12 +166,13 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     <motion.button
       type={type}
       onClick={onClick}
-      className={buttonClasses}
+      className={`group ${buttonClasses}`}
       disabled={disabled || loading}
       whileHover="hover"
       whileTap="tap"
+      initial="initial"
       variants={buttonVariants}
-      transition={{ duration: 0.2 }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
       {buttonContent}
     </motion.button>
