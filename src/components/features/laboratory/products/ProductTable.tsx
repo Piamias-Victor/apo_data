@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { FaTable, FaChartBar, FaSearch, FaSyncAlt } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaTable, FaChartBar, FaSearch, FaSyncAlt, FaChevronDown, FaChevronUp } from "react-icons/fa";
 import { HiSparkles } from "react-icons/hi2";
 import ProductSalesStockChart from "./ProductSalesStockChart";
 import ActionButton from "@/components/common/buttons/ActionButton";
 import SearchInput from "@/components/common/inputs/SearchInput";
-import CollapsibleSection from "@/components/common/sections/CollapsibleSection";
 import ProductTableRow from "@/components/common/tables/ProductTableRow";
 import SortableTableHeader from "@/components/common/tables/SortableTableHeader";
 import { useFilterContext } from "@/contexts/FilterContext";
@@ -14,6 +13,7 @@ import { ProductTableProps } from "@/types/types";
 
 /**
  * Tableau de produits avec tri, recherche et détails extensibles
+ * Ajout de la fonctionnalité de masquage/affichage du tableau
  */
 const ProductTable: React.FC<ProductTableProps> = ({
   title = "Performances Produits",
@@ -29,6 +29,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showUnitValues, setShowUnitValues] = useState<boolean>(false);
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
+  const [isTableCollapsed, setIsTableCollapsed] = useState<boolean>(defaultCollapsed);
   
   // Contexte et hook personnalisé
   const { filters } = useFilterContext();
@@ -89,6 +90,11 @@ const ProductTable: React.FC<ProductTableProps> = ({
     }
   };
 
+  // Gestionnaire pour masquer/afficher le tableau
+  const toggleTableVisibility = () => {
+    setIsTableCollapsed(prev => !prev);
+  };
+
   // Variantes d'animation
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -109,6 +115,22 @@ const ProductTable: React.FC<ProductTableProps> = ({
       transition: { 
         delay: 0.2, 
         duration: 0.4,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
+  };
+
+  const tableVariants = {
+    hidden: { 
+      opacity: 0, 
+      height: 0,
+      overflow: "hidden" 
+    },
+    visible: { 
+      opacity: 1, 
+      height: "auto",
+      transition: { 
+        duration: 0.4, 
         ease: [0.22, 1, 0.36, 1]
       }
     }
@@ -156,6 +178,18 @@ const ProductTable: React.FC<ProductTableProps> = ({
           {/* Boutons de contrôle */}
           <div className="flex gap-3">
             <ActionButton
+              onClick={toggleTableVisibility}
+              icon={isTableCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+              variant="secondary"
+              accentColor="indigo"
+              size="md"
+              rounded="full"
+              withRing
+            >
+              {isTableCollapsed ? "Afficher tableau" : "Masquer tableau"}
+            </ActionButton>
+            
+            <ActionButton
               onClick={() => setShowUnitValues(prev => !prev)}
               icon={<FaChartBar />}
               variant="primary"
@@ -187,7 +221,7 @@ const ProductTable: React.FC<ProductTableProps> = ({
           />
         </motion.div>
 
-        {/* États de chargement et d'erreur */}
+        {/* États de chargement et d'erreur - toujours visibles */}
         {loading && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
@@ -215,81 +249,88 @@ const ProductTable: React.FC<ProductTableProps> = ({
           </motion.div>
         )}
 
-        {/* Tableau */}
-        {!loading && !error && filteredData.length > 0 && (
-          <motion.div 
-            variants={contentVariants}
-            className="overflow-hidden border border-gray-200 shadow-lg rounded-xl"
-          >
-            <table className="w-full border-collapse rounded-xl table-auto">
-              <SortableTableHeader
-                columns={getColumns()}
-                sortColumn={sortColumn}
-                sortOrder={sortOrder}
-                onSort={handleSort}
-                headerBgColor="bg-gradient-to-r from-blue-500 to-indigo-500"
-                headerHoverColor="hover:from-blue-600 hover:to-indigo-600"
-              />
-              
-              <tbody className="text-sm">
-                {filteredData.map((product, index) => (
-                  <React.Fragment key={`${product.code_13_ref}-${index}`}>
-                    {/* Ligne de produit */}
-                    <ProductTableRow
-                      product={product}
-                      showUnitValues={showUnitValues}
-                      isExpanded={expandedProduct === product.code_13_ref}
-                      onToggleExpand={() => toggleDetails(product.code_13_ref)}
-                    />
+        {/* Contenu du tableau avec animation */}
+        <AnimatePresence initial={false}>
+          {!isTableCollapsed && !loading && !error && filteredData.length > 0 && (
+            <motion.div 
+              variants={tableVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="overflow-hidden"
+            >
+              <div className="border border-gray-200 shadow-lg rounded-xl">
+                <table className="w-full border-collapse rounded-xl table-auto">
+                  <SortableTableHeader
+                    columns={getColumns()}
+                    sortColumn={sortColumn}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                    headerBgColor="bg-gradient-to-r from-blue-500 to-indigo-500"
+                    headerHoverColor="hover:from-blue-600 hover:to-indigo-600"
+                  />
+                  
+                  <tbody className="text-sm">
+                    {filteredData.map((product, index) => (
+                      <React.Fragment key={`${product.code_13_ref}-${index}`}>
+                        {/* Ligne de produit */}
+                        <ProductTableRow
+                          product={product}
+                          showUnitValues={showUnitValues}
+                          isExpanded={expandedProduct === product.code_13_ref}
+                          onToggleExpand={() => toggleDetails(product.code_13_ref)}
+                        />
 
-                    {/* Détails du produit */}
-                    {expandedProduct === product.code_13_ref && (
-                      <tr>
-                        <td colSpan={getColumns().length} className="p-0">
-                          <motion.div 
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
-                            className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-t border-b border-blue-100"
-                          >
-                            {loadingStockData[product.code_13_ref] && (
-                              <div className="flex justify-center items-center p-8">
-                                <motion.div 
-                                  animate={{ rotate: 360 }}
-                                  transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                                  className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mr-3"
-                                />
-                                <p className="text-blue-600">Chargement des données détaillées...</p>
-                              </div>
-                            )}
-
-                            {salesStockData[product.code_13_ref] && (
-                              <div className="mt-2">
-                                <div className="flex items-center gap-2 mb-4">
-                                  <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100/80 text-blue-600 shadow-sm border border-blue-200/50">
-                                    <FaSyncAlt className="w-4 h-4" />
+                        {/* Détails du produit */}
+                        {expandedProduct === product.code_13_ref && (
+                          <tr>
+                            <td colSpan={getColumns().length} className="p-0">
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 border-t border-b border-blue-100"
+                              >
+                                {loadingStockData[product.code_13_ref] && (
+                                  <div className="flex justify-center items-center p-8">
+                                    <motion.div 
+                                      animate={{ rotate: 360 }}
+                                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                      className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mr-3"
+                                    />
+                                    <p className="text-blue-600">Chargement des données détaillées...</p>
                                   </div>
-                                  <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                                    Évolution des Ventes et Stocks
-                                  </h3>
-                                </div>
-                                <ProductSalesStockChart salesStockData={salesStockData[product.code_13_ref]} />
-                              </div>
-                            )}
-                          </motion.div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        )}
+                                )}
 
-        {/* Message si aucune donnée */}
-        {!loading && !error && filteredData.length === 0 && (
+                                {salesStockData[product.code_13_ref] && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100/80 text-blue-600 shadow-sm border border-blue-200/50">
+                                        <FaSyncAlt className="w-4 h-4" />
+                                      </div>
+                                      <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                        Évolution des Ventes et Stocks
+                                      </h3>
+                                    </div>
+                                    <ProductSalesStockChart salesStockData={salesStockData[product.code_13_ref]} />
+                                  </div>
+                                )}
+                              </motion.div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Message si aucune donnée - visible seulement quand le tableau est visible */}
+        {!isTableCollapsed && !loading && !error && filteredData.length === 0 && (
           <motion.div 
             variants={contentVariants}
             className="p-8 bg-amber-50/90 backdrop-blur-md rounded-xl border border-amber-200 text-center shadow-sm"
@@ -298,6 +339,24 @@ const ProductTable: React.FC<ProductTableProps> = ({
               <FaSearch className="h-6 w-6 text-amber-500" />
             </div>
             <p className="text-amber-700">Aucun produit ne correspond à votre recherche.</p>
+          </motion.div>
+        )}
+        
+        {/* Message de tableau masqué - visible uniquement quand le tableau est masqué */}
+        {isTableCollapsed && !loading && !error && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-6 bg-blue-50/50 rounded-xl border border-blue-100 text-center shadow-sm"
+          >
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <FaTable className="h-6 w-6 text-blue-500" />
+              </div>
+              <p className="text-blue-700 font-medium">Le tableau des produits est actuellement masqué</p>
+              <p className="text-blue-500 text-sm mt-1">Utilisez le bouton "Afficher tableau" pour visualiser les données</p>
+            </div>
           </motion.div>
         )}
       </div>

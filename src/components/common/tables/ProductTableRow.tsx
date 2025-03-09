@@ -12,7 +12,7 @@ interface ProductTableRowProps {
 }
 
 /**
- * Composant de ligne pour le tableau des produits avec animations fluides
+ * Composant de ligne pour le tableau des produits avec animations fluides et espacement réduit
  */
 const ProductTableRow: React.FC<ProductTableRowProps> = ({
   product,
@@ -107,7 +107,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
     }
   };
 
-  // Rendu des cellules pour les valeurs avec évolution
+  // Rendu des cellules pour les valeurs avec évolution (version avec espacement réduit)
   const renderValueCell = (
     currentValue: number, 
     previousValue?: number, 
@@ -117,9 +117,9 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
     const evolution = calculateEvolution(currentValue, previousValue);
     
     return (
-      <td className={`py-4 px-5 ${alternateRow ? 'bg-blue-50/20' : ''}`}>
+      <td className={`py-2 px-3 ${alternateRow ? 'bg-blue-50/20' : ''}`}>
         <div className="flex flex-col items-center">
-          <span className="font-medium text-gray-800">
+          <span className="font-medium text-gray-800 text-xs">
             {formatLargeNumber(currentValue, isCurrency)}
           </span>
           
@@ -128,19 +128,21 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
               variants={evolutionVariants}
               initial="initial"
               animate="animate"
-              className={`mt-1 px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${
+              className={`mt-1 px-1.5 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${
                 evolution.isPositive 
                   ? "bg-green-50 text-green-600" 
                   : "bg-red-50 text-red-600"
               }`}
             >
-              {evolution.isPositive ? "+" : ""}
-              {evolution.value.toFixed(1)}%
+              <span className="text-[10px]">
+                {evolution.isPositive ? "+" : ""}
+                {evolution.value.toFixed(1)}%
+              </span>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 20 20" 
                 fill="currentColor" 
-                className={`w-3 h-3 ${!evolution.isPositive && "transform rotate-180"}`}
+                className={`w-2.5 h-2.5 ${!evolution.isPositive && "transform rotate-180"}`}
               >
                 <path 
                   fillRule="evenodd" 
@@ -164,11 +166,11 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
       className={`${isExpanded ? 'bg-blue-50/30' : 'bg-white'} border-b border-gray-100 transition-colors duration-300`}
     >
       {/* Code 13 */}
-      <td className="py-4 px-5 border-r border-gray-50">
+      <td className="py-2 px-3 border-r border-gray-50">
         <div className="flex justify-center">
           <motion.div 
-            whileHover={{ y: -2, boxShadow: '0 3px 6px rgba(0, 0, 0, 0.1)' }}
-            className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-md text-sm font-medium border border-indigo-100"
+            whileHover={{ y: -1, boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
+            className="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-md text-xs font-medium border border-indigo-100"
           >
             {product.code_13_ref}
           </motion.div>
@@ -176,9 +178,9 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
       </td>
 
       {/* Nom du produit */}
-      <td className="py-4 px-5">
+      <td className="py-2 px-3">
         <div 
-          className="max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap text-gray-800 font-medium" 
+          className="max-w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-gray-800 font-medium text-xs" 
           title={product.product_name}
         >
           {product.product_name}
@@ -254,7 +256,7 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
       )}
 
       {/* Bouton d'expansion */}
-      <td className="py-4 px-5 text-center">
+      <td className="py-2 px-3 text-center">
         <motion.button
           variants={buttonVariants}
           initial="initial"
@@ -262,10 +264,10 @@ const ProductTableRow: React.FC<ProductTableRowProps> = ({
           whileHover="hover"
           whileTap="tap"
           onClick={onToggleExpand}
-          className="p-2 rounded-full flex items-center justify-center text-center border transition-all"
+          className="p-1.5 rounded-full flex items-center justify-center text-center border transition-all"
         >
           <HiChevronRight 
-            className={`w-5 h-5 ${isExpanded ? 'text-white' : 'text-indigo-600'}`} 
+            className={`w-4 h-4 ${isExpanded ? 'text-white' : 'text-indigo-600'}`} 
           />
         </motion.button>
       </td>
