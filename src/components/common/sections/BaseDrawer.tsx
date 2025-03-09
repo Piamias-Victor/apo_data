@@ -1,13 +1,14 @@
-import React, { ReactNode } from "react";
-import { FaTimes } from "react-icons/fa";
+import React, { ReactNode, useEffect } from "react";
+import { HiXMark } from "react-icons/hi2";
 
 interface BaseDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
-  width?: string; // par exemple "w-80" ou "w-96"
+  width?: string;
   footer?: ReactNode;
+  position?: "right" | "left";
 }
 
 const BaseDrawer: React.FC<BaseDrawerProps> = ({ 
@@ -15,35 +16,56 @@ const BaseDrawer: React.FC<BaseDrawerProps> = ({
   onClose, 
   title, 
   children, 
-  width = "w-80", 
-  footer 
+  width = "w-96", 
+  footer,
+  position = "right"
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      {isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={onClose}></div>}
+    <div className="fixed inset-0 z-[9999]">
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
       
-      <div
-        className={`fixed top-0 right-0 ${width} h-full bg-white shadow-lg transform ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 z-50 flex flex-col`}
+      {/* Drawer container - fixed height with scroll */}
+      <div 
+        className={`absolute top-0 ${position === "right" ? "right-0" : "left-0"} ${width} h-full bg-white shadow-lg`}
+        style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center border-b p-4">
-          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-          <button className="text-gray-600 hover:text-gray-800" onClick={onClose}>
-            <FaTimes />
-          </button>
+        {/* Header - fixed */}
+        <div className="p-4 border-b border-gray-200 bg-white">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+            <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
+              <HiXMark className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
         </div>
         
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* Content - scrollable */}
+        <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {children}
         </div>
         
-        {/* Footer (optionnel) */}
-        {footer && <div className="border-t p-4">{footer}</div>}
+        {/* Footer - fixed at bottom if provided */}
+        {footer && (
+          <div className="p-4 border-t border-gray-200 bg-white">
+            {footer}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

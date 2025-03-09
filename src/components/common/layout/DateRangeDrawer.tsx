@@ -1,16 +1,16 @@
-import { subYears } from "date-fns";
+import { subYears, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState, useEffect } from "react";
-import { FaCalendarMinus, FaTimes, FaCheck } from "react-icons/fa";
-import { DateRange } from "react-date-range"; // Ajoutez cet import
+import { motion } from "framer-motion";
+import { HiCalendar, HiXMark, HiCheck, HiArrowPath } from "react-icons/hi2";
+import { DateRange } from "react-date-range";
 import ActionButton from "../buttons/ActionButton";
 import BaseDrawer from "../sections/BaseDrawer";
 import { useFilterContext } from "@/contexts/FilterContext";
 
-// N'oubliez pas d'importer également les styles CSS nécessaires
-import "react-date-range/dist/styles.css"; // Style principal
-import "react-date-range/dist/theme/default.css"; // Thème par défaut
-
+// Import des styles
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
 
 interface DateRangeDrawerProps {
   isOpen: boolean;
@@ -107,76 +107,127 @@ const DateRangeDrawer: React.FC<DateRangeDrawerProps> = ({ isOpen, onClose }) =>
     ]);
   };
 
-  const footerContent = (
-    <div className="flex flex-col gap-3">
-      <div className="w-[50%]">
-        <ActionButton
-        onClick={applyLastYear}
-        icon={<FaCalendarMinus />}
-        variant="warning"
-      >
-        Appliquer N-1
-      </ActionButton>
-      </div>
-
-      <div className="flex justify-between">
-        <ActionButton
-          onClick={clearDateFilter}
-          icon={<FaTimes />}
-          variant="danger"
-        >
-          Réinitialiser
-        </ActionButton>
-
-        <ActionButton
-          onClick={applyDateFilter}
-          icon={<FaCheck />}
-          variant="success"
-        >
-          Appliquer
-        </ActionButton>
-      </div>
-    </div>
-  );
+  // Formatage pour affichage de dates au format court
+  const formatDateDisplay = (date: Date | null) => {
+    if (!date) return "--/--/--";
+    return format(date, "dd/MM/yy");
+  };
 
   return (
     <BaseDrawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Sélectionner une période"
+      title="Sélection de période"
       width="w-96"
-      footer={footerContent}
     >
-      <div className="space-y-6">
-        {/* Sélection de la période principale */}
-        <h4 className="text-md font-medium text-gray-700 mb-2">Période principale</h4>
-        <DateRange
-          ranges={mainDateRange}
-          onChange={(ranges) => {
-            if (ranges.main) setMainDateRange([ranges.main])
-          }}
-          moveRangeOnFirstSelection={false}
-          rangeColors={["#2563eb"]}
-          months={1}
-          direction="vertical"
-          locale={fr}
-          className="rounded-lg"
-        />
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto">
+          <div className="space-y-6 p-4">
+            {/* Résumé des dates sélectionnées */}
+            <div className="flex flex-row justify-between rounded-lg bg-gradient-to-r from-blue-50 to-teal-50 border border-blue-100 p-3">
+              <div className="flex-1 flex flex-col items-center border-r border-blue-100 pr-3">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-teal-500 mr-2"></div>
+                  <span className="text-xs font-medium text-gray-500 uppercase">Principale</span>
+                </div>
+                <div className="mt-1 text-sm font-semibold text-gray-800">
+                  {formatDateDisplay(mainDateRange[0].startDate)} → {formatDateDisplay(mainDateRange[0].endDate)}
+                </div>
+              </div>
+              
+              <div className="flex-1 flex flex-col items-center pl-3">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full bg-orange-500 mr-2"></div>
+                  <span className="text-xs font-medium text-gray-500 uppercase">Comparaison</span>
+                </div>
+                <div className="mt-1 text-sm font-semibold text-gray-800">
+                  {formatDateDisplay(comparisonDateRange[0].startDate)} → {formatDateDisplay(comparisonDateRange[0].endDate)}
+                </div>
+              </div>
+            </div>
 
-        {/* Sélection de la période de comparaison */}
-        <h4 className="text-md font-medium text-gray-700 mt-4 mb-2">Période de comparaison</h4>
-        <DateRange
-          ranges={comparisonDateRange}
-          onChange={(ranges) => {
-            if (ranges.comparison) setComparisonDateRange([ranges.comparison])
-          }}
-          moveRangeOnFirstSelection={false}
-          rangeColors={["#ff5722"]}
-          months={1}
-          direction="vertical"
-          locale={fr}
-          className="rounded-lg"
-        />
+            {/* Sélection de la période principale */}
+            <div className="space-y-2">
+              <h4 className="text-md font-medium text-gray-800 flex items-center gap-2">
+                <HiCalendar className="text-teal-500" />
+                Période principale
+              </h4>
+              <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={mainDateRange}
+                  onChange={(ranges) => {
+                    if (ranges.main) setMainDateRange([ranges.main]);
+                  }}
+                  moveRangeOnFirstSelection={false}
+                  rangeColors={["#0ea5e9"]} // sky-500
+                  months={1}
+                  direction="vertical"
+                  locale={fr}
+                  className="overflow-hidden"
+                />
+              </div>
+            </div>
+
+            {/* Sélection de la période de comparaison */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <h4 className="text-md font-medium text-gray-800 flex items-center gap-2">
+                  <HiCalendar className="text-orange-500" />
+                  Période de comparaison
+                </h4>
+                
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={applyLastYear}
+                  className="flex items-center gap-1 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-full transition-colors"
+                >
+                  <HiArrowPath className="text-gray-500" size={14} />
+                  Appliquer N-1
+                </motion.button>
+              </div>
+              
+              <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                <DateRange
+                  ranges={comparisonDateRange}
+                  onChange={(ranges) => {
+                    if (ranges.comparison) setComparisonDateRange([ranges.comparison]);
+                  }}
+                  moveRangeOnFirstSelection={false}
+                  rangeColors={["#f97316"]} // orange-500
+                  months={1}
+                  direction="vertical"
+                  locale={fr}
+                  className="overflow-hidden"
+                />
+              </div>
+            </div>
+            
+            {/* Espace pour éviter que le footer ne masque du contenu */}
+            <div className="h-16"></div>
+          </div>
+        </div>
+
+        {/* Footer avec boutons d'action */}
+        <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 mt-auto">
+          <div className="flex justify-between">
+            <ActionButton
+              onClick={clearDateFilter}
+              icon={<HiXMark />}
+              variant="danger"
+            >
+              Réinitialiser
+            </ActionButton>
+
+            <ActionButton
+              onClick={applyDateFilter}
+              icon={<HiCheck />}
+              variant="success"
+            >
+              Appliquer
+            </ActionButton>
+          </div>
+        </div>
       </div>
     </BaseDrawer>
   );
