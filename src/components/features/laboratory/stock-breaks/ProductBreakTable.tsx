@@ -1,12 +1,15 @@
-import ProductBreakChart from "@/components/common/charts/BreakChart";
-import SearchInput from "@/components/common/inputs/SearchInput";
-import CollapsibleSection from "@/components/common/sections/CollapsibleSection";
 import React, { useState, useMemo } from "react";
-import ProductBreakTableRow from "./ProductBreakTableRow";
+import { motion, AnimatePresence } from "framer-motion";
+import { FaTable, FaSearch, FaSyncAlt, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import { HiSparkles, HiExclamationTriangle } from "react-icons/hi2";
+import ProductBreakChart from "@/components/common/charts/BreakChart";
+import ActionButton from "@/components/common/buttons/ActionButton";
+import SearchInput from "@/components/common/inputs/SearchInput";
+import SortableTableHeader from "@/components/common/tables/SortableTableHeader";
 import { useFilterContext } from "@/contexts/FilterContext";
+import ProductBreakTableRow from "./ProductBreakTableRow";
 
-
-interface ProductStockBreakData {
+export interface ProductStockBreakData {
   code_13_ref: string;
   product_name: string;
   total_products_ordered: number;
@@ -23,18 +26,29 @@ interface ProductStockBreakData {
 
 interface ProductBreakTableProps {
   products: ProductStockBreakData[];
+  title?: string;
+  icon?: React.ReactNode;
+  defaultCollapsed?: boolean;
 }
 
 /**
  * Tableau détaillé des produits en rupture
+ * Affiche la liste des produits en rupture avec possibilité de voir les détails
+ * pour chaque produit, incluant un graphique de rupture.
  */
-const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
+const ProductBreakTable: React.FC<ProductBreakTableProps> = ({
+  products,
+  title = "Produits en Rupture de Stock",
+  icon = <HiExclamationTriangle className="w-5 h-5" />,
+  defaultCollapsed = false
+}) => {
   // États locaux
   const { filters } = useFilterContext();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [sortColumn, setSortColumn] = useState<keyof ProductStockBreakData>("stock_break_amount");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
+  const [isTableCollapsed, setIsTableCollapsed] = useState<boolean>(defaultCollapsed);
   const [salesStockData, setSalesStockData] = useState<Record<string, any>>({});
   const [loadingStockData, setLoadingStockData] = useState<Record<string, boolean>>({});
 
@@ -90,13 +104,16 @@ const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
         }
         
         // Pour les valeurs numériques
+        valueA = valueA as number;
+        valueB = valueB as number;
+        
         return sortOrder === 'asc' 
-          ? (valueA as number) - (valueB as number) 
-          : (valueB as number) - (valueA as number);
+          ? valueA - valueB 
+          : valueB - valueA;
       });
   }, [normalizedProducts, searchQuery, sortColumn, sortOrder]);
 
-  // Fonction pour charger les détails d'un produit - utilisant la même API que pour les ventes/stocks
+  // Fonction pour charger les détails d'un produit
   const fetchProductDetails = async (code_13_ref: string) => {
     if (salesStockData[code_13_ref] || loadingStockData[code_13_ref]) return;
     
@@ -122,102 +139,244 @@ const ProductBreakTable: React.FC<ProductBreakTableProps> = ({ products }) => {
 
   // Fonction pour basculer l'affichage des détails
   const toggleDetails = (code_13_ref: string) => {
-    if (expandedProduct === code_13_ref) {
-      setExpandedProduct(null);
-      return;
-    }
+    const newExpandedProduct = expandedProduct === code_13_ref ? null : code_13_ref;
+    setExpandedProduct(newExpandedProduct);
     
-    setExpandedProduct(code_13_ref);
-    // Charger les données si nécessaire
-    fetchProductDetails(code_13_ref);
+    if (newExpandedProduct) {
+      fetchProductDetails(code_13_ref);
+    }
+  };
+
+  // Fonction pour basculer la visibilité du tableau
+  const toggleTableVisibility = () => {
+    setIsTableCollapsed(prev => !prev);
+  };
+
+  // Variantes d'animation
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        duration: 0.5,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
+  };
+  
+  const contentVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1, 
+      transition: { 
+        delay: 0.2, 
+        duration: 0.4,
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
+  };
+
+  const tableVariants = {
+    hidden: { 
+      opacity: 0, 
+      height: 0,
+      overflow: "hidden" 
+    },
+    visible: { 
+      opacity: 1, 
+      height: "auto",
+      transition: { 
+        duration: 0.4, 
+        ease: [0.22, 1, 0.36, 1]
+      }
+    }
   };
 
   return (
-    <CollapsibleSection 
-      title="Produits en Rupture de Stock" 
-      icon="🚨"
-      buttonColorClass="bg-red-500 hover:bg-red-600"
-      defaultCollapsed={false}
+    <motion.div
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="w-full rounded-2xl overflow-hidden shadow-xl bg-white border border-gray-100"
     >
-      {/* Barre de recherche */}
-      <div className="mb-6">
-        <SearchInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Rechercher par Code EAN ou Nom du produit..."
-          accentColor="red"
-        />
+      {/* En-tête avec titre et contrôles */}
+      <div className="p-6 md:p-8 relative bg-gradient-to-br from-red-50 to-amber-50 border-b border-red-100/50">
+        {/* Accent décoratif */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-400 to-amber-500 shadow-sm"></div>
+        
+        {/* Éléments de design de fond */}
+        <div className="absolute top-10 right-10 w-32 h-32 bg-red-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-5 left-20 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl"></div>
+        
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
+          <div className="flex items-center">
+            <div className="relative mr-4">
+              <div className="w-12 h-12 flex items-center justify-center rounded-full bg-red-100/80 text-red-600 shadow-sm border border-red-200/50">
+                {icon}
+              </div>
+              <div className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center">
+                <HiSparkles className="text-yellow-400" />
+              </div>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-amber-600 bg-clip-text text-transparent">
+                {title}
+              </h2>
+              <motion.p 
+                variants={contentVariants}
+                className="text-gray-500 text-sm mt-1"
+              >
+                Analyse détaillée des produits en rupture de stock
+              </motion.p>
+            </div>
+          </div>
+
+          {/* Boutons de contrôle */}
+          <ActionButton
+            onClick={toggleTableVisibility}
+            icon={isTableCollapsed ? <FaChevronDown /> : <FaChevronUp />}
+            variant="secondary"
+            size="md"
+            rounded="full"
+            withRing
+          >
+            {isTableCollapsed ? "Afficher tableau" : "Masquer tableau"}
+          </ActionButton>
+        </div>
       </div>
 
-      {/* Tableau principal */}
-      {filteredProducts.length > 0 ? (
-        <div className="overflow-hidden border border-gray-200 shadow-lg rounded-lg">
-          <table className="w-full border-collapse rounded-lg table-auto">
-            {/* En-tête du tableau avec la colonne Détails */}
-            <thead>
-              <tr className="bg-red-500 text-white text-md">
-                {columns.slice(0, -1).map(column => (
-                  <th
-                    key={column.key}
-                    className="p-4 cursor-pointer transition hover:bg-red-600"
-                    onClick={() => handleSort(column.key)}
-                  >
-                    <div className="flex justify-center items-center gap-2">
-                      {column.label}
-                      {sortColumn === column.key ? (
-                        sortOrder === "asc" ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                        )
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 8-6 6-6-6"/><path d="m18 16-6-6-6 6"/></svg>
-                      )}
-                    </div>
-                  </th>
-                ))}
-                {/* Ajout explicite de la colonne Détails */}
-                <th className="p-4 text-center">
-                  Détails
-                </th>
-              </tr>
-            </thead>
-            
-            <tbody className="text-sm">
-              {filteredProducts.map((product) => (
-                <React.Fragment key={product.code_13_ref}>
-                  {/* Ligne du produit */}
-                  <ProductBreakTableRow
-                    product={product}
-                    isExpanded={expandedProduct === product.code_13_ref}
-                    onToggleExpand={() => toggleDetails(product.code_13_ref)}
-                  />
+      {/* Contenu principal */}
+      <div className="p-6 md:p-8 bg-white">
+        <motion.div
+          variants={contentVariants}
+          className="mb-6"
+        >
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Rechercher par Code EAN ou Nom de produit..."
+            accentColor="red"
+            size="md"
+            variant="glassmorphic"
+            withHistory={false}
+          />
+        </motion.div>
 
-                  {/* Détails du produit */}
-                  {expandedProduct === product.code_13_ref && (
-                    <tr>
-                      <td colSpan={columns.length} className="p-4 bg-red-50 text-center">
-                        {loadingStockData[product.code_13_ref] ? (
-                          <p className="text-gray-500">Chargement des détails...</p>
-                        ) : salesStockData[product.code_13_ref] ? (
-                          <div className="mt-4">
-                            <ProductBreakChart breakData={salesStockData[product.code_13_ref]} />
-                          </div>
-                        ) : (
-                          <p className="text-gray-500">Aucune donnée détaillée disponible</p>
+        {/* Animation du tableau */}
+        <AnimatePresence initial={false}>
+          {!isTableCollapsed && filteredProducts.length > 0 && (
+            <motion.div 
+              variants={tableVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="overflow-hidden"
+            >
+              <div className="border border-gray-200 shadow-lg rounded-xl">
+                <table className="w-full border-collapse rounded-xl table-auto">
+                  <SortableTableHeader
+                    columns={columns.map(col => ({
+                      key: col.key,
+                      label: col.label
+                    }))}
+                    sortColumn={sortColumn}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                    headerBgColor="bg-gradient-to-r from-red-500 to-amber-500"
+                    headerHoverColor="hover:from-red-600 hover:to-amber-600"
+                  />
+                  
+                  <tbody className="text-sm">
+                    {filteredProducts.map((product) => (
+                      <React.Fragment key={product.code_13_ref}>
+                        {/* Ligne du produit */}
+                        <ProductBreakTableRow
+                          product={product}
+                          isExpanded={expandedProduct === product.code_13_ref}
+                          onToggleExpand={() => toggleDetails(product.code_13_ref)}
+                        />
+
+                        {/* Détails du produit */}
+                        {expandedProduct === product.code_13_ref && (
+                          <tr>
+                            <td colSpan={columns.length} className="p-0">
+                              <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3, ease: "easeInOut" }}
+                                className="bg-gradient-to-br from-red-50 to-amber-50 p-6 border-t border-b border-red-100"
+                              >
+                                {loadingStockData[product.code_13_ref] && (
+                                  <div className="flex justify-center items-center p-8">
+                                    <motion.div 
+                                      animate={{ rotate: 360 }}
+                                      transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                      className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full mr-3"
+                                    />
+                                    <p className="text-red-600">Chargement des données détaillées...</p>
+                                  </div>
+                                )}
+
+                                {salesStockData[product.code_13_ref] && (
+                                  <div className="mt-2">
+                                    <div className="flex items-center gap-2 mb-4">
+                                      <div className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100/80 text-red-600 shadow-sm border border-red-200/50">
+                                        <FaSyncAlt className="w-4 h-4" />
+                                      </div>
+                                      <h3 className="text-lg font-semibold bg-gradient-to-r from-red-600 to-amber-600 bg-clip-text text-transparent">
+                                        Évolution des Ventes et Ruptures
+                                      </h3>
+                                    </div>
+                                    <ProductBreakChart breakData={salesStockData[product.code_13_ref]} />
+                                  </div>
+                                )}
+                              </motion.div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-center text-gray-500 my-8">Aucun produit en rupture ne correspond à votre recherche.</p>
-      )}
-    </CollapsibleSection>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Message si aucune donnée - visible seulement quand le tableau est visible */}
+        {!isTableCollapsed && filteredProducts.length === 0 && (
+          <motion.div 
+            variants={contentVariants}
+            className="p-8 bg-amber-50/90 backdrop-blur-md rounded-xl border border-amber-200 text-center shadow-sm"
+          >
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 mb-4">
+              <FaSearch className="h-6 w-6 text-amber-500" />
+            </div>
+            <p className="text-amber-700">Aucun produit en rupture ne correspond à votre recherche.</p>
+          </motion.div>
+        )}
+
+        {/* Message de tableau masqué - visible uniquement quand le tableau est masqué */}
+        {isTableCollapsed && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-6 bg-red-50/50 rounded-xl border border-red-100 text-center shadow-sm"
+          >
+            <div className="flex flex-col items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                <FaTable className="h-6 w-6 text-red-500" />
+              </div>
+              <p className="text-red-700 font-medium">Le tableau des produits en rupture est actuellement masqué</p>
+              <p className="text-red-500 text-sm mt-1">Utilisez le bouton "Afficher tableau" pour visualiser les données</p>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   );
 };
 
