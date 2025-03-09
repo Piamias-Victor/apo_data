@@ -149,19 +149,6 @@ const SalesDataMonthly: React.FC<SalesDataMonthlyProps> = ({ salesData, loading,
       <>
         {/* Options de filtre et d'affichage */}
         <div className="bg-white p-4 mb-5 rounded-xl shadow-sm border border-gray-200/70 flex flex-col md:flex-row gap-4 justify-between">
-          {/* Recherche */}
-          <div className="relative flex-grow max-w-md">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <HiMagnifyingGlass className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Rechercher un mois..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-teal-500 focus:border-teal-500 text-sm bg-gray-50/50"
-            />
-          </div>
           
           {/* Toggles d'affichage */}
           <div className="flex flex-wrap gap-3 justify-end">

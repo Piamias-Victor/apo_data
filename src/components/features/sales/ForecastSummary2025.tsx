@@ -65,6 +65,15 @@ const ForecastSummary2025: React.FC<ForecastSummaryProps> = ({
     ? (previousYearValues.margin / previousYearValues.revenue) * 100
     : 0;
 
+  // Calcul du ratio achats/ventes (en centimes par euro)
+  const purchaseRatio = forecastValues.revenue > 0 
+    ? (forecastValues.purchaseAmount / forecastValues.revenue) * 100 
+    : 0;
+    
+  const prevPurchaseRatio = previousYearValues.revenue > 0
+    ? (previousYearValues.purchaseAmount / previousYearValues.revenue) * 100
+    : 0;
+
   return (
     <motion.div
       variants={containerVariants}
@@ -217,17 +226,13 @@ const ForecastSummary2025: React.FC<ForecastSummaryProps> = ({
               />
             </div>
             
-            {/* Ratio achats/ventes prévisionnel */}
+            {/* Ratio achats/ventes prévisionnel - exprimé en centimes par euro */}
             <div className="mt-4 pt-3 border-t border-purple-50">
               <DataBlock 
-                title="Ratio Achats/Ventes Prév."
-                value={forecastValues.revenue > 0 
-                  ? (forecastValues.purchaseAmount / forecastValues.revenue) * 100 
-                  : 0}
-                previousValue={previousYearValues.revenue > 0
-                  ? (previousYearValues.purchaseAmount / previousYearValues.revenue) * 100
-                  : 0}
-                isPercentage
+                title="Coût pour 1€ de Vente"
+                value={purchaseRatio}
+                previousValue={prevPurchaseRatio}
+                isRatio
                 accentColor="purple"
                 animationDelay={0.5}
                 variant="outlined"

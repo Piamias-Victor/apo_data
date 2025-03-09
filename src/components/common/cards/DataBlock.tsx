@@ -9,6 +9,7 @@ export interface DataBlockProps {
   isCurrency?: boolean;
   isPercentage?: boolean;
   isDecimal?: boolean;
+  isRatio?: boolean; // Nouveau: pour indiquer si c'est un ratio achats/ventes
   accentColor?: "teal" | "blue" | "indigo" | "purple" | "rose" | "orange" | "gray" | "amber" | "emerald";
   size?: "sm" | "md" | "lg";
   animationDelay?: number;
@@ -22,6 +23,7 @@ const DataBlock: React.FC<DataBlockProps> = ({
   isCurrency = false,
   isPercentage = false,
   isDecimal = false,
+  isRatio = false,
   accentColor = "teal",
   size = "md",
   animationDelay = 0,
@@ -30,85 +32,103 @@ const DataBlock: React.FC<DataBlockProps> = ({
   // Configuration des couleurs d'accent
   const colorConfig = {
     teal: {
-      light: "bg-teal-50 text-teal-600 border-teal-200",
-      medium: "bg-teal-100 text-teal-700 border-teal-300",
-      dark: "bg-teal-600 text-white border-teal-700",
-      gradient: "from-teal-500 to-teal-400",
-      increase: "bg-teal-50 text-teal-600",
-      badge: "bg-teal-100 text-teal-700",
-      bar: "bg-teal-500/20"
+      light: "bg-teal-50 text-teal-700 border-teal-200",
+      medium: "bg-teal-100 text-teal-800",
+      badge: {
+        increase: "bg-teal-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-teal-500",
+      shadow: "shadow-teal-100"
     },
     blue: {
-      light: "bg-blue-50 text-blue-600 border-blue-200",
-      medium: "bg-blue-100 text-blue-700 border-blue-300",
-      dark: "bg-blue-600 text-white border-blue-700",
-      gradient: "from-blue-500 to-blue-400",
-      increase: "bg-blue-50 text-blue-600",
-      badge: "bg-blue-100 text-blue-700",
-      bar: "bg-blue-500/20"
+      light: "bg-blue-50 text-blue-700 border-blue-200",
+      medium: "bg-blue-100 text-blue-800",
+      badge: {
+        increase: "bg-blue-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-blue-500",
+      shadow: "shadow-blue-100"
     },
     indigo: {
-      light: "bg-indigo-50 text-indigo-600 border-indigo-200",
-      medium: "bg-indigo-100 text-indigo-700 border-indigo-300",
-      dark: "bg-indigo-600 text-white border-indigo-700",
-      gradient: "from-indigo-500 to-indigo-400",
-      increase: "bg-indigo-50 text-indigo-600",
-      badge: "bg-indigo-100 text-indigo-700",
-      bar: "bg-indigo-500/20"
+      light: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      medium: "bg-indigo-100 text-indigo-800",
+      badge: {
+        increase: "bg-indigo-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-indigo-500",
+      shadow: "shadow-indigo-100"
     },
     purple: {
-      light: "bg-purple-50 text-purple-600 border-purple-200",
-      medium: "bg-purple-100 text-purple-700 border-purple-300",
-      dark: "bg-purple-600 text-white border-purple-700",
-      gradient: "from-purple-500 to-purple-400",
-      increase: "bg-purple-50 text-purple-600",
-      badge: "bg-purple-100 text-purple-700",
-      bar: "bg-purple-500/20"
+      light: "bg-purple-50 text-purple-700 border-purple-200",
+      medium: "bg-purple-100 text-purple-800",
+      badge: {
+        increase: "bg-purple-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-purple-500",
+      shadow: "shadow-purple-100"
     },
     rose: {
-      light: "bg-rose-50 text-rose-600 border-rose-200",
-      medium: "bg-rose-100 text-rose-700 border-rose-300",
-      dark: "bg-rose-600 text-white border-rose-700",
-      gradient: "from-rose-500 to-rose-400",
-      increase: "bg-rose-50 text-rose-600",
-      badge: "bg-rose-100 text-rose-700",
-      bar: "bg-rose-500/20"
+      light: "bg-rose-50 text-rose-700 border-rose-200",
+      medium: "bg-rose-100 text-rose-800",
+      badge: {
+        increase: "bg-rose-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-rose-500",
+      shadow: "shadow-rose-100"
     },
     orange: {
-      light: "bg-orange-50 text-orange-600 border-orange-200",
-      medium: "bg-orange-100 text-orange-700 border-orange-300",
-      dark: "bg-orange-600 text-white border-orange-700",
-      gradient: "from-orange-500 to-orange-400",
-      increase: "bg-orange-50 text-orange-600",
-      badge: "bg-orange-100 text-orange-700",
-      bar: "bg-orange-500/20"
+      light: "bg-orange-50 text-orange-700 border-orange-200",
+      medium: "bg-orange-100 text-orange-800",
+      badge: {
+        increase: "bg-orange-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-orange-500",
+      shadow: "shadow-orange-100"
     },
     amber: {
-      light: "bg-amber-50 text-amber-600 border-amber-200",
-      medium: "bg-amber-100 text-amber-700 border-amber-300",
-      dark: "bg-amber-600 text-white border-amber-700",
-      gradient: "from-amber-500 to-amber-400",
-      increase: "bg-amber-50 text-amber-600",
-      badge: "bg-amber-100 text-amber-700",
-      bar: "bg-amber-500/20"
+      light: "bg-amber-50 text-amber-700 border-amber-200",
+      medium: "bg-amber-100 text-amber-800",
+      badge: {
+        increase: "bg-amber-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-amber-500",
+      shadow: "shadow-amber-100"
     },
     emerald: {
-      light: "bg-emerald-50 text-emerald-600 border-emerald-200",
-      medium: "bg-emerald-100 text-emerald-700 border-emerald-300",
-      dark: "bg-emerald-600 text-white border-emerald-700",
-      gradient: "from-emerald-500 to-emerald-400",
-      increase: "bg-emerald-50 text-emerald-600",
-      badge: "bg-emerald-100 text-emerald-700",
-      bar: "bg-emerald-500/20"
+      light: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      medium: "bg-emerald-100 text-emerald-800",
+      badge: {
+        increase: "bg-emerald-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-emerald-500",
+      shadow: "shadow-emerald-100"
     },
     gray: {
-      light: "bg-gray-50 text-gray-600 border-gray-200",
-      medium: "bg-gray-100 text-gray-700 border-gray-300",
-      dark: "bg-gray-600 text-white border-gray-700",
-      gradient: "from-gray-500 to-gray-400",
-      increase: "bg-gray-50 text-gray-600",
-      badge: "bg-gray-100 text-gray-700",
-      bar: "bg-gray-500/20"
+      light: "bg-gray-50 text-gray-700 border-gray-200",
+      medium: "bg-gray-100 text-gray-800",
+      badge: {
+        increase: "bg-gray-500 text-white",
+        decrease: "bg-red-500 text-white",
+        neutral: "bg-gray-300 text-gray-700"
+      },
+      code: "text-gray-500",
+      shadow: "shadow-gray-100"
     }
   };
   
@@ -159,16 +179,16 @@ const DataBlock: React.FC<DataBlockProps> = ({
       valueColor: "text-gray-900"
     },
     gradient: {
-      container: `bg-gradient-to-br ${colorConfig[accentColor].gradient} border-none shadow-md`,
+      container: `bg-gradient-to-br from-${accentColor}-500 to-${accentColor}-400 border-none shadow-md`,
       valueColor: "text-white"
     }
   };
 
-  const sizes = sizeConfig[size];
-  const colors = colorConfig[accentColor];
-  const variantClasses = variantConfig[variant];
+  const sizes = sizeConfig[size] || sizeConfig.md;
+  const colors = colorConfig[accentColor] || colorConfig.teal;
+  const variantClasses = variantConfig[variant] || variantConfig.default;
 
-  // Calcul de la variation en pourcentage
+  // Calcul du pourcentage de variation
   let percentageChange: number | null = null; 
 
   if (previousValue !== undefined && previousValue !== null) {
@@ -180,18 +200,36 @@ const DataBlock: React.FC<DataBlockProps> = ({
   }
 
   // Formatage de la valeur principale
-  const displayValue = isDecimal 
-    ? value.toFixed(2)
-    : isPercentage 
-    ? `${value.toFixed(1)}%` 
-    : formatLargeNumber(value, isCurrency);
+  const getDisplayValue = () => {
+    if (isRatio) {
+      // Pour le ratio Achats/Ventes, afficher "X cts par €" pour plus de clarté
+      return `${value.toFixed(1)} cts par €`;
+    } else if (isDecimal) {
+      return value.toFixed(2);
+    } else if (isPercentage) {
+      return `${value.toFixed(1)}%`;
+    } else {
+      return formatLargeNumber(value, isCurrency);
+    }
+  };
+  
+  // Formatage de la valeur précédente avec la même logique
+  const getDisplayPreviousValue = () => {
+    if (previousValue === undefined || previousValue === null) return null;
     
-  // Formatage de la valeur précédente
-  const displayPreviousValue = previousValue !== undefined && previousValue !== null
-    ? isPercentage 
-      ? `${previousValue.toFixed(1)}%` 
-      : formatLargeNumber(previousValue, isCurrency)
-    : null;
+    if (isRatio) {
+      return `${previousValue.toFixed(1)} cts par €`;
+    } else if (isDecimal) {
+      return previousValue.toFixed(2);
+    } else if (isPercentage) {
+      return `${previousValue.toFixed(1)}%`;
+    } else {
+      return formatLargeNumber(previousValue, isCurrency);
+    }
+  };
+
+  const displayValue = getDisplayValue();
+  const displayPreviousValue = getDisplayPreviousValue();
 
   // Animations
   const containerVariants = {
@@ -234,7 +272,11 @@ const DataBlock: React.FC<DataBlockProps> = ({
 
   // Détermine la couleur et l'icône en fonction de la variation
   const getChangeStyles = (change: number) => {
-    if (change > 0) {
+    // Pour les ratios, la logique est inversée (diminution = positif)
+    const isRatioDecrease = isRatio && change < 0;
+    const isRatioIncrease = isRatio && change > 0;
+    
+    if ((change > 0 && !isRatio) || isRatioDecrease) {
       return {
         bgColor: "bg-green-50",
         textColor: "text-green-600",
@@ -253,7 +295,7 @@ const DataBlock: React.FC<DataBlockProps> = ({
           </svg>
         )
       };
-    } else if (change < 0) {
+    } else if ((change < 0 && !isRatio) || isRatioIncrease) {
       return {
         bgColor: "bg-red-50",
         textColor: "text-red-600",
@@ -311,16 +353,20 @@ const DataBlock: React.FC<DataBlockProps> = ({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: animationDelay + 0.3, duration: 0.3 }}
             >
-              {percentageChange > 0 && '+'}
-              {percentageChange.toFixed(1)}%
+              {isRatio ? 
+                // Pour les ratios, on inverse le signe pour clarifier l'interprétation (une baisse est positive)
+                (percentageChange > 0 ? "" : "+") + Math.abs(percentageChange).toFixed(1) + "%"
+                : 
+                (percentageChange > 0 ? "+" : "") + percentageChange.toFixed(1) + "%"
+              }
               {getChangeStyles(percentageChange).icon}
             </motion.div>
             
             {/* Valeur précédente */}
             {displayPreviousValue && (
-              <span className={`${sizes.comparisonValue} ${variant === 'gradient' ? 'text-white/70' : 'text-gray-400'}`}>
+              <div className={`${sizes.comparisonValue} ${variant === 'gradient' ? 'text-white/70' : 'text-gray-400'} h-5 min-h-[1.25rem]`}>
                 vs {displayPreviousValue}
-              </span>
+              </div>
             )}
           </div>
         )}
@@ -329,7 +375,7 @@ const DataBlock: React.FC<DataBlockProps> = ({
       {/* Barre d'accent stylisée */}
       <div className={`mt-3 w-full ${colors.bar} ${sizes.barHeight} rounded-full overflow-hidden`}>
         <motion.div 
-          className={`h-full rounded-full bg-gradient-to-r ${colorConfig[accentColor].gradient}`}
+          className={`h-full rounded-full bg-gradient-to-r from-${accentColor}-500 to-${accentColor}-400`}
           variants={barVariants}
           initial="hidden"
           animate="visible"

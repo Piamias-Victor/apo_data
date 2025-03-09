@@ -46,6 +46,15 @@ const AnnualSummary2025: React.FC<AnnualSummaryProps> = ({
     ? (comparisonPeriodData.margin / comparisonPeriodData.revenue) * 100
     : 0;
     
+  // Calcul du ratio achats/ventes en centimes par euro
+  const purchaseRatio = hasData && currentPeriodData.revenue > 0 
+    ? (currentPeriodData.purchaseAmount / currentPeriodData.revenue) * 100 
+    : 0;
+    
+  const prevPurchaseRatio = comparisonPeriodData && comparisonPeriodData.revenue > 0
+    ? (comparisonPeriodData.purchaseAmount / comparisonPeriodData.revenue) * 100
+    : 0;
+    
   // Variables d'animation
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -217,17 +226,13 @@ const AnnualSummary2025: React.FC<AnnualSummaryProps> = ({
               />
             </div>
             
-            {/* Ratio achats/ventes */}
+            {/* Coût pour 1€ de vente */}
             <div className="mt-4 pt-3 border-t border-blue-50">
               <DataBlock 
-                title="Ratio Achats/Ventes"
-                value={hasData && currentPeriodData.revenue > 0 
-                  ? (currentPeriodData.purchaseAmount / currentPeriodData.revenue) * 100 
-                  : 0}
-                previousValue={comparisonPeriodData && comparisonPeriodData.revenue > 0
-                  ? (comparisonPeriodData.purchaseAmount / comparisonPeriodData.revenue) * 100
-                  : 0}
-                isPercentage
+                title="Coût pour 1€ de Vente"
+                value={purchaseRatio}
+                previousValue={prevPurchaseRatio}
+                isRatio
                 accentColor="blue"
                 animationDelay={0.5}
                 variant="outlined"
