@@ -111,16 +111,6 @@ const SalesPharmaciesComponent: React.FC = () => {
       animate="visible" 
       className="max-w-8xl mx-auto p-6 md:p-8 space-y-12"
     >
-      {/* Titre de la section */}
-      <motion.div variants={itemVariants}>
-        <SectionTitle 
-          title="Performance des Pharmacies" 
-          description="Analyse détaillée des ventes et marges des pharmacies partenaires 💊"
-          emoji="🏥"
-          color="text-pink-600"
-        />
-      </motion.div>
-
       {/* Carte des meilleures pharmacies */}
       <motion.div variants={itemVariants}>
         <TopPharmaciesCard 
